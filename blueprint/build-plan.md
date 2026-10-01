@@ -1,0 +1,26 @@
+# Build Plan
+
+- [ ] 1. **Product & Service Catalog** - Create the database models and APIs for digital products and services, including name, slug, description, price, category, images, files, and status.
+- [ ] 2. **Product & Service Details** - Build customer-facing product and service detail pages with pricing, descriptions, features, images, and purchase actions.
+- [ ] 3. **Shopping Cart** - Build the cart functionality for adding, removing, updating, and reviewing products and services before checkout.
+- [ ] 4. **Stripe Checkout** - Integrate Stripe Checkout for secure customer payments and support successful, cancelled, and failed checkout states.
+- [ ] 5. **Stripe Webhooks & Orders** - Process Stripe webhooks, verify payments, and automatically create and update orders after successful payment.
+- [ ] 6. **Digital Product Delivery** - Store digital files securely and provide customers with protected download access after payment.
+- [ ] 7. **Customer Authentication** - Add customer registration, login, logout, password/account management, and protected customer routes.
+- [ ] 8. **Customer Account Dashboard** - Build the customer dashboard with profile information, orders, purchased products, downloads, and services.
+- [ ] 9. **Service Purchase & Onboarding** - Create post-purchase onboarding forms for services such as Ads Management and Account Management.
+- [ ] 10. **Customer Service Tracking** - Allow customers to view purchased services, submitted requirements, service status, and updates.
+- [ ] 11. **Admin Dashboard** - Build the protected admin dashboard with revenue, orders, customers, products, services, and recent activity.
+- [ ] 12. **Admin Product Management** - Allow admins to create, edit, publish, unpublish, and delete digital products with pricing, images, descriptions, and downloadable files.
+- [ ] 13. **Admin Service Management** - Allow admins to create and manage services, packages, pricing, duration, requirements, and availability.
+- [ ] 14. **Admin Order Management** - Allow admins to view and manage orders, customers, purchased items, payment status, order status, and refunds.
+- [ ] 15. **Admin Service Management** - Allow admins to manage service orders, customer requirements, notes, progress, and completion status.
+- [ ] 16. **Customer Management** - Allow admins to view customers, profiles, orders, purchases, downloads, and active services.
+- [ ] 17. **Secure File Storage** - Implement private storage for digital products with protected, authenticated download URLs.
+- [ ] 18. **Email Notifications** - Send transactional emails for orders, payments, digital downloads, service purchases, and service status updates.
+- [ ] 19. **Discount & Coupon System** - Allow admins to create, edit, activate, deactivate, and apply discount codes to eligible products or services.
+- [ ] 20. **Website Content Management** - Allow admins to manage featured products, homepage sections, promotional content, and basic website settings.
+- [ ] 21. **SEO & Social Sharing** - Add SEO metadata, Open Graph images, sitemap, robots configuration, structured data, and SEO-friendly URLs.
+- [ ] 22. **Analytics & Sales Reporting** - Track product views, cart activity, purchases, revenue, customers, and basic ecommerce performance.
+- [ ] 23. **Security & Access Control** - Protect customer and admin routes, APIs, database operations, digital files, and Stripe webhook endpoints.
+- [ ] 24. **Production Testing & Launch** - Test the complete customer and admin workflows, Stripe payments, webhooks, downloads, emails, permissions, mobile layouts, and production deployment.
