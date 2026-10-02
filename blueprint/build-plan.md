@@ -1,6 +1,6 @@
 # Build Plan
 
-- [ ] 1. **Product & Service Catalog** - Create the database models and APIs for digital products and services, including name, slug, description, price, category, images, files, and status.
+- [x] 1. **Product & Service Catalog** - Create the database models and APIs for digital products and services, including name, slug, description, price, category, images, files, and status.
 - [ ] 2. **Product & Service Details** - Build customer-facing product and service detail pages with pricing, descriptions, features, images, and purchase actions.
 - [ ] 3. **Shopping Cart** - Build the cart functionality for adding, removing, updating, and reviewing products and services before checkout.
 - [ ] 4. **Stripe Checkout** - Integrate Stripe Checkout for secure customer payments and support successful, cancelled, and failed checkout states.

@@ -311,13 +311,18 @@ change; do not create an npm or yarn lockfile.
 - Build: `pnpm build` (also type-checks the project)
 - Production server: `pnpm start`
 - Lint: `pnpm lint`
+- Test: `pnpm test` (Vitest, single run)
+- Test watch: `pnpm test:watch`
+- Database migrate: `pnpm db:migrate` (Prisma `migrate dev`; needs `DATABASE_URL`
+  in `.env`, see `.env.example`)
+- Database seed: `pnpm db:seed` (development data only; safe to re-run)
+- Prisma client: `pnpm exec prisma generate` (runs automatically after
+  `pnpm install`; output in `lib/generated/prisma` is not committed)
+- Migration status: `pnpm exec prisma migrate status`
 
-There is no test command, no standalone typecheck script, and no `Verify`
-command yet, so tests are not a gate. Until that changes, `pnpm build` and
-`pnpm lint` are the automated checks.
-
-Testing is opt-in. Run `/tests` or `$tests` to add a unit test runner and update
-this section with the real test commands.
+Unit tests are a gate for logic-bearing steps. There is no standalone typecheck
+script and no `Verify` command yet, so the automated checks are `pnpm test`,
+`pnpm build`, and `pnpm lint`.
 
 Browser testing is also opt-in. Run `/tests browser` or `$tests browser` to add
 or normalize a browser harness and document its exact command as `Browser

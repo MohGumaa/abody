@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ProductType {
+  DIGITAL_PRODUCT
+  SERVICE
+}
+
+enum ProductStatus {
+  PUBLISHED
+  UNPUBLISHED
+}
+
+model Product {
+  id               String        @id @default(cuid())
+  name             String
+  slug             String        @unique
+  shortDescription String
+  description      String        @db.Text
+  // Whole US cents: 4900 is $49.00.
+  priceCents       Int
+  type             ProductType
+  category         String
+  image            String?
+  // Private storage reference. Never select this for public responses.
+  digitalFile      String?
+  status           ProductStatus
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}

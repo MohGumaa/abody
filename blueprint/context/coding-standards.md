@@ -79,11 +79,17 @@ them.
 
 ## Database
 
-> TODO: no database is installed. The project plan recommends PostgreSQL with
-> Prisma. When the first data feature adds it:
+PostgreSQL with Prisma 7 (`prisma/schema.prisma`, config in `prisma.config.ts`,
+`@prisma/adapter-pg` driver adapter). The connection string is `DATABASE_URL`.
 
-- Use the ORM for all database operations
-- Change the schema through migrations (`prisma migrate dev`, not `db push`)
+- Use the shared client from `lib/db.ts` for all database operations; do not
+  create another `PrismaClient`
+- Import generated types and enums from `@/lib/generated/prisma/...`; that folder
+  is generated, ignored by Git and lint, and never edited by hand
+- Money is stored as integer US cents (`priceCents`); the store currency is USD
+- Public reads go through `lib/catalog.ts`, which selects public fields only.
+  Never select `digitalFile` for a public response.
+- Change the schema through migrations (`pnpm db:migrate`, not `db push`)
 - Run `prisma migrate status` before committing to verify migrations are in sync
 - Production deployments must run `prisma migrate deploy` before the app starts
 
@@ -113,9 +119,8 @@ them.
 
 ## Testing
 
-**Gate status: off.** `AGENTS.md` declares no `test` command, so logic is
-verified with `pnpm build`, `pnpm lint`, and direct evidence until `/tests` adds
-a runner.
+**Gate status: on.** `AGENTS.md` declares `pnpm test` (Vitest, config in
+`vitest.config.mts`, Node environment, files matching `**/*.test.ts`).
 
 The blueprint installs no test runner; testing is opt-in at the project level,
 because the overlay can't know your stack. Adding unit testing is an explicit
@@ -158,9 +163,8 @@ of the switch; the skills and `ai-interaction.md` only point back here.
 - Run them via the project's test command (see Commands in `AGENTS.md`), not a
   hardcoded tool name.
 
-Stack binding: when `/tests` runs, this TypeScript app should use Vitest,
-`vi.mock()` for external dependencies (database client, auth, Stripe), and
-`vi.useFakeTimers()` for time-dependent logic.
+Stack binding: Vitest, with `vi.mock()` for external dependencies (database
+client, auth, Stripe) and `vi.useFakeTimers()` for time-dependent logic.
 
 ## Browser Verification
 
