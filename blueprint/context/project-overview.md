@@ -1,6 +1,6 @@
 # Abody Digital Ecommerce Platform - Project Overview
 
-<!-- blueprint:source-hash 7eb8a7787720d9fda027f55b8702c08426bcfc328cc6fe720f28431d4a2c44b2 -->
+<!-- blueprint:source-hash ef7c5781abebe78924cd640368c2f8e30f7724512861704d56b371c8fa6c95c6 -->
 
 > A bilingual (English and Arabic) storefront where customers buy Abody's
 > downloadable digital products and digital services with Stripe, plus an admin
@@ -27,8 +27,8 @@ dashboard instead of handling service customers manually through email.
   files, availability, orders, customers, service work, and website content.
 
 Access tiers: anonymous visitors browse the public store; signed-in customers
-reach `/account`; admins reach `/admin`. Customers and admins have different
-permissions, enforced on the server.
+reach the account area; admins reach the admin area. Customers and admins have
+different permissions, enforced on the server.
 
 ## Usage model
 
@@ -53,16 +53,24 @@ languages other than English and Arabic, advanced reporting, native mobile apps.
 
 ## Features
 
-In `build-plan.md` order. Items 1 and 2 are shipped. The headline flow is items
-1-2 and 4-7: discover, add to cart, pay with Stripe, and receive the product.
+In `build-plan.md` order. Items 1, 2, and 3a are shipped; 3b is next. The
+headline flow is items 1-2 and 4-7: discover, add to cart, pay with Stripe, and
+receive the product.
 
 1. **Product & Service Catalog** (done) - database models and APIs for digital
    products and services.
 2. **Product & Service Details** (done) - customer-facing detail pages with
    pricing, descriptions, features, images, and purchase actions.
-3. **Multi-Language Support** - English and Arabic customer website: header
-   language switcher, right-to-left layout for Arabic, Tajawal font for Arabic
-   text, and translated interface text that every later customer page builds on.
+3. **Multi-Language Support** (in progress) - English and Arabic customer
+   website that every later customer page builds on. Split into:
+   - 3a. **Bilingual Routing and Interface** (done) - every customer page under
+     `/en` and `/ar`, language picked from the saved choice or the browser
+     (English otherwise), minimal header with the language switcher,
+     right-to-left layout and Tajawal for Arabic, existing interface text
+     translated.
+   - 3b. **Bilingual Product Content** - store product and service name,
+     descriptions, what's included, and requirements in English and Arabic, and
+     show the content that matches the page language.
 4. **Shopping Cart** - add, remove, update quantity, and review items before
    checkout, with subtotal and total.
 5. **Stripe Checkout** - create Stripe Checkout sessions and handle success,
@@ -114,8 +122,9 @@ In `build-plan.md` order. Items 1 and 2 are shipped. The headline flow is items
 ## Data model
 
 Derived from project-plan section 7 and the features that use each field.
-PostgreSQL with Prisma. `Product` is shipped and locked by features 1 and 2;
-feature 6 locks `Order` and `OrderItem`. Later features depend on those shapes.
+PostgreSQL with Prisma. `Product` is the only model that exists today (features
+1 and 2); feature 3b changes its text fields, and feature 6 locks `Order` and
+`OrderItem`. Later features depend on those shapes.
 
 ### User
 
@@ -137,7 +146,8 @@ One model for both product types; `type` decides delivery. This is the shape in
 
 - `id` (string cuid, primary key)
 - `name` (string)
-- `slug` (string, unique) - used in `/products/[slug]` and `/services/[slug]`
+- `slug` (string, unique) - used in `/<lang>/products/[slug]` and
+  `/<lang>/services/[slug]`
 - `shortDescription` (string)
 - `description` (text)
 - `priceCents` (integer) - whole US cents; the store currency is USD
@@ -153,9 +163,11 @@ One model for both product types; `type` decides delivery. This is the shape in
 - `createdAt`, `updatedAt` (datetime)
 - will have many `OrderItem`
 
-> TODO: all text fields hold one language today. Whether product and service
-> content is stored in English and Arabic is undecided (see Open questions); a
-> yes changes this locked model and the admin product form.
+> TODO (feature 3b): `name`, `shortDescription`, `description`, `included`, and
+> `requirements` hold one language today and must be stored in English and
+> Arabic. The storage shape is not specified in the plans, and `category` is not
+> in 3b's list. The `/api/products` responses and the admin product form change
+> with it.
 
 > TODO: Stripe product and price identifiers set by the admin are named in the
 > plan's admin form but are not stored yet.
@@ -202,7 +214,8 @@ references listed on `User` and `Order`.
 
 > TODO: the plan's data list has no shapes for discount codes (feature 20),
 > service packages (feature 14), managed website content (feature 21),
-> analytics events (feature 23), or a customer's preferred language.
+> analytics events (feature 23), or a signed-in customer's preferred language
+> (today the choice lives only in a `lang` cookie).
 
 ## Tech stack
 
@@ -214,6 +227,7 @@ plan and not installed.
   appropriate; server-side functionality and API routes for products, orders,
   checkout, accounts, Stripe webhooks, and admin operations
 - **Tailwind CSS + shadcn/ui** - styling and UI components, responsive
+  (shadcn/ui is not installed yet)
 - **PostgreSQL + Prisma** - transactional database and ORM
 - **Clerk or Auth.js** - authentication with separate customer and admin
   permissions (undecided)
@@ -222,7 +236,8 @@ plan and not installed.
   (undecided)
 - **Transactional email and analytics** - required by features 19 and 23; no
   provider named
-- **Translations** - required by feature 3; no library or approach named
+- **Translations** - no library; feature 3a shipped typed English and Arabic
+  dictionaries in `lib/i18n/` and a root `proxy.ts` for the language redirect
 
 ## Monetization
 
@@ -245,30 +260,41 @@ Start from the existing Abody brand and modernize it.
   Tajawal font. Prices and order numbers keep the same format in both languages.
   The bilingual Abody logo is used as is.
 - A language switch sits in the header on every page, and the choice persists
-  through browsing, checkout, and the account.
+  through browsing, checkout, and the account. Every customer link, redirect,
+  and Stripe return URL must carry the language prefix.
 - All customer-facing interface text exists in both languages: navigation,
   buttons, labels, form messages, order and service statuses, and transactional
-  emails.
-- Navigation: Home, Products, Services, About, Contact, Login, Cart.
+  emails. Each feature translates the text it introduces.
+- Navigation: Home, Products, Services, About, Contact, Login, Cart. Only the
+  logo and the language switcher exist in the header today.
 - Product detail pages are simple and conversion-focused: image, name, price,
   description, feature list, Add to Cart, a Stripe trust line, What's Included,
   and How It Works. Services replace the download part with onboarding.
 - Core flow: Discover, Understand, Purchase, Receive, Manage.
-- Design reference: `prototypes/` holds static mockups and `theme.css` for the
-  agreed look in both languages, until the first UI feature ports the theme.
+- Design reference: `prototypes/` (untracked) holds the static mockups for the
+  agreed look in both languages. Its theme tokens are already ported into
+  `app/globals.css`; nothing in the app imports from `prototypes/`.
 
-Routes:
+Routes. Customer pages live under a language prefix, `/en/...` or `/ar/...`.
+An unprefixed customer URL redirects to the visitor's language: saved choice,
+then browser language, then English. `/api/*` is never prefixed.
 
-- `/` - landing page: hero, featured products and services, value proposition,
-  CTAs, social proof, footer
-- `/products`, `/products/[slug]` - product store and detail
-- `/services`, `/services/[slug]` - services list and detail
-- `/cart`, `/checkout`, `/success` - cart, checkout, payment success
-- `/login` - sign in
-- `/account`, `/account/orders`, `/account/downloads`, `/account/services` -
-  customer dashboard (overview, orders, downloads, services, profile, logout)
+- `/<lang>` - landing page: hero, featured products and services, value
+  proposition, CTAs, social proof, footer (still the scaffold placeholder)
+- `/<lang>/products`, `/<lang>/products/[slug]` - product store and detail
+  (detail shipped)
+- `/<lang>/services`, `/<lang>/services/[slug]` - services list and detail
+  (detail shipped)
+- `/<lang>/cart`, `/<lang>/checkout`, `/<lang>/success` - cart, checkout,
+  payment success
+- `/<lang>/login` - sign in
+- `/<lang>/account`, `.../orders`, `.../downloads`, `.../services` - customer
+  dashboard (overview, orders, downloads, services, profile, logout)
 - `/admin`, `/admin/products`, `/admin/products/new`, `/admin/orders`,
   `/admin/customers`, `/admin/services`, `/admin/settings` - admin dashboard
+  (whether it is prefixed depends on the admin language decision below)
+- `/api/products`, `/api/products/[slug]` - shipped catalog API, language-neutral
+  today
 
 ## Deployment
 
@@ -282,40 +308,44 @@ Routes:
 
 Resolve these in the plans, then re-run `/overview`.
 
-1. **Language decisions (feature 3).** The plan leaves four open: whether
-   product and service content is stored in both languages (changes the shipped
-   `Product` model and the admin form), which language is the default, how the
-   language appears in the URL (for example an `/ar` prefix), and whether the
-   admin dashboard is translated.
-2. **No build-plan item for the public pages.** The project plan lists the
+1. **Project plan's language section is out of date.** It still lists four
+   decisions as open. The build plan (3a, 3b) has settled three: both languages
+   are URL-prefixed (`/en`, `/ar`), English is the default, and product and
+   service content is stored in both languages. Section 11's route list is also
+   still unprefixed.
+2. **Admin dashboard language.** Still undecided. If admin stays in one
+   language, feature 12 must exclude `/admin` from the language redirect.
+3. **Bilingual content details (feature 3b).** The plans do not say how the two
+   languages are stored, or whether `category` is translated.
+4. **No build-plan item for the public pages.** The project plan lists the
    homepage, Products page, and Services page as v1 must-haves, and names About
    and Contact in the navigation. The build plan has no item for the homepage,
-   the store listing pages, About and Contact, or the shared header and footer
-   that would hold the language switch (item 2 covers detail pages only; item
-   21 manages homepage content but does not build it).
-3. **Coupons conflict.** Build-plan item 20 is a discount and coupon system. The
+   the store listing pages, About and Contact, the navigation links, or the
+   footer (item 2 covers detail pages only; 3a built a minimal header; item 21
+   manages homepage content but does not build it).
+5. **Coupons conflict.** Build-plan item 20 is a discount and coupon system. The
    project plan lists advanced coupons as not required for v1 and a coupon system
    as a future feature.
-4. **Duplicate title.** Items 14 and 16 are both "Admin Service Management" with
+6. **Duplicate title.** Items 14 and 16 are both "Admin Service Management" with
    different scopes (catalog vs purchased service work).
-5. **Authentication comes late.** Orders need a `userId` and downloads must be
+7. **Authentication comes late.** Orders need a `userId` and downloads must be
    limited to the purchaser, but Customer Authentication is item 8, after
    checkout, orders, and delivery (items 5-7). Guest checkout is not mentioned.
-6. **File storage comes late.** Item 7 stores and delivers digital files; private
+8. **File storage comes late.** Item 7 stores and delivers digital files; private
    storage is item 18. Item 13 (admin file upload) also depends on it.
-7. **Security as a late item.** Item 24 protects routes, APIs, files, and
+9. **Security as a late item.** Item 24 protects routes, APIs, files, and
    webhooks, but the plan requires those protections as each feature ships
    (items 6, 7, 12 onward).
-8. **Undecided stack choices.** Clerk or Auth.js; Cloudflare R2 or AWS S3; no
-   email, analytics, or translation approach named; no deployment target.
-9. **Service packages.** Item 14 and the service flow mention choosing a package,
-   but the data list has no package or pricing-tier shape.
-10. **Cart storage.** No decision on where the cart lives (browser or database)
+10. **Undecided stack choices.** Clerk or Auth.js; Cloudflare R2 or AWS S3; no
+    email or analytics provider named; no deployment target.
+11. **Service packages.** Item 14 and the service flow mention choosing a package,
+    but the data list has no package or pricing-tier shape.
+12. **Cart storage.** No decision on where the cart lives (browser or database)
     or whether a service can have a quantity above one.
-11. **Product reviews.** The detail-page sketch shows a star rating, but no
+13. **Product reviews.** The detail-page sketch shows a star rating, but no
     review or rating feature or data exists in either plan.
-12. **Refunds.** Item 15 includes refunds and `REFUNDED` is an order status, but
+14. **Refunds.** Item 15 includes refunds and `REFUNDED` is an order status, but
     whether refunds are issued from the admin or only reflected from Stripe is
     not stated.
-13. **Heading typo.** `project-plan.md` section "9. Stripe Payment Flow" is
+15. **Heading typo.** `project-plan.md` section "9. Stripe Payment Flow" is
     missing its `##` heading marker.
