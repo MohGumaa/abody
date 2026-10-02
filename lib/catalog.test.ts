@@ -34,9 +34,24 @@ const row = {
   included: ["One", "Two"],
   durationDays: 30,
   requirements: "Line one\nLine two",
+  nameAr: null as string | null,
+  shortDescriptionAr: null as string | null,
+  descriptionAr: null as string | null,
+  includedAr: [] as string[],
+  requirementsAr: null as string | null,
   createdAt: new Date("2026-01-01T00:00:00.000Z"),
   updatedAt: new Date("2026-01-02T03:04:05.678Z"),
 };
+
+const arabic = {
+  nameAr: "قالب التسويق الرقمي",
+  shortDescriptionAr: "قصير",
+  descriptionAr: "طويل",
+  includedAr: ["واحد", "اثنان"],
+  requirementsAr: "السطر الأول\nالسطر الثاني",
+};
+
+const ARABIC_KEYS = Object.keys(arabic);
 
 beforeEach(() => {
   findMany.mockReset();
@@ -58,7 +73,7 @@ describe("isProductType", () => {
 
 describe("toPublicProduct", () => {
   it("passes cents through, adds USD, and formats dates as ISO strings", () => {
-    expect(toPublicProduct(row)).toEqual({
+    expect(toPublicProduct(row, "en")).toEqual({
       id: "p1",
       name: "Digital Marketing Template",
       slug: "digital-marketing-template",
@@ -79,9 +94,67 @@ describe("toPublicProduct", () => {
 
   it("drops private fields even if a row carries them", () => {
     const leaky = { ...row, digitalFile: "private/key.pdf", status: "PUBLISHED" };
-    const result = toPublicProduct(leaky);
+    const result = toPublicProduct(leaky, "en");
     expect(result).not.toHaveProperty("digitalFile");
     expect(result).not.toHaveProperty("status");
+  });
+
+  it("ignores Arabic content in English", () => {
+    const result = toPublicProduct({ ...row, ...arabic }, "en");
+    expect(result.name).toBe("Digital Marketing Template");
+    expect(result.shortDescription).toBe("Short");
+    expect(result.description).toBe("Long");
+    expect(result.included).toEqual(["One", "Two"]);
+    expect(result.requirements).toBe("Line one\nLine two");
+  });
+
+  it("returns Arabic content in Arabic under the same field names", () => {
+    const result = toPublicProduct({ ...row, ...arabic }, "ar");
+    expect(result.name).toBe(arabic.nameAr);
+    expect(result.shortDescription).toBe(arabic.shortDescriptionAr);
+    expect(result.description).toBe(arabic.descriptionAr);
+    expect(result.included).toEqual(arabic.includedAr);
+    expect(result.requirements).toBe(arabic.requirementsAr);
+    expect(result.category).toBe("Templates");
+  });
+
+  it("falls back to English per field when Arabic text is missing or blank", () => {
+    for (const blank of [null, "", "  \n "]) {
+      const result = toPublicProduct(
+        {
+          ...row,
+          ...arabic,
+          shortDescriptionAr: blank,
+          requirementsAr: blank,
+        },
+        "ar",
+      );
+      expect(result.name).toBe(arabic.nameAr);
+      expect(result.shortDescription).toBe("Short");
+      expect(result.description).toBe(arabic.descriptionAr);
+      expect(result.requirements).toBe("Line one\nLine two");
+    }
+  });
+
+  it("falls back to the English list when no Arabic line has text", () => {
+    for (const includedAr of [[], ["", "  "]]) {
+      const result = toPublicProduct({ ...row, ...arabic, includedAr }, "ar");
+      expect(result.included).toEqual(["One", "Two"]);
+    }
+  });
+
+  it("keeps requirements null when neither language has them", () => {
+    const result = toPublicProduct({ ...row, requirements: null }, "ar");
+    expect(result.requirements).toBeNull();
+  });
+
+  it("never exposes the Arabic columns as their own keys", () => {
+    for (const locale of ["en", "ar"] as const) {
+      const result = toPublicProduct({ ...row, ...arabic }, locale);
+      for (const key of ARABIC_KEYS) {
+        expect(result).not.toHaveProperty(key);
+      }
+    }
   });
 });
 
@@ -89,7 +162,7 @@ describe("listPublishedProducts", () => {
   it("queries published rows only, newest first, without private fields", async () => {
     findMany.mockResolvedValue([row]);
 
-    const result = await listPublishedProducts();
+    const result = await listPublishedProducts({ locale: "en" });
 
     const query = findMany.mock.calls[0][0];
     expect(query.where).toEqual({ status: "PUBLISHED", type: undefined });
@@ -103,11 +176,21 @@ describe("listPublishedProducts", () => {
   it("filters by type when given", async () => {
     findMany.mockResolvedValue([]);
 
-    expect(await listPublishedProducts({ type: "SERVICE" })).toEqual([]);
+    expect(
+      await listPublishedProducts({ type: "SERVICE", locale: "en" }),
+    ).toEqual([]);
     expect(findMany.mock.calls[0][0].where).toEqual({
       status: "PUBLISHED",
       type: "SERVICE",
     });
+  });
+
+  it("returns content in the requested language", async () => {
+    findMany.mockResolvedValue([{ ...row, ...arabic }]);
+
+    const [product] = await listPublishedProducts({ locale: "ar" });
+
+    expect(product.name).toBe(arabic.nameAr);
   });
 });
 
@@ -115,7 +198,10 @@ describe("getPublishedProductBySlug", () => {
   it("looks up a published row by slug without private fields", async () => {
     findFirst.mockResolvedValue(row);
 
-    const result = await getPublishedProductBySlug("digital-marketing-template");
+    const result = await getPublishedProductBySlug(
+      "digital-marketing-template",
+      "en",
+    );
 
     const query = findFirst.mock.calls[0][0];
     expect(query.where).toEqual({
@@ -129,13 +215,25 @@ describe("getPublishedProductBySlug", () => {
   it("returns null when nothing matches", async () => {
     findFirst.mockResolvedValue(null);
 
-    expect(await getPublishedProductBySlug("missing")).toBeNull();
+    expect(await getPublishedProductBySlug("missing", "en")).toBeNull();
   });
 
   it("returns null for a malformed slug without querying", async () => {
-    expect(await getPublishedProductBySlug("Bad_Slug")).toBeNull();
-    expect(await getPublishedProductBySlug("a\u0000b")).toBeNull();
+    expect(await getPublishedProductBySlug("Bad_Slug", "en")).toBeNull();
+    expect(await getPublishedProductBySlug("a\u0000b", "ar")).toBeNull();
     expect(findFirst).not.toHaveBeenCalled();
+  });
+
+  it("returns content in the requested language", async () => {
+    findFirst.mockResolvedValue({ ...row, ...arabic });
+
+    const result = await getPublishedProductBySlug(
+      "digital-marketing-template",
+      "ar",
+    );
+
+    expect(result?.name).toBe(arabic.nameAr);
+    expect(result?.slug).toBe("digital-marketing-template");
   });
 });
 
@@ -218,7 +316,7 @@ describe("listRelatedProducts", () => {
       .mockResolvedValueOnce([{ ...row, id: "p2" }])
       .mockResolvedValueOnce([{ ...row, id: "p3", category: "Guides" }]);
 
-    const result = await listRelatedProducts(current);
+    const result = await listRelatedProducts(current, "en");
 
     expect(result.map((product) => product.id)).toEqual(["p2", "p3"]);
     const [same, other] = findMany.mock.calls.map(([query]) => query);
@@ -250,13 +348,24 @@ describe("listRelatedProducts", () => {
       { ...row, id: "p4" },
     ]);
 
-    expect(await listRelatedProducts(current)).toHaveLength(3);
+    expect(await listRelatedProducts(current, "en")).toHaveLength(3);
     expect(findMany).toHaveBeenCalledTimes(1);
   });
 
   it("returns an empty list when nothing else is published", async () => {
     findMany.mockResolvedValue([]);
 
-    expect(await listRelatedProducts(current)).toEqual([]);
+    expect(await listRelatedProducts(current, "en")).toEqual([]);
+  });
+
+  it("matches the same category in Arabic and returns Arabic content", async () => {
+    findMany
+      .mockResolvedValueOnce([{ ...row, ...arabic, id: "p2" }])
+      .mockResolvedValueOnce([]);
+
+    const result = await listRelatedProducts(current, "ar");
+
+    expect(findMany.mock.calls[0][0].where.category).toBe("Templates");
+    expect(result[0].name).toBe(arabic.nameAr);
   });
 });

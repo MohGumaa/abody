@@ -1,4 +1,8 @@
-export type ApiErrorCode = "invalid_type" | "not_found" | "internal_error";
+export type ApiErrorCode =
+  | "invalid_type"
+  | "invalid_lang"
+  | "not_found"
+  | "internal_error";
 
 export function apiError(
   status: number,

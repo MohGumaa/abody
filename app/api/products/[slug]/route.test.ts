@@ -9,8 +9,8 @@ vi.mock("@/lib/catalog", () => ({ getPublishedProductBySlug }));
 
 import { GET } from "./route";
 
-function call(slug: string) {
-  return GET(new NextRequest(`http://localhost/api/products/${slug}`), {
+function call(slug: string, query = "") {
+  return GET(new NextRequest(`http://localhost/api/products/${slug}${query}`), {
     params: Promise.resolve({ slug }),
   });
 }
@@ -30,7 +30,34 @@ describe("GET /api/products/[slug]", () => {
     expect(await response.json()).toEqual({
       product: { slug: "ads-management" },
     });
-    expect(getPublishedProductBySlug).toHaveBeenCalledWith("ads-management");
+    expect(getPublishedProductBySlug).toHaveBeenCalledWith(
+      "ads-management",
+      "en",
+    );
+  });
+
+  it("passes a valid lang through", async () => {
+    getPublishedProductBySlug.mockResolvedValue({ slug: "ads-management" });
+
+    const response = await call("ads-management", "?lang=ar");
+
+    expect(response.status).toBe(200);
+    expect(getPublishedProductBySlug).toHaveBeenCalledWith(
+      "ads-management",
+      "ar",
+    );
+  });
+
+  it("rejects an unknown lang without querying", async () => {
+    for (const query of ["?lang=fr", "?lang=AR", "?lang="]) {
+      const response = await call("ads-management", query);
+
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({
+        error: { code: "invalid_lang", message: "lang must be en or ar." },
+      });
+    }
+    expect(getPublishedProductBySlug).not.toHaveBeenCalled();
   });
 
   it("returns 404 when the product is missing or unpublished", async () => {

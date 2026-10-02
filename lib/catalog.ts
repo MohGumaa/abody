@@ -18,6 +18,11 @@ const publicProductSelect = {
   included: true,
   durationDays: true,
   requirements: true,
+  nameAr: true,
+  shortDescriptionAr: true,
+  descriptionAr: true,
+  includedAr: true,
+  requirementsAr: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.ProductSelect;
@@ -84,51 +89,74 @@ export function formatDurationDays(days: number, locale: Locale): string {
   }).format(days);
 }
 
-export function toPublicProduct(row: PublicProductRow): PublicProduct {
+function hasText(value: string | null): value is string {
+  return value !== null && value.trim() !== "";
+}
+
+// Arabic content is optional, so each field falls back to English on its own.
+export function toPublicProduct(
+  row: PublicProductRow,
+  locale: Locale,
+): PublicProduct {
+  const arabic = locale === "ar";
   return {
     id: row.id,
-    name: row.name,
+    name: arabic && hasText(row.nameAr) ? row.nameAr : row.name,
     slug: row.slug,
-    shortDescription: row.shortDescription,
-    description: row.description,
+    shortDescription:
+      arabic && hasText(row.shortDescriptionAr)
+        ? row.shortDescriptionAr
+        : row.shortDescription,
+    description:
+      arabic && hasText(row.descriptionAr)
+        ? row.descriptionAr
+        : row.description,
     priceCents: row.priceCents,
     currency: "USD",
     type: row.type,
     category: row.category,
     image: row.image,
-    included: row.included,
+    included:
+      arabic && row.includedAr.some(hasText) ? row.includedAr : row.included,
     durationDays: row.durationDays,
-    requirements: row.requirements,
+    requirements:
+      arabic && hasText(row.requirementsAr)
+        ? row.requirementsAr
+        : row.requirements,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
 }
 
-export async function listPublishedProducts(
-  options: { type?: ProductType } = {},
-): Promise<PublicProduct[]> {
+export async function listPublishedProducts(options: {
+  type?: ProductType;
+  locale: Locale;
+}): Promise<PublicProduct[]> {
   const rows = await db.product.findMany({
     where: { status: ProductStatus.PUBLISHED, type: options.type },
     orderBy: [{ createdAt: "desc" }, { id: "asc" }],
     select: publicProductSelect,
   });
-  return rows.map(toPublicProduct);
+  return rows.map((row) => toPublicProduct(row, options.locale));
 }
 
 export async function getPublishedProductBySlug(
   slug: string,
+  locale: Locale,
 ): Promise<PublicProduct | null> {
   if (!isValidSlug(slug)) return null;
   const row = await db.product.findFirst({
     where: { slug, status: ProductStatus.PUBLISHED },
     select: publicProductSelect,
   });
-  return row ? toPublicProduct(row) : null;
+  return row ? toPublicProduct(row, locale) : null;
 }
 
 // Same type only: same category first, then other categories, newest first.
+// Category is stored in one language, so matching is the same in both.
 export async function listRelatedProducts(
   product: Pick<PublicProduct, "id" | "type" | "category">,
+  locale: Locale,
 ): Promise<PublicProduct[]> {
   const where = {
     status: ProductStatus.PUBLISHED,
@@ -157,5 +185,7 @@ export async function listRelatedProducts(
         })
       : [];
 
-  return [...sameCategory, ...otherCategories].map(toPublicProduct);
+  return [...sameCategory, ...otherCategories].map((row) =>
+    toPublicProduct(row, locale),
+  );
 }

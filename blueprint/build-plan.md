@@ -2,9 +2,9 @@
 
 - [x] 1. **Product & Service Catalog** - Create the database models and APIs for digital products and services, including name, slug, description, price, category, images, files, and status.
 - [x] 2. **Product & Service Details** - Build customer-facing product and service detail pages with pricing, descriptions, features, images, and purchase actions.
-- [ ] 3. **Multi-Language Support** - Make the customer website available in English and Arabic with a header language switcher, right-to-left layout for Arabic, the Tajawal font for Arabic text, and translated interface text that every later customer page builds on.
+- [x] 3. **Multi-Language Support** - Make the customer website available in English and Arabic with a header language switcher, right-to-left layout for Arabic, the Tajawal font for Arabic text, and translated interface text that every later customer page builds on.
   - [x] 3a. **Bilingual Routing and Interface** - Serve every customer page under `/en` and `/ar`, pick the language from the visitor's saved choice or browser (English otherwise), add a minimal header with the language switcher, right-to-left layout and the Tajawal font for Arabic, and translate the existing interface text.
-  - [ ] 3b. **Bilingual Product Content** - Store product and service name, descriptions, what's included, and requirements in English and Arabic, and show the content that matches the page language.
+  - [x] 3b. **Bilingual Product Content** - Store product and service name, descriptions, what's included, and requirements in English and Arabic, and show the content that matches the page language.
 - [ ] 4. **Shopping Cart** - Build the cart functionality for adding, removing, updating, and reviewing products and services before checkout.
 - [ ] 5. **Stripe Checkout** - Integrate Stripe Checkout for secure customer payments and support successful, cancelled, and failed checkout states.
 - [ ] 6. **Stripe Webhooks & Orders** - Process Stripe webhooks, verify payments, and automatically create and update orders after successful payment.

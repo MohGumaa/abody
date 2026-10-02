@@ -14,11 +14,11 @@ interface RelatedProductsProps {
 }
 
 export async function RelatedProducts({ product }: RelatedProductsProps) {
-  const related = await listRelatedProducts(product);
+  const locale = await getLocale();
+  const related = await listRelatedProducts(product, locale);
   if (related.length === 0) {
     return null;
   }
-  const locale = await getLocale();
   const dictionary = await getDictionary();
 
   return (

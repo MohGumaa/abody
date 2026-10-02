@@ -2,6 +2,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import { getPublishedProductBySlug, type PublicProduct } from "@/lib/catalog";
 import type { ProductType } from "@/lib/generated/prisma/enums";
+import { getLocale } from "@/lib/i18n/dictionaries";
 
 // One query per request, shared by generateMetadata and the page.
 const loadProduct = cache(getPublishedProductBySlug);
@@ -11,7 +12,7 @@ export async function requirePublishedProduct(
   slug: string,
   type: ProductType,
 ): Promise<PublicProduct> {
-  const product = await loadProduct(slug);
+  const product = await loadProduct(slug, await getLocale());
   if (!product || product.type !== type) {
     notFound();
   }

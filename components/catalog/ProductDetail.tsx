@@ -29,7 +29,7 @@ function CheckIcon() {
   );
 }
 
-// Stored product content is one language until bilingual content ships, so it
+// A field with no Arabic content falls back to English, so stored content
 // carries dir="auto" to keep its own alignment and punctuation on Arabic pages.
 export async function ProductDetail({ product }: ProductDetailProps) {
   const locale = await getLocale();

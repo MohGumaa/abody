@@ -18,24 +18,30 @@ enum ProductStatus {
 }
 
 model Product {
-  id               String        @id @default(cuid())
-  name             String
-  slug             String        @unique
-  shortDescription String
-  description      String        @db.Text
+  id                 String        @id @default(cuid())
+  name               String
+  slug               String        @unique
+  shortDescription   String
+  description        String        @db.Text
   // Whole US cents: 4900 is $49.00.
-  priceCents       Int
-  type             ProductType
-  category         String
-  image            String?
+  priceCents         Int
+  type               ProductType
+  category           String
+  image              String?
   // Private storage reference. Never select this for public responses.
-  digitalFile      String?
+  digitalFile        String?
   // Short plain-text lines shown under "What's Included".
-  included         String[]      @default([])
+  included           String[]      @default([])
   // Services only.
-  durationDays     Int?
-  requirements     String?       @db.Text
-  status           ProductStatus
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  durationDays       Int?
+  requirements       String?       @db.Text
+  // Arabic content. Optional: a missing value falls back to the English field.
+  nameAr             String?
+  shortDescriptionAr String?
+  descriptionAr      String?       @db.Text
+  includedAr         String[]      @default([])
+  requirementsAr     String?       @db.Text
+  status             ProductStatus
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 }
