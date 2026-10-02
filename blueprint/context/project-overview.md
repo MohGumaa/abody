@@ -1,6 +1,6 @@
 # Abody Digital Ecommerce Platform - Project Overview
 
-<!-- blueprint:source-hash ef7c5781abebe78924cd640368c2f8e30f7724512861704d56b371c8fa6c95c6 -->
+<!-- blueprint:source-hash 88d1cd177743fec0959c4cb13dbcb9c658f8d40849f47f4173e422538e84e94e -->
 
 > A bilingual (English and Arabic) storefront where customers buy Abody's
 > downloadable digital products and digital services with Stripe, plus an admin
@@ -53,7 +53,7 @@ languages other than English and Arabic, advanced reporting, native mobile apps.
 
 ## Features
 
-In `build-plan.md` order. Items 1, 2, and 3a are shipped; 3b is next. The
+In `build-plan.md` order. Items 1 through 4 are shipped; 26 is next. The
 headline flow is items 1-2 and 4-7: discover, add to cart, pay with Stripe, and
 receive the product.
 
@@ -61,18 +61,23 @@ receive the product.
    products and services.
 2. **Product & Service Details** (done) - customer-facing detail pages with
    pricing, descriptions, features, images, and purchase actions.
-3. **Multi-Language Support** (in progress) - English and Arabic customer
+3. **Multi-Language Support** (done) - English and Arabic customer
    website that every later customer page builds on. Split into:
    - 3a. **Bilingual Routing and Interface** (done) - every customer page under
      `/en` and `/ar`, language picked from the saved choice or the browser
      (English otherwise), minimal header with the language switcher,
      right-to-left layout and Tajawal for Arabic, existing interface text
      translated.
-   - 3b. **Bilingual Product Content** - store product and service name,
+   - 3b. **Bilingual Product Content** (done) - store product and service name,
      descriptions, what's included, and requirements in English and Arabic, and
      show the content that matches the page language.
-4. **Shopping Cart** - add, remove, update quantity, and review items before
-   checkout, with subtotal and total.
+4. **Shopping Cart** (done) - add, remove, update quantity, and review items
+   before checkout, with subtotal and total.
+26. **Storefront Design Alignment** - bring the customer site in line with the
+    mockups in `prototypes/` in both languages: full header (navigation, sign
+    in, cart, trust bar), footer, home page, products and services listing
+    pages, and the detail pages. Numbered 26 to keep existing IDs stable; it is
+    built after 4 and before 5.
 5. **Stripe Checkout** - create Stripe Checkout sessions and handle success,
    cancelled, and failed states.
 6. **Stripe Webhooks & Orders** - verify payments through webhooks and create or
@@ -317,12 +322,10 @@ Resolve these in the plans, then re-run `/overview`.
    language, feature 12 must exclude `/admin` from the language redirect.
 3. **Bilingual content details (feature 3b).** The plans do not say how the two
    languages are stored, or whether `category` is translated.
-4. **No build-plan item for the public pages.** The project plan lists the
-   homepage, Products page, and Services page as v1 must-haves, and names About
-   and Contact in the navigation. The build plan has no item for the homepage,
-   the store listing pages, About and Contact, the navigation links, or the
-   footer (item 2 covers detail pages only; 3a built a minimal header; item 21
-   manages homepage content but does not build it).
+4. **Public pages (mostly resolved).** Item 26 now covers the homepage, the
+   store listing pages, the navigation, and the footer, built from the
+   prototypes. About and Contact are still named in the navigation but have no
+   build-plan item or mockup.
 5. **Coupons conflict.** Build-plan item 20 is a discount and coupon system. The
    project plan lists advanced coupons as not required for v1 and a coupon system
    as a future feature.

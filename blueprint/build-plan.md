@@ -6,6 +6,7 @@
   - [x] 3a. **Bilingual Routing and Interface** - Serve every customer page under `/en` and `/ar`, pick the language from the visitor's saved choice or browser (English otherwise), add a minimal header with the language switcher, right-to-left layout and the Tajawal font for Arabic, and translate the existing interface text.
   - [x] 3b. **Bilingual Product Content** - Store product and service name, descriptions, what's included, and requirements in English and Arabic, and show the content that matches the page language.
 - [x] 4. **Shopping Cart** - Build the cart functionality for adding, removing, updating, and reviewing products and services before checkout.
+- [ ] 26. **Storefront Design Alignment** - Bring the customer site in line with the approved mockups in `prototypes/` in English and Arabic: the full header (navigation, sign in, cart, trust bar), the footer, the home page, the products and services listing pages, and the product and service detail pages.
 - [ ] 5. **Stripe Checkout** - Integrate Stripe Checkout for secure customer payments and support successful, cancelled, and failed checkout states.
 - [ ] 6. **Stripe Webhooks & Orders** - Process Stripe webhooks, verify payments, and automatically create and update orders after successful payment.
 - [ ] 7. **Digital Product Delivery** - Store digital files securely and provide customers with protected download access after payment.
