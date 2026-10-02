@@ -15,6 +15,7 @@ import {
   isProductType,
   isValidSlug,
   listPublishedProducts,
+  listPublishedProductsByIds,
   listRelatedProducts,
   productPath,
   publicImageSrc,
@@ -189,6 +190,35 @@ describe("listPublishedProducts", () => {
     findMany.mockResolvedValue([{ ...row, ...arabic }]);
 
     const [product] = await listPublishedProducts({ locale: "ar" });
+
+    expect(product.name).toBe(arabic.nameAr);
+  });
+});
+
+describe("listPublishedProductsByIds", () => {
+  it("returns an empty list without querying when there are no ids", async () => {
+    expect(await listPublishedProductsByIds([], "en")).toEqual([]);
+    expect(findMany).not.toHaveBeenCalled();
+  });
+
+  it("queries published rows with the given ids, without private fields", async () => {
+    findMany.mockResolvedValue([row]);
+
+    const result = await listPublishedProductsByIds(["p1", "p2"], "en");
+
+    const query = findMany.mock.calls[0][0];
+    expect(query.where).toEqual({
+      status: "PUBLISHED",
+      id: { in: ["p1", "p2"] },
+    });
+    expect(query.select).not.toHaveProperty("digitalFile");
+    expect(result.map((product) => product.id)).toEqual(["p1"]);
+  });
+
+  it("returns content in the requested language", async () => {
+    findMany.mockResolvedValue([{ ...row, ...arabic }]);
+
+    const [product] = await listPublishedProductsByIds(["p1"], "ar");
 
     expect(product.name).toBe(arabic.nameAr);
   });

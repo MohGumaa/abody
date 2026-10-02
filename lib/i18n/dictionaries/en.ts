@@ -5,6 +5,9 @@ export const en = {
   },
   header: {
     logoAlt: "Abody",
+    cart: "Cart",
+    // No plural forms: Arabic has several, so both languages use "items: N".
+    cartLabel: (count: number) => `Cart, items: ${count}`,
   },
   product: {
     typeLabels: {
@@ -13,7 +16,11 @@ export const en = {
     },
     duration: "Duration",
     addToCart: "Add to Cart",
-    cartComingSoon: "Cart is coming soon.",
+    adding: "Adding…",
+    added: "Added to your cart.",
+    alreadyInCart: "This service is already in your cart.",
+    maxQuantity: "You already have the maximum quantity of this item in your cart.",
+    viewCart: "View cart",
     securePayment: "Secure payment powered by Stripe",
     description: "Description",
     included: "What's Included",
@@ -24,6 +31,30 @@ export const en = {
       SERVICE: ["Purchase", "Tell us what we need", "We get started"],
     },
     related: "You might also like",
+  },
+  cart: {
+    title: "Your cart",
+    empty: "Your cart is empty.",
+    continueShopping: "Continue shopping",
+    itemsRemoved: "Some items are no longer available and are not shown.",
+    unitPrice: "Price",
+    quantity: "Quantity",
+    lineTotal: "Total",
+    update: "Update",
+    updating: "Updating…",
+    remove: "Remove",
+    removing: "Removing…",
+    summary: "Order summary",
+    subtotal: "Subtotal",
+    total: "Total",
+    checkout: "Checkout",
+    checkoutComingSoon: "Checkout is coming soon.",
+    errors: {
+      invalid_input: "Enter a quantity from 1 to 99.",
+      unavailable: "This item is no longer available.",
+      cart_full: "Your cart is full. Remove an item to add another.",
+      unexpected: "Something went wrong. Please try again.",
+    },
   },
   notFound: {
     title: "Page not found",

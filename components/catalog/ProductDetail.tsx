@@ -3,6 +3,7 @@ import { ProductImage } from "@/components/catalog/ProductImage";
 import { RelatedProducts } from "@/components/catalog/RelatedProducts";
 import { formatDurationDays, type PublicProduct } from "@/lib/catalog";
 import { ProductType } from "@/lib/generated/prisma/enums";
+import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatPriceCents } from "@/lib/money";
 
@@ -33,7 +34,7 @@ function CheckIcon() {
 // carries dir="auto" to keep its own alignment and punctuation on Arabic pages.
 export async function ProductDetail({ product }: ProductDetailProps) {
   const locale = await getLocale();
-  const { product: text } = await getDictionary();
+  const { product: text, cart } = await getDictionary();
   const isService = product.type === ProductType.SERVICE;
   const included = product.included.filter((line) => line.trim() !== "");
   const durationDays =
@@ -75,7 +76,19 @@ export async function ProductDetail({ product }: ProductDetailProps) {
           </p>
 
           <div className="mt-8">
-            <AddToCartButton />
+            <AddToCartButton
+              productId={product.id}
+              cartHref={localizedPath(locale, "/cart")}
+              text={{
+                addToCart: text.addToCart,
+                adding: text.adding,
+                added: text.added,
+                alreadyInCart: text.alreadyInCart,
+                maxQuantity: text.maxQuantity,
+                viewCart: text.viewCart,
+                errors: cart.errors,
+              }}
+            />
           </div>
           <p className="mt-4 flex items-center gap-2 text-sm text-muted">
             <svg

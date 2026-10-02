@@ -152,6 +152,19 @@ export async function getPublishedProductBySlug(
   return row ? toPublicProduct(row, locale) : null;
 }
 
+// Cart lookups: only published rows; order is left to the caller.
+export async function listPublishedProductsByIds(
+  ids: string[],
+  locale: Locale,
+): Promise<PublicProduct[]> {
+  if (ids.length === 0) return [];
+  const rows = await db.product.findMany({
+    where: { status: ProductStatus.PUBLISHED, id: { in: ids } },
+    select: publicProductSelect,
+  });
+  return rows.map((row) => toPublicProduct(row, locale));
+}
+
 // Same type only: same category first, then other categories, newest first.
 // Category is stored in one language, so matching is the same in both.
 export async function listRelatedProducts(
