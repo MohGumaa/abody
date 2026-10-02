@@ -67,6 +67,28 @@ The goal is to create a modern, simple, trustworthy ecommerce experience that im
 - Customer trust/social proof section.
 - Footer with important links.
 
+#### Languages
+
+The customer website is available in two languages:
+
+- English.
+- Arabic.
+
+Customers should be able to:
+
+- Switch language from the header on any page.
+- Keep the chosen language while they browse, check out, and use their account.
+- See Arabic pages in a right-to-left layout.
+
+All customer-facing interface text is provided in both languages: navigation, buttons, labels, form messages, order and service statuses, and transactional emails.
+
+To decide when the feature is specified:
+
+- Whether product and service content (name, descriptions, what's included, requirements) is stored in both languages, which changes the product data and the admin product form.
+- Which language is the default.
+- How the language appears in the URL (for example an `/ar` prefix) for SEO.
+- Whether the admin dashboard is also translated or stays in one language.
+
 #### Product Store
 
 A dedicated store where customers can browse:
@@ -517,6 +539,18 @@ Subtle borders.
 
 Soft shadows.
 
+Languages and Typography
+
+The design must work in both English (left-to-right) and Arabic (right-to-left).
+
+Layouts, icons that point in a direction, and navigation mirror in Arabic.
+
+Use the Tajawal font for Arabic text.
+
+Prices and order numbers keep the same format in both languages.
+
+The Abody logo is bilingual and is used as is in both languages.
+
 ## 11. Website Structure
 
 Recommended navigation:
@@ -808,6 +842,8 @@ Customer management.
 
 Responsive/mobile design.
 
+English and Arabic languages, with right-to-left layout for Arabic.
+
 Basic SEO.
 
 Email notifications.
@@ -829,7 +865,7 @@ Loyalty points.
 
 Complex CRM.
 
-Multi-language system.
+Languages other than English and Arabic.
 
 Advanced reporting.
 

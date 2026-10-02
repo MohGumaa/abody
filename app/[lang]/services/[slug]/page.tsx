@@ -5,22 +5,16 @@ import { requirePublishedProduct } from "@/lib/product-page";
 
 export async function generateMetadata({
   params,
-}: PageProps<"/products/[slug]">): Promise<Metadata> {
+}: PageProps<"/[lang]/services/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = await requirePublishedProduct(
-    slug,
-    ProductType.DIGITAL_PRODUCT,
-  );
+  const product = await requirePublishedProduct(slug, ProductType.SERVICE);
   return { title: product.name, description: product.shortDescription };
 }
 
-export default async function ProductPage({
+export default async function ServicePage({
   params,
-}: PageProps<"/products/[slug]">) {
+}: PageProps<"/[lang]/services/[slug]">) {
   const { slug } = await params;
-  const product = await requirePublishedProduct(
-    slug,
-    ProductType.DIGITAL_PRODUCT,
-  );
+  const product = await requirePublishedProduct(slug, ProductType.SERVICE);
   return <ProductDetail product={product} />;
 }

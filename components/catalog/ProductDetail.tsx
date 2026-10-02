@@ -3,21 +3,12 @@ import { ProductImage } from "@/components/catalog/ProductImage";
 import { RelatedProducts } from "@/components/catalog/RelatedProducts";
 import { formatDurationDays, type PublicProduct } from "@/lib/catalog";
 import { ProductType } from "@/lib/generated/prisma/enums";
+import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatPriceCents } from "@/lib/money";
 
 interface ProductDetailProps {
   product: PublicProduct;
 }
-
-const TYPE_LABELS: Record<ProductType, string> = {
-  DIGITAL_PRODUCT: "Digital product",
-  SERVICE: "Service",
-};
-
-const HOW_IT_WORKS: Record<ProductType, string[]> = {
-  DIGITAL_PRODUCT: ["Purchase", "Receive access", "Download"],
-  SERVICE: ["Purchase", "Tell us what we need", "We get started"],
-};
 
 function CheckIcon() {
   return (
@@ -38,7 +29,11 @@ function CheckIcon() {
   );
 }
 
-export function ProductDetail({ product }: ProductDetailProps) {
+// Stored product content is one language until bilingual content ships, so it
+// carries dir="auto" to keep its own alignment and punctuation on Arabic pages.
+export async function ProductDetail({ product }: ProductDetailProps) {
+  const locale = await getLocale();
+  const { product: text } = await getDictionary();
   const isService = product.type === ProductType.SERVICE;
   const included = product.included.filter((line) => line.trim() !== "");
   const durationDays =
@@ -55,10 +50,16 @@ export function ProductDetail({ product }: ProductDetailProps) {
 
         <div>
           <p className="text-sm font-medium text-primary-strong">
-            {TYPE_LABELS[product.type]}
-            <span className="text-muted"> · {product.category}</span>
+            {text.typeLabels[product.type]}
+            <span className="text-muted">
+              {" · "}
+              <span dir="auto">{product.category}</span>
+            </span>
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight break-words sm:text-4xl">
+          <h1
+            dir="auto"
+            className="mt-2 text-3xl font-semibold tracking-tight break-words sm:text-4xl"
+          >
             {product.name}
           </h1>
           <p className="mt-4 text-3xl font-semibold">
@@ -66,10 +67,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
           </p>
           {durationDays && (
             <p className="mt-1 text-sm text-muted">
-              Duration: {formatDurationDays(durationDays)}
+              {text.duration}: {formatDurationDays(durationDays, locale)}
             </p>
           )}
-          <p className="mt-4 text-lg leading-7 text-muted">
+          <p dir="auto" className="mt-4 text-lg leading-7 text-muted">
             {product.shortDescription}
           </p>
 
@@ -98,7 +99,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
                 strokeWidth="1.5"
               />
             </svg>
-            Secure payment powered by Stripe
+            {text.securePayment}
           </p>
         </div>
       </div>
@@ -106,9 +107,12 @@ export function ProductDetail({ product }: ProductDetailProps) {
       <div className="mt-12 grid gap-10 border-t border-border pt-10 lg:grid-cols-2 lg:gap-12">
         <section aria-labelledby="description-heading">
           <h2 id="description-heading" className="text-xl font-semibold">
-            Description
+            {text.description}
           </h2>
-          <p className="mt-4 leading-7 break-words whitespace-pre-line">
+          <p
+            dir="auto"
+            className="mt-4 leading-7 break-words whitespace-pre-line"
+          >
             {product.description}
           </p>
         </section>
@@ -116,13 +120,15 @@ export function ProductDetail({ product }: ProductDetailProps) {
         {included.length > 0 && (
           <section aria-labelledby="included-heading">
             <h2 id="included-heading" className="text-xl font-semibold">
-              What&apos;s Included
+              {text.included}
             </h2>
             <ul className="mt-4 space-y-3">
               {included.map((line, index) => (
                 <li key={index} className="flex gap-3">
                   <CheckIcon />
-                  <span className="min-w-0 break-words">{line}</span>
+                  <span dir="auto" className="min-w-0 break-words">
+                    {line}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -132,9 +138,12 @@ export function ProductDetail({ product }: ProductDetailProps) {
         {requirements && (
           <section aria-labelledby="requirements-heading">
             <h2 id="requirements-heading" className="text-xl font-semibold">
-              What we need from you
+              {text.requirements}
             </h2>
-            <p className="mt-4 leading-7 break-words whitespace-pre-line">
+            <p
+              dir="auto"
+              className="mt-4 leading-7 break-words whitespace-pre-line"
+            >
               {requirements}
             </p>
           </section>
@@ -146,10 +155,10 @@ export function ProductDetail({ product }: ProductDetailProps) {
         className="mt-12 rounded-2xl bg-surface p-6 sm:p-8"
       >
         <h2 id="how-it-works-heading" className="text-xl font-semibold">
-          How It Works
+          {text.howItWorks}
         </h2>
         <ol className="mt-6 grid gap-6 sm:grid-cols-3">
-          {HOW_IT_WORKS[product.type].map((step, index) => (
+          {text.steps[product.type].map((step, index) => (
             <li key={step} className="flex items-center gap-3">
               <span
                 aria-hidden="true"

@@ -196,9 +196,17 @@ describe("publicImageSrc", () => {
 });
 
 describe("formatDurationDays", () => {
-  it("uses the singular for one day", () => {
-    expect(formatDurationDays(1)).toBe("1 day");
-    expect(formatDurationDays(30)).toBe("30 days");
+  it("uses the singular for one day in English", () => {
+    expect(formatDurationDays(1, "en")).toBe("1 day");
+    expect(formatDurationDays(30, "en")).toBe("30 days");
+  });
+
+  // The exact Arabic wording comes from the runtime, so it is not asserted.
+  it("uses Arabic words with Latin digits in Arabic", () => {
+    const result = formatDurationDays(30, "ar");
+    expect(result).toMatch(/[ء-ي]/);
+    expect(result).toContain("30");
+    expect(result).not.toMatch(/[٠-٩]/);
   });
 });
 

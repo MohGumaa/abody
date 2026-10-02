@@ -1,25 +1,68 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Tokens ported from prototypes/theme.css. Radius, shadow, and container keys
+   are named so they do not replace Tailwind's own defaults. */
+@theme {
+  --color-background: #ffffff;
+  --color-foreground: oklch(21% 0.02 252);
+  --color-canvas: oklch(96% 0.012 248);
+  --color-panel: #ffffff;
+  --color-surface: oklch(97.5% 0.008 248);
+  --color-border: oklch(91% 0.012 248);
+  --color-ink: oklch(23% 0.04 252);
+  --color-ink-text: oklch(96% 0.01 248);
+  --color-ink-muted: oklch(78% 0.025 248);
+  --color-muted: oklch(40% 0.02 248);
+  --color-faint: oklch(52% 0.02 248);
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
   --color-primary: oklch(59% 0.13 248);
   /* Darker shade of the brand color: text and filled buttons need AA contrast. */
   --color-primary-strong: oklch(48% 0.13 248);
-  --color-surface: oklch(97.5% 0.008 248);
-  --color-border: oklch(91% 0.012 248);
-  --color-muted: oklch(45% 0.02 248);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary-soft: oklch(95% 0.03 248);
+
+  --color-success: oklch(47% 0.11 155);
+  --color-success-soft: oklch(95% 0.04 155);
+  --color-warning: oklch(48% 0.1 70);
+  --color-warning-soft: oklch(95% 0.05 85);
+  --color-danger: oklch(50% 0.17 25);
+  --color-danger-soft: oklch(95% 0.03 25);
+
+  --color-tint-1: oklch(94% 0.035 248);
+  --color-tint-2: oklch(94% 0.035 200);
+  --color-tint-3: oklch(94% 0.035 285);
+  --color-tint-4: oklch(95% 0.04 85);
+
+  --radius-control: 8px;
+  --radius-card: 14px;
+  --radius-panel: 20px;
+  --shadow-soft: 0 1px 2px oklch(23% 0.04 252 / 0.05);
+  --shadow-raised: 0 10px 30px -12px oklch(23% 0.04 252 / 0.22);
+  --container-site: 1200px;
+}
+
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+:root {
+  --font-body:
+    var(--font-geist-sans), var(--font-tajawal), system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+}
+
+:root:lang(ar) {
+  --font-body: var(--font-tajawal), var(--font-geist-sans), system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+}
+
+/* Letter-spacing breaks Arabic letter joining, and Arabic needs taller lines.
+   Unlayered on purpose so it wins over tracking and leading utilities. */
+:lang(ar) :is(h1, h2, h3) {
+  letter-spacing: 0;
+  line-height: 1.4;
 }

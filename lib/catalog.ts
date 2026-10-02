@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { ProductStatus, ProductType } from "@/lib/generated/prisma/enums";
+import type { Locale } from "@/lib/i18n/config";
 
 // The only fields public code may read. digitalFile and status stay out of the
 // query itself so a private file reference can never reach a response.
@@ -69,8 +70,18 @@ export function publicImageSrc(image: string | null): string | null {
   return URL.canParse(image) ? image : null;
 }
 
-export function formatDurationDays(days: number): string {
-  return `${days} ${days === 1 ? "day" : "days"}`;
+// Latin digits in Arabic too, so numbers match prices and order numbers.
+const DURATION_LOCALES: Record<Locale, string> = {
+  en: "en",
+  ar: "ar-u-nu-latn",
+};
+
+export function formatDurationDays(days: number, locale: Locale): string {
+  return new Intl.NumberFormat(DURATION_LOCALES[locale], {
+    style: "unit",
+    unit: "day",
+    unitDisplay: "long",
+  }).format(days);
 }
 
 export function toPublicProduct(row: PublicProductRow): PublicProduct {
