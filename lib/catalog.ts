@@ -14,6 +14,9 @@ const publicProductSelect = {
   type: true,
   category: true,
   image: true,
+  included: true,
+  durationDays: true,
+  requirements: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.ProductSelect;
@@ -33,12 +36,41 @@ export interface PublicProduct {
   type: ProductType;
   category: string;
   image: string | null;
+  included: string[];
+  durationDays: number | null;
+  requirements: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const RELATED_LIMIT = 3;
+
 export function isProductType(value: string): value is ProductType {
   return value === ProductType.DIGITAL_PRODUCT || value === ProductType.SERVICE;
+}
+
+export function isValidSlug(slug: string): boolean {
+  return SLUG_PATTERN.test(slug);
+}
+
+export function productPath(product: Pick<PublicProduct, "type" | "slug">): string {
+  const base = product.type === ProductType.SERVICE ? "/services" : "/products";
+  return `${base}/${product.slug}`;
+}
+
+// Only root-relative paths and https URLs are rendered. Storage keys and other
+// schemes fall back to the placeholder.
+export function publicImageSrc(image: string | null): string | null {
+  if (!image) return null;
+  // Browsers read "//" and "/\" as protocol-relative, so those are not local.
+  if (image.startsWith("/")) return /^\/[/\\]/.test(image) ? null : image;
+  if (!image.startsWith("https://")) return null;
+  return URL.canParse(image) ? image : null;
+}
+
+export function formatDurationDays(days: number): string {
+  return `${days} ${days === 1 ? "day" : "days"}`;
 }
 
 export function toPublicProduct(row: PublicProductRow): PublicProduct {
@@ -53,6 +85,9 @@ export function toPublicProduct(row: PublicProductRow): PublicProduct {
     type: row.type,
     category: row.category,
     image: row.image,
+    included: row.included,
+    durationDays: row.durationDays,
+    requirements: row.requirements,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -72,9 +107,44 @@ export async function listPublishedProducts(
 export async function getPublishedProductBySlug(
   slug: string,
 ): Promise<PublicProduct | null> {
+  if (!isValidSlug(slug)) return null;
   const row = await db.product.findFirst({
     where: { slug, status: ProductStatus.PUBLISHED },
     select: publicProductSelect,
   });
   return row ? toPublicProduct(row) : null;
+}
+
+// Same type only: same category first, then other categories, newest first.
+export async function listRelatedProducts(
+  product: Pick<PublicProduct, "id" | "type" | "category">,
+): Promise<PublicProduct[]> {
+  const where = {
+    status: ProductStatus.PUBLISHED,
+    type: product.type,
+    id: { not: product.id },
+  } satisfies Prisma.ProductWhereInput;
+  const orderBy = [
+    { createdAt: "desc" },
+    { id: "asc" },
+  ] satisfies Prisma.ProductOrderByWithRelationInput[];
+
+  const sameCategory = await db.product.findMany({
+    where: { ...where, category: product.category },
+    orderBy,
+    take: RELATED_LIMIT,
+    select: publicProductSelect,
+  });
+  const remaining = RELATED_LIMIT - sameCategory.length;
+  const otherCategories =
+    remaining > 0
+      ? await db.product.findMany({
+          where: { ...where, category: { not: product.category } },
+          orderBy,
+          take: remaining,
+          select: publicProductSelect,
+        })
+      : [];
+
+  return [...sameCategory, ...otherCategories].map(toPublicProduct);
 }

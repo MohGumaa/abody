@@ -30,6 +30,11 @@ model Product {
   image            String?
   // Private storage reference. Never select this for public responses.
   digitalFile      String?
+  // Short plain-text lines shown under "What's Included".
+  included         String[]      @default([])
+  // Services only.
+  durationDays     Int?
+  requirements     String?       @db.Text
   status           ProductStatus
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
