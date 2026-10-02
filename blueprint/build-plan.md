@@ -7,6 +7,7 @@
   - [x] 3b. **Bilingual Product Content** - Store product and service name, descriptions, what's included, and requirements in English and Arabic, and show the content that matches the page language.
 - [x] 4. **Shopping Cart** - Build the cart functionality for adding, removing, updating, and reviewing products and services before checkout.
 - [ ] 26. **Storefront Design Alignment** - Bring the customer site in line with the approved mockups in `prototypes/` in English and Arabic: the full header (navigation, sign in, cart, trust bar), the footer, the home page, the products and services listing pages, and the product and service detail pages.
+- [ ] 22. **SEO & Social Sharing** - Add per-page titles and meta descriptions in English and Arabic, Open Graph and social images, language alternates (`hreflang`) between `/en` and `/ar` pages, canonical URLs, a sitemap covering both languages, robots configuration, and product structured data.
 - [ ] 5. **Stripe Checkout** - Integrate Stripe Checkout for secure customer payments and support successful, cancelled, and failed checkout states.
 - [ ] 6. **Stripe Webhooks & Orders** - Process Stripe webhooks, verify payments, and automatically create and update orders after successful payment.
 - [ ] 7. **Digital Product Delivery** - Store digital files securely and provide customers with protected download access after payment.
@@ -24,7 +25,6 @@
 - [ ] 19. **Email Notifications** - Send transactional emails for orders, payments, digital downloads, service purchases, and service status updates.
 - [ ] 20. **Discount & Coupon System** - Allow admins to create, edit, activate, deactivate, and apply discount codes to eligible products or services.
 - [ ] 21. **Website Content Management** - Allow admins to manage featured products, homepage sections, promotional content, and basic website settings.
-- [ ] 22. **SEO & Social Sharing** - Add SEO metadata, Open Graph images, sitemap, robots configuration, structured data, and SEO-friendly URLs.
 - [ ] 23. **Analytics & Sales Reporting** - Track product views, cart activity, purchases, revenue, customers, and basic ecommerce performance.
 - [ ] 24. **Security & Access Control** - Protect customer and admin routes, APIs, database operations, digital files, and Stripe webhook endpoints.
 - [ ] 25. **Production Testing & Launch** - Test the complete customer and admin workflows, Stripe payments, webhooks, downloads, emails, permissions, mobile layouts, and production deployment.

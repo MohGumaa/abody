@@ -1,6 +1,6 @@
 # Abody Digital Ecommerce Platform - Project Overview
 
-<!-- blueprint:source-hash 88d1cd177743fec0959c4cb13dbcb9c658f8d40849f47f4173e422538e84e94e -->
+<!-- blueprint:source-hash dc61a9df846d9734c8b30b2cb017b943691616ed6d0422cfbbdf51a13af28b8a -->
 
 > A bilingual (English and Arabic) storefront where customers buy Abody's
 > downloadable digital products and digital services with Stripe, plus an admin
@@ -78,6 +78,10 @@ receive the product.
     in, cart, trust bar), footer, home page, products and services listing
     pages, and the detail pages. Numbered 26 to keep existing IDs stable; it is
     built after 4 and before 5.
+22. **SEO & Social Sharing** - per-page titles and descriptions in both
+    languages, Open Graph images, `hreflang` alternates between `/en` and
+    `/ar`, canonical URLs, a bilingual sitemap, robots, and product structured
+    data. Built after 26 so it covers every public page.
 5. **Stripe Checkout** - create Stripe Checkout sessions and handle success,
    cancelled, and failed states.
 6. **Stripe Webhooks & Orders** - verify payments through webhooks and create or
@@ -114,8 +118,6 @@ receive the product.
     apply discount codes.
 21. **Website Content Management** - admins manage featured products, homepage
     sections, promotional content, and basic site settings.
-22. **SEO & Social Sharing** - metadata, Open Graph images, sitemap, robots,
-    structured data, SEO-friendly URLs.
 23. **Analytics & Sales Reporting** - track page and product views, add to cart,
     checkout started, purchases, popular products, and revenue.
 24. **Security & Access Control** - protect customer and admin routes, APIs,
