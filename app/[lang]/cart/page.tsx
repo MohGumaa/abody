@@ -40,9 +40,8 @@ export default async function CartPage() {
   const itemCountLabel = formatItemCount(locale, view.itemCount, text.itemCount);
 
   return (
-    // The panels need the tinted canvas behind them. Item 26 moves it site-wide.
-    <div className="flex-1 bg-canvas font-sans">
-      <main className="mx-auto grid w-full max-w-5xl gap-6 px-4 pt-6 pb-16 sm:px-6">
+    <div className="flex-1 font-sans">
+      <main className="mx-auto grid w-full max-w-site gap-6 px-4 pt-6 pb-16">
         <nav
           aria-label={text.breadcrumb}
           className="flex flex-wrap items-center gap-2 rounded-panel bg-panel px-5 py-4 text-sm text-muted shadow-soft min-[600px]:px-6 min-[960px]:px-10"

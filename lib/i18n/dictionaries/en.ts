@@ -8,6 +8,19 @@ export const en = {
     cart: "Cart",
     // No plural forms: Arabic has several, so both languages use "items: N".
     cartLabel: (count: number) => `Cart, items: ${count}`,
+    nav: "Main navigation",
+    home: "Home",
+    trust: {
+      download: "Instant download after payment",
+      payment: "Secure payment with Stripe",
+      tracking: "Track every service from your account",
+    },
+  },
+  footer: {
+    blurb:
+      "Digital products you can download today and services run by the Abody team.",
+    rights: (year: number) => `© ${year} Abody. All rights reserved.`,
+    stripe: "Payments secured by Stripe",
   },
   product: {
     typeLabels: {

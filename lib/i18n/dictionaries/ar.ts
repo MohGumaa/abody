@@ -9,6 +9,18 @@ export const ar: Dictionary = {
     logoAlt: "عبودي",
     cart: "السلة",
     cartLabel: (count: number) => `السلة، عدد العناصر: ${count}`,
+    nav: "القائمة الرئيسية",
+    home: "الرئيسية",
+    trust: {
+      download: "تحميل فوري بعد الدفع",
+      payment: "دفع آمن عبر Stripe",
+      tracking: "تابع كل خدماتك من حسابك",
+    },
+  },
+  footer: {
+    blurb: "منتجات رقمية تحمّلها اليوم وخدمات ينفذها فريق عبودي.",
+    rights: (year: number) => `© ${year} عبودي. جميع الحقوق محفوظة.`,
+    stripe: "مدفوعات مؤمّنة عبر Stripe",
   },
   product: {
     typeLabels: {
