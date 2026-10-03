@@ -1,13 +1,13 @@
 "use client";
 
-import { useActionState, useId } from "react";
+import { useActionState } from "react";
 import { updateCartQuantity, type CartActionError } from "@/actions/cart";
+import { MinusIcon, PlusIcon } from "@/components/icons";
 import { MAX_QUANTITY } from "@/lib/cart";
 
 export interface CartQuantityText {
-  quantity: string;
-  update: string;
-  updating: string;
+  decrease: string;
+  increase: string;
   errors: Record<CartActionError, string>;
 }
 
@@ -18,6 +18,9 @@ interface CartQuantityFormProps {
   text: CartQuantityText;
 }
 
+const STEP_BUTTON =
+  "grid h-9 w-9 place-items-center rounded-control text-muted outline-offset-2 hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary-strong disabled:cursor-not-allowed disabled:opacity-40";
+
 export function CartQuantityForm({
   productId,
   productName,
@@ -25,46 +28,50 @@ export function CartQuantityForm({
   text,
 }: CartQuantityFormProps) {
   const [state, action, pending] = useActionState(updateCartQuantity, null);
-  const inputId = useId();
-  const errorId = useId();
   const error = state?.success === false ? text.errors[state.error] : null;
 
   return (
-    <form action={action}>
+    // "contents" lets the line's controls row lay out the stepper and the error.
+    <form action={action} className="contents">
       <input type="hidden" name="productId" value={productId} />
-      <label htmlFor={inputId} className="block text-sm text-muted">
-        {text.quantity}
-        <span className="sr-only">
-          {": "}
-          <span dir="auto">{productName}</span>
-        </span>
-      </label>
-      <div className="mt-1 flex items-center gap-2">
-        <input
-          // Remount after an update so the field shows the saved quantity.
-          key={quantity}
-          id={inputId}
-          name="quantity"
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={MAX_QUANTITY}
-          step={1}
-          required
-          defaultValue={quantity}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? errorId : undefined}
-          className="h-10 w-20 rounded-control border border-border bg-panel px-2 text-center outline-offset-2 focus-visible:outline-2 focus-visible:outline-primary-strong aria-invalid:border-danger"
-        />
+      <span className="inline-flex items-center rounded-control border border-border bg-panel">
+        {/* Each button submits the new quantity. Removing is the trash button's job. */}
         <button
           type="submit"
-          disabled={pending}
-          className="h-10 rounded-control border border-border px-3 text-sm font-semibold outline-offset-2 hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary-strong disabled:cursor-wait disabled:opacity-60"
+          name="quantity"
+          value={quantity - 1}
+          disabled={pending || quantity <= 1}
+          className={STEP_BUTTON}
         >
-          {pending ? text.updating : text.update}
+          <MinusIcon />
+          <span className="sr-only">
+            {text.decrease}
+            {": "}
+            <span dir="auto">{productName}</span>
+          </span>
         </button>
-      </div>
-      <p id={errorId} role="alert" className="mt-1 text-sm text-danger empty:mt-0">
+        <output className="min-w-7 text-center text-sm font-semibold">
+          {quantity}
+        </output>
+        <button
+          type="submit"
+          name="quantity"
+          value={quantity + 1}
+          disabled={pending || quantity >= MAX_QUANTITY}
+          className={STEP_BUTTON}
+        >
+          <PlusIcon />
+          <span className="sr-only">
+            {text.increase}
+            {": "}
+            <span dir="auto">{productName}</span>
+          </span>
+        </button>
+      </span>
+      <p
+        role="alert"
+        className="order-last w-0 min-w-full text-end text-sm text-danger empty:hidden"
+      >
         {!pending && error}
       </p>
     </form>

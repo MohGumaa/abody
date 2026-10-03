@@ -6,11 +6,11 @@ import {
   type CartActionError,
   type CartActionResult,
 } from "@/actions/cart";
+import { TrashIcon } from "@/components/icons";
 import { CART_HEADING_ID } from "@/lib/cart";
 
 export interface RemoveFromCartText {
   remove: string;
-  removing: string;
   errors: Record<CartActionError, string>;
 }
 
@@ -44,20 +44,25 @@ export function RemoveFromCartButton({
       : null;
 
   return (
-    <form action={action}>
+    // "contents" lets the line's controls row lay out the button and the error.
+    <form action={action} className="contents">
       <input type="hidden" name="productId" value={productId} />
       <button
         type="submit"
         disabled={pending}
-        className="rounded-control text-sm font-semibold text-danger underline-offset-2 outline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-primary-strong disabled:cursor-wait disabled:opacity-60"
+        className="grid h-9 w-9 place-items-center rounded-control text-muted outline-offset-2 hover:bg-danger-soft hover:text-danger focus-visible:outline-2 focus-visible:outline-primary-strong disabled:cursor-wait disabled:opacity-60"
       >
-        {pending ? text.removing : text.remove}
+        <TrashIcon />
         <span className="sr-only">
+          {text.remove}
           {": "}
           <span dir="auto">{productName}</span>
         </span>
       </button>
-      <p role="alert" className="mt-1 text-sm text-danger empty:mt-0">
+      <p
+        role="alert"
+        className="order-last w-0 min-w-full text-end text-sm text-danger empty:hidden"
+      >
         {!pending && error}
       </p>
     </form>

@@ -41,6 +41,8 @@ export interface CartView {
   lines: CartLine[];
   subtotalCents: number;
   totalCents: number;
+  // Sum of the shown line quantities.
+  itemCount: number;
   removedCount: number;
 }
 
@@ -165,5 +167,12 @@ export function buildCartView(
     });
   }
   const subtotalCents = lines.reduce((sum, line) => sum + line.lineTotalCents, 0);
-  return { lines, subtotalCents, totalCents: subtotalCents, removedCount };
+  const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
+  return {
+    lines,
+    subtotalCents,
+    totalCents: subtotalCents,
+    itemCount,
+    removedCount,
+  };
 }

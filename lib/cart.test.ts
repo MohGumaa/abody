@@ -221,6 +221,7 @@ describe("buildCartView", () => {
     ]);
     expect(view.subtotalCents).toBe(39800);
     expect(view.totalCents).toBe(39800);
+    expect(view.itemCount).toBe(3);
     expect(view.removedCount).toBe(0);
   });
 
@@ -231,6 +232,7 @@ describe("buildCartView", () => {
     );
     expect(view.lines[0].quantity).toBe(1);
     expect(view.totalCents).toBe(1000);
+    expect(view.itemCount).toBe(1);
   });
 
   it("counts entries with no published product", () => {
@@ -250,6 +252,7 @@ describe("buildCartView", () => {
       lines: [],
       subtotalCents: 0,
       totalCents: 0,
+      itemCount: 0,
       removedCount: 0,
     });
   });

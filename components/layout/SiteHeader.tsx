@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { CartIcon } from "@/components/icons";
 import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
 import { CART_COOKIE, cartItemCount, parseCart } from "@/lib/cart";
 import { localizedPath } from "@/lib/i18n/config";
@@ -35,25 +36,12 @@ export async function SiteHeader() {
           <Link
             href={localizedPath(locale, "/cart")}
             aria-label={header.cartLabel(count)}
-            className="flex h-11 items-center gap-2 rounded-card px-3 text-sm font-semibold outline-offset-2 hover:bg-surface focus-visible:outline-2 focus-visible:outline-primary-strong"
+            className="flex h-11 items-center gap-2 rounded-card bg-primary-soft px-3 text-sm font-semibold text-primary-strong outline-offset-2 hover:bg-tint-1 focus-visible:outline-2 focus-visible:outline-primary-strong sm:px-5"
           >
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-5 w-5 shrink-0"
-            >
-              <path d="M3.5 4.5h2.2l2.1 10.2a1.5 1.5 0 0 0 1.5 1.2h7.9a1.5 1.5 0 0 0 1.5-1.1l1.6-6.3H6.4" />
-              <circle cx="10" cy="19.5" r="1" />
-              <circle cx="17" cy="19.5" r="1" />
-            </svg>
+            <CartIcon />
             {/* The icon and count fit narrow phones; the label names the link. */}
             <span className="hidden sm:inline">{header.cart}</span>
-            <span className="min-w-6 rounded-full bg-primary-soft px-1.5 text-center text-xs leading-6 text-primary-strong">
+            <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary-strong px-1 text-xs text-white">
               {count}
             </span>
           </Link>
