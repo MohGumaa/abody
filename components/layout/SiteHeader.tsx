@@ -62,7 +62,7 @@ export async function SiteHeader() {
       <ul className="flex flex-wrap justify-between gap-x-6 gap-y-2 rounded-b-panel bg-primary-soft px-5 py-4 text-sm font-medium text-primary-strong min-[600px]:px-6 min-[960px]:px-10">
         {trustItems.map(({ icon: Icon, text }) => (
           <li key={text} className="flex items-center gap-2">
-            <Icon className="h-4 w-4" />
+            <Icon className="size-[1.25em]" />
             {text}
           </li>
         ))}

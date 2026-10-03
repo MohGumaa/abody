@@ -60,7 +60,7 @@ export async function SiteFooter() {
         <div className="mt-10 flex flex-wrap justify-between gap-3 border-t border-border pt-6 text-sm text-muted">
           <span>{footer.rights(new Date().getFullYear())}</span>
           <span className="inline-flex items-center gap-2">
-            <LockIcon className="h-4 w-4" />
+            <LockIcon className="size-[1.25em]" />
             {footer.stripe}
           </span>
         </div>

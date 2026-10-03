@@ -38,6 +38,24 @@
   --shadow-soft: 0 1px 2px oklch(23% 0.04 252 / 0.05);
   --shadow-raised: 0 10px 30px -12px oklch(23% 0.04 252 / 0.22);
   --container-site: 1200px;
+
+  /* Mockup type scale: body copy at 1.65, headings at 1.2. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.65;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.65;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.65;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.65;
+  --text-xl: 1.5rem;
+  --text-xl--line-height: 1.2;
+  --text-2xl: 1.875rem;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 2.5rem;
+  --text-3xl--line-height: 1.2;
+  --text-4xl: 3.25rem;
+  --text-4xl--line-height: 1.2;
 }
 
 @theme inline {
@@ -58,6 +76,8 @@
 body {
   background: var(--color-canvas);
   color: var(--color-foreground);
+  font-size: var(--text-base);
+  line-height: 1.65;
 }
 
 /* Letter-spacing breaks Arabic letter joining, and Arabic needs taller lines.

@@ -89,7 +89,7 @@ export function PlusIcon(props: IconProps) {
 export function ChartIcon(props: IconProps) {
   return (
     <Icon {...props}>
-      <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />
+      <path d="M4 20V4m0 16h16M8 16v-4m4 4V8m4 8v-6" />
     </Icon>
   );
 }

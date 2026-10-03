@@ -96,7 +96,7 @@ export default async function CartPage() {
               <h1
                 id={CART_HEADING_ID}
                 tabIndex={-1}
-                className="text-3xl font-semibold tracking-tight outline-none"
+                className="text-2xl font-semibold tracking-tight outline-none"
               >
                 {isEmpty ? text.emptyTitle : text.title}
               </h1>
