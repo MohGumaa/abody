@@ -80,6 +80,15 @@ body {
   line-height: 1.65;
 }
 
+/* Arabic text inside an English page (the language switcher) would otherwise
+   stop at Geist's Arial fallback, which has Arabic letters, before Tajawal. */
+@layer base {
+  [lang="ar"] {
+    font-family:
+      var(--font-tajawal), var(--font-geist-sans), system-ui, sans-serif;
+  }
+}
+
 /* Letter-spacing breaks Arabic letter joining, and Arabic needs taller lines.
    Unlayered on purpose so it wins over tracking and leading utilities. */
 :lang(ar) :is(h1, h2, h3) {
