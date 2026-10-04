@@ -4,6 +4,7 @@ import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { LOCALES, localeDirection } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import { defaultSocialImage, siteUrl } from "@/lib/seo";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -29,8 +30,12 @@ export function generateStaticParams() {
 export async function generateMetadata(): Promise<Metadata> {
   const { meta } = await getDictionary();
   return {
-    title: meta.title,
+    metadataBase: siteUrl(),
+    title: { default: meta.title, template: `%s | ${meta.title}` },
     description: meta.description,
+    // Pages without their own block (the cart) still share the default image.
+    openGraph: { images: [defaultSocialImage(meta.title)] },
+    twitter: { card: "summary_large_image" },
     // app/favicon.ico is added automatically; these cover the other sizes.
     icons: {
       icon: [

@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 import { ProductDetail } from "@/components/catalog/ProductDetail";
+import { ProductJsonLd } from "@/components/catalog/ProductJsonLd";
 import { ProductType } from "@/lib/generated/prisma/enums";
-import { requirePublishedProduct } from "@/lib/product-page";
+import { productMetadata, requirePublishedProduct } from "@/lib/product-page";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/[lang]/products/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const product = await requirePublishedProduct(
-    slug,
-    ProductType.DIGITAL_PRODUCT,
-  );
-  return { title: product.name, description: product.shortDescription };
+  return productMetadata(slug, ProductType.DIGITAL_PRODUCT);
 }
 
 export default async function ProductPage({
@@ -22,5 +19,10 @@ export default async function ProductPage({
     slug,
     ProductType.DIGITAL_PRODUCT,
   );
-  return <ProductDetail product={product} />;
+  return (
+    <>
+      <ProductJsonLd product={product} />
+      <ProductDetail product={product} />
+    </>
+  );
 }

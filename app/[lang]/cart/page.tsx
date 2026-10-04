@@ -21,7 +21,8 @@ const PANEL =
 
 export async function generateMetadata(): Promise<Metadata> {
   const { cart } = await getDictionary();
-  return { title: cart.title };
+  // Each visitor's cart is personal, so it stays out of search results.
+  return { title: cart.title, robots: { index: false, follow: true } };
 }
 
 export default async function CartPage() {

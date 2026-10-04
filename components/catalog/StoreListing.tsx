@@ -12,6 +12,7 @@ import {
   filterByCategory,
   summarizeCategories,
 } from "@/lib/listing";
+import { pageMetadata } from "@/lib/seo";
 
 const PANEL = "rounded-panel bg-panel shadow-soft";
 const LISTING_PATHS: Record<ProductType, string> = {
@@ -20,9 +21,16 @@ const LISTING_PATHS: Record<ProductType, string> = {
 };
 
 export async function listingMetadata(type: ProductType): Promise<Metadata> {
-  const { listing } = await getDictionary();
+  const { listing, meta } = await getDictionary();
   const text = listing.types[type];
-  return { title: text.title, description: text.intro };
+  // A ?category= filter canonicalizes to the unfiltered listing.
+  return pageMetadata({
+    locale: await getLocale(),
+    path: LISTING_PATHS[type],
+    title: text.title,
+    description: text.intro,
+    siteName: meta.title,
+  });
 }
 
 interface StoreListingProps {

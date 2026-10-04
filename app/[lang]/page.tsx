@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ProductCard } from "@/components/catalog/ProductCard";
@@ -15,6 +16,7 @@ import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatItemCount } from "@/lib/i18n/plural";
 import { categoryHref } from "@/lib/listing";
+import { pageMetadata } from "@/lib/seo";
 
 const PANEL = "rounded-panel bg-panel shadow-soft";
 const PANEL_PADDING = "p-5 min-[600px]:p-6 min-[960px]:p-10";
@@ -73,6 +75,18 @@ function ValuePanel({
       <p className="mt-2 text-sm text-muted">{body}</p>
     </div>
   );
+}
+
+export async function generateMetadata(): Promise<Metadata> {
+  const { meta } = await getDictionary();
+  return pageMetadata({
+    locale: await getLocale(),
+    path: "/",
+    title: meta.title,
+    description: meta.description,
+    siteName: meta.title,
+    absoluteTitle: true,
+  });
 }
 
 export default async function Home() {
