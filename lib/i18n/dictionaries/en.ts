@@ -103,6 +103,67 @@ export const en = {
       },
     },
   },
+  home: {
+    hero: {
+      eyebrow: "Digital products and services",
+      title: "Marketing tools and done-for-you services",
+      lead: "Download templates and guides the moment you pay, or hand your ads to the Abody team and follow the work from your account.",
+      browseProducts: "Browse products",
+      exploreServices: "Explore services",
+    },
+    categories: "Shop by category",
+    viewAll: "View all",
+    featured: {
+      title: "Featured products",
+      intro: "Ready to use the minute your payment clears.",
+    },
+    services: {
+      title: "Services",
+      intro: "Buy online, tell us what we need, and we get started.",
+      viewAll: "View all services",
+      promoEyebrow: "Done for you",
+      promoTitle: "Hand it to the Abody team",
+      promoBody:
+        "Every service comes with a clear scope, a fixed price, and status updates in your account.",
+      promoAction: "See how services work",
+    },
+    why: "Why Abody",
+    values: {
+      instant: {
+        title: "Delivered instantly",
+        body: "Your files are ready in your account as soon as the payment is confirmed.",
+      },
+      secure: {
+        title: "Secure payment",
+        body: "Checkout runs on Stripe. Abody never sees or stores your card details.",
+      },
+      people: {
+        title: "Real people on your services",
+        body: "The Abody team does the work and keeps the status up to date.",
+      },
+    },
+    howItWorks: "How it works",
+    steps: [
+      {
+        title: "Discover",
+        body: "Browse products and services and pick what fits.",
+      },
+      { title: "Purchase", body: "Pay securely with Stripe in a few clicks." },
+      {
+        title: "Receive",
+        body: "Download your files or fill in the service brief.",
+      },
+      {
+        title: "Manage",
+        body: "Find orders, downloads, and services in your account.",
+      },
+    ],
+    cta: {
+      title: "Ready to grow your business?",
+      body: "Start with a template today, or let us run the campaign for you.",
+      action: "Browse the store",
+    },
+  },
   cart: {
     title: "Your cart",
     breadcrumb: "Breadcrumb",
