@@ -25,7 +25,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: cart.title, robots: { index: false, follow: true } };
 }
 
-export default async function CartPage() {
+export default async function CartPage({
+  searchParams,
+}: PageProps<"/[lang]/cart">) {
   const locale = await getLocale();
   const {
     cart: text,
@@ -47,6 +49,8 @@ export default async function CartPage() {
         locale,
       );
   const itemCountLabel = formatItemCount(locale, view.itemCount, text.itemCount);
+  // Stripe's cancel_url; any other value is ignored.
+  const cancelled = !isEmpty && (await searchParams).checkout === "cancelled";
 
   return (
     <div className="flex-1 font-sans">
@@ -66,6 +70,15 @@ export default async function CartPage() {
             {headerText.cart}
           </span>
         </nav>
+
+        {cancelled && (
+          <p
+            role="status"
+            className="rounded-panel bg-primary-soft px-5 py-4 text-sm text-primary-strong min-[600px]:px-6 min-[960px]:px-10"
+          >
+            {text.checkoutCancelled}
+          </p>
+        )}
 
         {view.removedCount > 0 && (
           <p className="rounded-panel bg-warning-soft px-5 py-4 text-sm text-warning min-[600px]:px-6 min-[960px]:px-10">
@@ -142,7 +155,8 @@ export default async function CartPage() {
               subtotalCents={view.subtotalCents}
               totalCents={view.totalCents}
               itemCountLabel={itemCountLabel}
-              text={text}
+              locale={locale}
+              text={{ ...text, errors: text.checkoutErrors }}
             />
           )}
         </div>

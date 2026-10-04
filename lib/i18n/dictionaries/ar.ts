@@ -180,13 +180,37 @@ export const ar: Dictionary = {
     subtotal: "المجموع الفرعي",
     total: "الإجمالي",
     checkout: "متابعة إلى الدفع",
-    checkoutComingSoon: "إتمام الشراء سيتوفر قريباً.",
+    redirecting: "جارٍ التحويل إلى Stripe…",
+    checkoutCancelled: "تم إلغاء الدفع. سلتك محفوظة.",
     secureNote: "تدفع عبر صفحة Stripe الآمنة",
+    checkoutErrors: {
+      empty_cart:
+        "العناصر في سلتك لم تعد متاحة. حدّث الصفحة لعرض سلتك.",
+      unexpected: "تعذّر بدء الدفع. يرجى المحاولة مرة أخرى.",
+    },
     errors: {
       invalid_input: "أدخل كمية من 1 إلى 99.",
       unavailable: "هذا العنصر لم يعد متاحاً.",
       cart_full: "سلتك ممتلئة. أزل عنصراً لإضافة عنصر آخر.",
       unexpected: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+    },
+  },
+  checkoutResult: {
+    total: "المبلغ المدفوع",
+    keepShopping: "متابعة التسوق",
+    viewServices: "تصفح الخدمات",
+    backToCart: "العودة إلى سلتك",
+    paid: {
+      title: "تم استلام الدفع",
+      body: "شكراً لشرائك. نعمل الآن على تأكيد طلبك.",
+    },
+    processing: {
+      title: "جارٍ معالجة الدفع",
+      body: "لا تزال Stripe تؤكد عملية الدفع. قد يستغرق ذلك بعض الوقت مع بعض طرق الدفع.",
+    },
+    not_completed: {
+      title: "لم يكتمل الدفع",
+      body: "لم يتم خصم أي مبلغ. سلتك لا تزال محفوظة، ويمكنك المحاولة مرة أخرى.",
     },
   },
   notFound: {

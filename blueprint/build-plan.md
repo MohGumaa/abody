@@ -12,7 +12,7 @@
   - [x] 26c. **Product and Service Detail Pages** - Detail layout with the buy panel, chips, and How it works from the mockup.
   - [x] 26d. **Home Page** - Hero, categories, featured products, services, value proposition, How it works, social proof, and call to action.
 - [x] 22. **SEO & Social Sharing** - Add per-page titles and meta descriptions in English and Arabic, Open Graph and social images, language alternates (`hreflang`) between `/en` and `/ar` pages, canonical URLs, a sitemap covering both languages, robots configuration, and product structured data.
-- [ ] 5. **Stripe Checkout** - Integrate Stripe Checkout for secure customer payments and support successful, cancelled, and failed checkout states.
+- [x] 5. **Stripe Checkout** - Integrate Stripe Checkout for secure customer payments and support successful, cancelled, and failed checkout states.
 - [ ] 6. **Stripe Webhooks & Orders** - Process Stripe webhooks, verify payments, and automatically create and update orders after successful payment.
 - [ ] 7. **Digital Product Delivery** - Store digital files securely and provide customers with protected download access after payment.
 - [ ] 8. **Customer Authentication** - Add customer registration, login, logout, password/account management, and protected customer routes.

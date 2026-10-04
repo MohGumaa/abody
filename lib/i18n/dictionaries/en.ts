@@ -191,13 +191,37 @@ export const en = {
     subtotal: "Subtotal",
     total: "Total",
     checkout: "Continue to checkout",
-    checkoutComingSoon: "Checkout is coming soon.",
+    redirecting: "Redirecting to Stripe…",
+    checkoutCancelled: "Checkout cancelled. Your cart is saved.",
     secureNote: "You pay on Stripe's secure page",
+    checkoutErrors: {
+      empty_cart:
+        "The items in your cart are no longer available. Refresh the page to see your cart.",
+      unexpected: "Checkout could not start. Please try again.",
+    },
     errors: {
       invalid_input: "Enter a quantity from 1 to 99.",
       unavailable: "This item is no longer available.",
       cart_full: "Your cart is full. Remove an item to add another.",
       unexpected: "Something went wrong. Please try again.",
+    },
+  },
+  checkoutResult: {
+    total: "Total paid",
+    keepShopping: "Keep shopping",
+    viewServices: "Browse services",
+    backToCart: "Back to your cart",
+    paid: {
+      title: "Payment received",
+      body: "Thank you for your purchase. We are confirming your order now.",
+    },
+    processing: {
+      title: "Your payment is processing",
+      body: "Stripe is still confirming your payment. This can take a little while for some payment methods.",
+    },
+    not_completed: {
+      title: "Payment not completed",
+      body: "You were not charged. Your cart is still saved, so you can try again.",
     },
   },
   notFound: {

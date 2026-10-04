@@ -1,4 +1,9 @@
-import { ArrowIcon, LockIcon } from "@/components/icons";
+import {
+  CheckoutButton,
+  type CheckoutButtonText,
+} from "@/components/cart/CheckoutButton";
+import { LockIcon } from "@/components/icons";
+import type { Locale } from "@/lib/i18n/config";
 import { formatPriceCents } from "@/lib/money";
 
 interface CartSummaryProps {
@@ -6,21 +11,20 @@ interface CartSummaryProps {
   totalCents: number;
   // Already pluralized, for example "3 items".
   itemCountLabel: string;
+  locale: Locale;
   text: {
     summary: string;
     subtotal: string;
     total: string;
-    checkout: string;
-    checkoutComingSoon: string;
     secureNote: string;
-  };
+  } & CheckoutButtonText;
 }
 
-// Checkout ships with feature 5; until then the button stays disabled.
 export function CartSummary({
   subtotalCents,
   totalCents,
   itemCountLabel,
+  locale,
   text,
 }: CartSummaryProps) {
   return (
@@ -43,18 +47,7 @@ export function CartSummary({
           <dd>{formatPriceCents(totalCents)}</dd>
         </div>
       </dl>
-      <button
-        type="button"
-        disabled
-        aria-describedby="checkout-note"
-        className="flex h-13 w-full items-center justify-center gap-2 rounded-card bg-primary-strong px-6 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {text.checkout}
-        <ArrowIcon className="h-5 w-5 rtl:-scale-x-100" />
-      </button>
-      <p id="checkout-note" className="mt-2 text-center text-sm text-muted">
-        {text.checkoutComingSoon}
-      </p>
+      <CheckoutButton locale={locale} text={text} />
       <p className="mt-4 flex items-center justify-center gap-2 text-sm text-muted">
         <LockIcon className="h-4 w-4" />
         {text.secureNote}
