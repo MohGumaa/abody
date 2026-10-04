@@ -14,6 +14,7 @@ import {
   getPublishedProductBySlug,
   isProductType,
   isValidSlug,
+  listCartSuggestions,
   listPublishedProducts,
   listPublishedProductsByIds,
   listRelatedProducts,
@@ -338,6 +339,33 @@ describe("formatDurationDays", () => {
   });
 });
 
+describe("listCartSuggestions", () => {
+  it("queries the newest published items not in the cart, without private fields", async () => {
+    findMany.mockResolvedValue([{ ...row, id: "p3" }]);
+
+    const result = await listCartSuggestions(["p1", "p2"], "en");
+
+    const query = findMany.mock.calls[0][0];
+    expect(query.where).toEqual({
+      status: "PUBLISHED",
+      id: { notIn: ["p1", "p2"] },
+    });
+    expect(query.orderBy).toEqual([{ createdAt: "desc" }, { id: "asc" }]);
+    expect(query.take).toBe(4);
+    expect(query.select).not.toHaveProperty("digitalFile");
+    expect(query.select).not.toHaveProperty("status");
+    expect(result.map((product) => product.id)).toEqual(["p3"]);
+  });
+
+  it("returns content in the requested language", async () => {
+    findMany.mockResolvedValue([{ ...row, ...arabic }]);
+
+    const [product] = await listCartSuggestions(["p9"], "ar");
+
+    expect(product.name).toBe(arabic.nameAr);
+  });
+});
+
 describe("listRelatedProducts", () => {
   const current = { id: "p1", type: "DIGITAL_PRODUCT" as const, category: "Templates" };
 
@@ -356,14 +384,14 @@ describe("listRelatedProducts", () => {
       id: { not: "p1" },
       category: "Templates",
     });
-    expect(same.take).toBe(3);
+    expect(same.take).toBe(4);
     expect(other.where).toEqual({
       status: "PUBLISHED",
       type: "DIGITAL_PRODUCT",
       id: { not: "p1" },
       category: { not: "Templates" },
     });
-    expect(other.take).toBe(2);
+    expect(other.take).toBe(3);
     for (const query of [same, other]) {
       expect(query.orderBy).toEqual([{ createdAt: "desc" }, { id: "asc" }]);
       expect(query.select).not.toHaveProperty("digitalFile");
@@ -371,14 +399,15 @@ describe("listRelatedProducts", () => {
     }
   });
 
-  it("stops at three items from the same category", async () => {
+  it("stops at four items from the same category", async () => {
     findMany.mockResolvedValueOnce([
       { ...row, id: "p2" },
       { ...row, id: "p3" },
       { ...row, id: "p4" },
+      { ...row, id: "p5" },
     ]);
 
-    expect(await listRelatedProducts(current, "en")).toHaveLength(3);
+    expect(await listRelatedProducts(current, "en")).toHaveLength(4);
     expect(findMany).toHaveBeenCalledTimes(1);
   });
 

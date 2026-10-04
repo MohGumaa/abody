@@ -1,13 +1,10 @@
 import Link from "next/link";
-import { ProductImage } from "@/components/catalog/ProductImage";
-import {
-  listRelatedProducts,
-  productPath,
-  type PublicProduct,
-} from "@/lib/catalog";
+import { ProductCard } from "@/components/catalog/ProductCard";
+import { ArrowIcon } from "@/components/icons";
+import { listRelatedProducts, type PublicProduct } from "@/lib/catalog";
+import { ProductType } from "@/lib/generated/prisma/enums";
 import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
-import { formatPriceCents } from "@/lib/money";
 
 interface RelatedProductsProps {
   product: PublicProduct;
@@ -19,36 +16,33 @@ export async function RelatedProducts({ product }: RelatedProductsProps) {
   if (related.length === 0) {
     return null;
   }
-  const dictionary = await getDictionary();
+  const { product: text } = await getDictionary();
+  const listingPath =
+    product.type === ProductType.SERVICE ? "/services" : "/products";
 
   return (
     <section aria-labelledby="related-heading" className="mt-14">
-      <h2 id="related-heading" className="text-xl font-semibold">
-        {dictionary.product.related}
-      </h2>
-      <ul className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {related.map((item) => (
-          <li
-            key={item.id}
-            className="relative rounded-2xl border border-border p-4 transition-shadow focus-within:ring-2 focus-within:ring-primary-strong hover:shadow-md"
-          >
-            <ProductImage image={item.image} alt="" />
-            <h3 dir="auto" className="mt-4 font-semibold">
-              {/* The stretched link makes the whole card clickable while its
-                  accessible name stays the item name. */}
-              <Link
-                href={localizedPath(locale, productPath(item))}
-                className="outline-none after:absolute after:inset-0"
-              >
-                {item.name}
-              </Link>
-            </h3>
-            <p dir="auto" className="mt-1 text-sm text-muted">
-              {item.shortDescription}
-            </p>
-            <p className="mt-3 font-semibold">
-              {formatPriceCents(item.priceCents)}
-            </p>
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
+        <h2 id="related-heading" className="text-2xl font-semibold">
+          {text.related}
+        </h2>
+        <Link
+          href={localizedPath(locale, listingPath)}
+          className="inline-flex items-center gap-1 rounded-control font-semibold text-primary-strong outline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-primary-strong"
+        >
+          {text.viewAll}
+          <ArrowIcon className="size-[1.1em] rtl:-scale-x-100" />
+        </Link>
+      </div>
+      <ul className="grid gap-5 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4">
+        {related.map((item, index) => (
+          <li key={item.id}>
+            <ProductCard
+              product={item}
+              locale={locale}
+              index={index}
+              text={text}
+            />
           </li>
         ))}
       </ul>

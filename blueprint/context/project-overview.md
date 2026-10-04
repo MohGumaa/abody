@@ -130,8 +130,9 @@ receive the product.
 
 Derived from project-plan section 7 and the features that use each field.
 PostgreSQL with Prisma. `Product` is the only model that exists today (features
-1 and 2); feature 3b changes its text fields, and feature 6 locks `Order` and
-`OrderItem`. Later features depend on those shapes.
+1, 2, and 3b), and its shape is locked: the cart, checkout, and admin forms
+depend on it. Feature 6 locks `Order` and `OrderItem`. The cart (feature 4) has
+no table; see Cart below.
 
 ### User
 
@@ -152,32 +153,38 @@ One model for both product types; `type` decides delivery. This is the shape in
 `prisma/schema.prisma`.
 
 - `id` (string cuid, primary key)
-- `name` (string)
+- `name` (string) - English, as are the other unsuffixed text fields
 - `slug` (string, unique) - used in `/<lang>/products/[slug]` and
-  `/<lang>/services/[slug]`
+  `/<lang>/services/[slug]`; one slug for both languages
 - `shortDescription` (string)
 - `description` (text)
 - `priceCents` (integer) - whole US cents; the store currency is USD
 - `type` (enum: `DIGITAL_PRODUCT`, `SERVICE`)
-- `category` (string, free text)
+- `category` (string, free text, one language only)
 - `image` (string, optional) - URL or storage key
 - `digitalFile` (string, optional) - private storage key, digital products only;
   never returned in a public response
 - `included` (string list) - "What's Included" lines
 - `durationDays` (integer, optional) - services only
 - `requirements` (text, optional) - services only, what the customer must supply
+- `nameAr`, `shortDescriptionAr` (string, optional), `descriptionAr`,
+  `requirementsAr` (text, optional), `includedAr` (string list) - Arabic
+  content; a missing value falls back to the English field
 - `status` (enum: `PUBLISHED`, `UNPUBLISHED`)
 - `createdAt`, `updatedAt` (datetime)
 - will have many `OrderItem`
 
-> TODO (feature 3b): `name`, `shortDescription`, `description`, `included`, and
-> `requirements` hold one language today and must be stored in English and
-> Arabic. The storage shape is not specified in the plans, and `category` is not
-> in 3b's list. The `/api/products` responses and the admin product form change
-> with it.
-
 > TODO: Stripe product and price identifiers set by the admin are named in the
-> plan's admin form but are not stored yet.
+> plan's admin form but are not stored yet. The admin product form (features 13
+> and 14) must also edit the Arabic fields.
+
+### Cart (shipped, no table)
+
+A `cart` browser cookie holds `[productId, quantity]` pairs for anonymous
+visitors. It is untrusted input, written only by Server Actions; prices, names,
+and availability always come from the current `Product` rows. Digital products
+take quantity 1-99; services are fixed at 1. No database cart, account cart, or
+merge at login exists.
 
 ### Order
 
@@ -272,8 +279,9 @@ Start from the existing Abody brand and modernize it.
 - All customer-facing interface text exists in both languages: navigation,
   buttons, labels, form messages, order and service statuses, and transactional
   emails. Each feature translates the text it introduces.
-- Navigation: Home, Products, Services, About, Contact, Login, Cart. Only the
-  logo and the language switcher exist in the header today.
+- Navigation: Home, Products, Services, About, Contact, Login, Cart. The header
+  has only the logo, the cart link with its count, and the language switcher
+  today; item 26 adds the rest.
 - Product detail pages are simple and conversion-focused: image, name, price,
   description, feature list, Add to Cart, a Stripe trust line, What's Included,
   and How It Works. Services replace the download part with onboarding.
@@ -289,19 +297,19 @@ then browser language, then English. `/api/*` is never prefixed.
 - `/<lang>` - landing page: hero, featured products and services, value
   proposition, CTAs, social proof, footer (still the scaffold placeholder)
 - `/<lang>/products`, `/<lang>/products/[slug]` - product store and detail
-  (detail shipped)
+  (detail shipped, listing is item 26)
 - `/<lang>/services`, `/<lang>/services/[slug]` - services list and detail
-  (detail shipped)
-- `/<lang>/cart`, `/<lang>/checkout`, `/<lang>/success` - cart, checkout,
-  payment success
+  (detail shipped, listing is item 26)
+- `/<lang>/cart` - cart (shipped; checkout button disabled until item 5)
+- `/<lang>/checkout`, `/<lang>/success` - checkout, payment success
 - `/<lang>/login` - sign in
 - `/<lang>/account`, `.../orders`, `.../downloads`, `.../services` - customer
   dashboard (overview, orders, downloads, services, profile, logout)
 - `/admin`, `/admin/products`, `/admin/products/new`, `/admin/orders`,
   `/admin/customers`, `/admin/services`, `/admin/settings` - admin dashboard
   (whether it is prefixed depends on the admin language decision below)
-- `/api/products`, `/api/products/[slug]` - shipped catalog API, language-neutral
-  today
+- `/api/products`, `/api/products/[slug]` - shipped catalog API; an optional
+  `?lang=en|ar` picks the content language (English by default)
 
 ## Deployment
 
@@ -322,8 +330,10 @@ Resolve these in the plans, then re-run `/overview`.
    still unprefixed.
 2. **Admin dashboard language.** Still undecided. If admin stays in one
    language, feature 12 must exclude `/admin` from the language redirect.
-3. **Bilingual content details (feature 3b).** The plans do not say how the two
-   languages are stored, or whether `category` is translated.
+3. **Category language.** Feature 3b shipped Arabic fields for name,
+   descriptions, what's included, and requirements. `category` was not in its
+   list and stays in one language, so Arabic pages show an untranslated
+   category. Neither plan says whether that is intended.
 4. **Public pages (mostly resolved).** Item 26 now covers the homepage, the
    store listing pages, the navigation, and the footer, built from the
    prototypes. About and Contact are still named in the navigation but have no
@@ -345,8 +355,9 @@ Resolve these in the plans, then re-run `/overview`.
     email or analytics provider named; no deployment target.
 11. **Service packages.** Item 14 and the service flow mention choosing a package,
     but the data list has no package or pricing-tier shape.
-12. **Cart storage.** No decision on where the cart lives (browser or database)
-    or whether a service can have a quantity above one.
+12. **Cart after sign-in.** The shipped cart is an anonymous browser cookie.
+    Neither plan says whether it moves to the account or merges at login once
+    item 8 lands.
 13. **Product reviews.** The detail-page sketch shows a star rating, but no
     review or rating feature or data exists in either plan.
 14. **Refunds.** Item 15 includes refunds and `REFUNDED` is an order status, but

@@ -18,6 +18,8 @@ export async function SiteHeader() {
   // Only pages that exist are linked; each feature adds its own entry.
   const navItems: NavItem[] = [
     { href: localizedPath(locale, "/"), label: header.home },
+    { href: localizedPath(locale, "/products"), label: header.products },
+    { href: localizedPath(locale, "/services"), label: header.services },
   ];
   const trustItems = [
     { icon: BoltIcon, text: header.trust.download },

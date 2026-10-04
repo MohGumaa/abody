@@ -10,7 +10,8 @@ import {
   CART_HEADING_ID,
   parseCart,
 } from "@/lib/cart";
-import { listPublishedProductsByIds } from "@/lib/catalog";
+import { ProductCard } from "@/components/catalog/ProductCard";
+import { listCartSuggestions, listPublishedProductsByIds } from "@/lib/catalog";
 import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatItemCount } from "@/lib/i18n/plural";
@@ -37,6 +38,13 @@ export default async function CartPage() {
   );
   const view = buildCartView(entries, products);
   const isEmpty = view.lines.length === 0;
+  // Suggestions only sit beside a cart that has something in it.
+  const suggestions = isEmpty
+    ? []
+    : await listCartSuggestions(
+        view.lines.map((line) => line.product.id),
+        locale,
+      );
   const itemCountLabel = formatItemCount(locale, view.itemCount, text.itemCount);
 
   return (
@@ -105,9 +113,8 @@ export default async function CartPage() {
             {isEmpty ? (
               <>
                 <p className="max-w-[44ch] text-muted">{text.emptyBody}</p>
-                {/* Links home until item 26 builds the listing pages. */}
                 <Link
-                  href={localizedPath(locale, "/")}
+                  href={localizedPath(locale, "/products")}
                   className="inline-flex h-13 items-center rounded-card bg-primary-strong px-6 font-semibold text-white outline-offset-2 hover:shadow-raised focus-visible:outline-2 focus-visible:outline-primary-strong"
                 >
                   {text.browseStore}
@@ -138,6 +145,26 @@ export default async function CartPage() {
             />
           )}
         </div>
+
+        {suggestions.length > 0 && (
+          <section aria-labelledby="more-heading" className={PANEL}>
+            <h2 id="more-heading" className="mb-8 text-2xl font-semibold">
+              {productText.related}
+            </h2>
+            <ul className="grid gap-5 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4">
+              {suggestions.map((item, index) => (
+                <li key={item.id}>
+                  <ProductCard
+                    product={item}
+                    locale={locale}
+                    index={index}
+                    text={productText}
+                  />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </main>
     </div>
   );

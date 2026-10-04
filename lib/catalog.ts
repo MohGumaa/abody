@@ -50,7 +50,8 @@ export interface PublicProduct {
 }
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const RELATED_LIMIT = 3;
+// Fills the mockup's four-card row on the detail and cart pages.
+const RELATED_LIMIT = 4;
 
 export function isProductType(value: string): value is ProductType {
   return value === ProductType.DIGITAL_PRODUCT || value === ProductType.SERVICE;
@@ -160,6 +161,21 @@ export async function listPublishedProductsByIds(
   if (ids.length === 0) return [];
   const rows = await db.product.findMany({
     where: { status: ProductStatus.PUBLISHED, id: { in: ids } },
+    select: publicProductSelect,
+  });
+  return rows.map((row) => toPublicProduct(row, locale));
+}
+
+// The cart's "You might also like" row: newest items of any type that are not
+// already in the cart.
+export async function listCartSuggestions(
+  excludeIds: string[],
+  locale: Locale,
+): Promise<PublicProduct[]> {
+  const rows = await db.product.findMany({
+    where: { status: ProductStatus.PUBLISHED, id: { notIn: excludeIds } },
+    orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+    take: RELATED_LIMIT,
     select: publicProductSelect,
   });
   return rows.map((row) => toPublicProduct(row, locale));

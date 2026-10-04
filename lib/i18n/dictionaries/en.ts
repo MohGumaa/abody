@@ -10,6 +10,8 @@ export const en = {
     cartLabel: (count: number) => `Cart, items: ${count}`,
     nav: "Main navigation",
     home: "Home",
+    products: "Products",
+    services: "Services",
     trust: {
       download: "Instant download after payment",
       payment: "Secure payment with Stripe",
@@ -21,6 +23,7 @@ export const en = {
       "Digital products you can download today and services run by the Abody team.",
     rights: (year: number) => `© ${year} Abody. All rights reserved.`,
     stripe: "Payments secured by Stripe",
+    shop: "Shop",
   },
   product: {
     typeLabels: {
@@ -44,6 +47,48 @@ export const en = {
       SERVICE: ["Purchase", "Tell us what we need", "We get started"],
     },
     related: "You might also like",
+    viewAll: "View all",
+    instantDownload: "Instant download",
+    startsAfterOnboarding: "Starts after onboarding",
+  },
+  listing: {
+    catalogType: "Catalog type",
+    categories: "Categories",
+    categoryEmpty: "Nothing in this category right now.",
+    types: {
+      DIGITAL_PRODUCT: {
+        title: "Products",
+        intro:
+          "Templates, guides, and resources you can download as soon as your payment is confirmed.",
+        tab: "Digital products",
+        all: "All products",
+        empty: "No products yet. Check back soon.",
+        count: {
+          zero: "{count} products",
+          one: "{count} product",
+          two: "{count} products",
+          few: "{count} products",
+          many: "{count} products",
+          other: "{count} products",
+        },
+      },
+      SERVICE: {
+        title: "Services",
+        intro:
+          "Services run by the Abody team, from ad campaigns to account management. Work starts once we have your details.",
+        tab: "Services",
+        all: "All services",
+        empty: "No services yet. Check back soon.",
+        count: {
+          zero: "{count} services",
+          one: "{count} service",
+          two: "{count} services",
+          few: "{count} services",
+          many: "{count} services",
+          other: "{count} services",
+        },
+      },
+    },
   },
   cart: {
     title: "Your cart",

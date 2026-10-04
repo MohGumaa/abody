@@ -13,9 +13,17 @@ interface FooterColumn {
 export async function SiteFooter() {
   const locale = await getLocale();
   const { header, footer } = await getDictionary();
-  // Shop, Company, and Account columns join as their pages ship; a column
-  // with no links is not shown.
-  const columns: FooterColumn[] = [];
+  // Company and Account columns join as their pages ship; a column with no
+  // links is not shown.
+  const columns: FooterColumn[] = [
+    {
+      heading: footer.shop,
+      links: [
+        { href: localizedPath(locale, "/products"), label: header.products },
+        { href: localizedPath(locale, "/services"), label: header.services },
+      ],
+    },
+  ];
   const shownColumns = columns.filter((column) => column.links.length > 0);
 
   return (

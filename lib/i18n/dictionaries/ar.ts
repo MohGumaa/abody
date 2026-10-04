@@ -11,6 +11,8 @@ export const ar: Dictionary = {
     cartLabel: (count: number) => `السلة، عدد العناصر: ${count}`,
     nav: "القائمة الرئيسية",
     home: "الرئيسية",
+    products: "المنتجات",
+    services: "الخدمات",
     trust: {
       download: "تحميل فوري بعد الدفع",
       payment: "دفع آمن عبر Stripe",
@@ -21,6 +23,7 @@ export const ar: Dictionary = {
     blurb: "منتجات رقمية تحمّلها اليوم وخدمات ينفذها فريق عبودي.",
     rights: (year: number) => `© ${year} عبودي. جميع الحقوق محفوظة.`,
     stripe: "مدفوعات مؤمّنة عبر Stripe",
+    shop: "المتجر",
   },
   product: {
     typeLabels: {
@@ -44,6 +47,47 @@ export const ar: Dictionary = {
       SERVICE: ["اشترِ", "أخبرنا بما نحتاجه", "نبدأ العمل"],
     },
     related: "قد يعجبك أيضاً",
+    viewAll: "عرض الكل",
+    instantDownload: "تحميل فوري",
+    startsAfterOnboarding: "تبدأ بعد استلام بياناتك",
+  },
+  listing: {
+    catalogType: "نوع المنتجات",
+    categories: "الفئات",
+    categoryEmpty: "لا يوجد شيء في هذه الفئة حالياً.",
+    types: {
+      DIGITAL_PRODUCT: {
+        title: "المنتجات",
+        intro: "قوالب وأدلة وموارد يمكنك تحميلها فور تأكيد الدفع.",
+        tab: "منتجات رقمية",
+        all: "كل المنتجات",
+        empty: "لا توجد منتجات بعد. عد قريباً.",
+        count: {
+          zero: "لا منتجات",
+          one: "منتج واحد",
+          two: "منتجان",
+          few: "{count} منتجات",
+          many: "{count} منتجاً",
+          other: "{count} منتج",
+        },
+      },
+      SERVICE: {
+        title: "الخدمات",
+        intro:
+          "خدمات ينفذها فريق عبودي، من الحملات الإعلانية إلى إدارة الحسابات. يبدأ العمل فور استلام بياناتك.",
+        tab: "الخدمات",
+        all: "كل الخدمات",
+        empty: "لا توجد خدمات بعد. عد قريباً.",
+        count: {
+          zero: "لا خدمات",
+          one: "خدمة واحدة",
+          two: "خدمتان",
+          few: "{count} خدمات",
+          many: "{count} خدمة",
+          other: "{count} خدمة",
+        },
+      },
+    },
   },
   cart: {
     title: "سلة المشتريات",
