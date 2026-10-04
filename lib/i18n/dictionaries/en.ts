@@ -211,9 +211,11 @@ export const en = {
     keepShopping: "Keep shopping",
     viewServices: "Browse services",
     backToCart: "Back to your cart",
+    orderNumber: "Order",
     paid: {
       title: "Payment received",
       body: "Thank you for your purchase. We are confirming your order now.",
+      confirmedBody: "Thank you for your purchase. Your order is confirmed.",
     },
     processing: {
       title: "Your payment is processing",

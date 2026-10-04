@@ -200,9 +200,11 @@ export const ar: Dictionary = {
     keepShopping: "متابعة التسوق",
     viewServices: "تصفح الخدمات",
     backToCart: "العودة إلى سلتك",
+    orderNumber: "رقم الطلب",
     paid: {
       title: "تم استلام الدفع",
       body: "شكراً لشرائك. نعمل الآن على تأكيد طلبك.",
+      confirmedBody: "شكراً لشرائك. تم تأكيد طلبك.",
     },
     processing: {
       title: "جارٍ معالجة الدفع",

@@ -47,10 +47,10 @@
 **Suggested fix:** In the "falls back to English per field" test, blank all four text fields in turn (or add `nameAr: blank` and `descriptionAr: blank` to a second loop) and assert `name` and `description` return the English values. Add one assertion that an Arabic value with surrounding whitespace (for example `"  نص  "`) comes back unchanged. Requirement lost: None.
 **Resolution:**
 
-### F-07 [P3] open - Paid-state copy says the order is being confirmed, but no order exists until feature 6
+### F-08 [P3] open - Missing STRIPE_SECRET_KEY makes the webhook answer 400 invalid_signature instead of the 500 the contract requires
 
-**File:** lib/i18n/dictionaries/en.ts:216
-**Found:** 2026-10-04 by /audit independent (scope: current; lens: quality)
-**Why it matters:** The spec's success page contract asks the `paid` state for "a note that order details arrive with the next update of the store", and its Out of scope section says a paid session creates no order until feature 6 ships. The shipped body reads "Thank you for your purchase. We are confirming your order now." (Arabic at `lib/i18n/dictionaries/ar.ts:205` says the same). Nothing in this feature or the codebase confirms or creates an order, so the copy promises follow-up work that does not happen and drifts from the spec's wording. Impact is low: the spec requires Stripe test mode until feature 6, so no real customer sees it yet.
-**Suggested fix:** Change the `paid` body in both dictionaries to the spec's intent, for example "Thank you for your purchase. Your order details will arrive with the next update of the store." and the Arabic equivalent, or update the spec if the current wording is the intended copy for when feature 6 ships. Requirement lost: None.
+**File:** app/api/stripe/webhook/route.ts:23
+**Found:** 2026-10-04 by /audit independent (scope: current; lens: quality, tests)
+**Why it matters:** `getStripe()` is called inside the `try` that wraps `constructEvent`, so when `STRIPE_SECRET_KEY` is unset its "STRIPE_SECRET_KEY is not set" error is caught as a verification failure. The route logs "Stripe webhook verification failed" and returns 400 `invalid_signature` for a correctly signed event. The spec's Webhook responses contract reserves 400 for a missing or invalid signature and 500 for missing configuration. Stripe retries any non-2xx, so no event is lost; the impact is a misleading status code and log line that point an operator at the signing secret instead of the API key. No route test covers an unset `STRIPE_SECRET_KEY`.
+**Suggested fix:** Call `const stripe = getStripe();` before the `try` (or inside the existing secret check), letting a missing key return `apiError(500, "internal_error", ...)` with its cause logged, and keep only `stripe.webhooks.constructEvent(...)` inside the `try`. Add a route test that stubs `STRIPE_SECRET_KEY` to `""` and expects 500 with no sync. Requirement lost: None.
 **Resolution:**

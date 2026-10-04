@@ -44,4 +44,47 @@ model Product {
   status             ProductStatus
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
+  orderItems         OrderItem[]
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id                      String      @id @default(cuid())
+  // Shown as #1001. The migration restarts the sequence at 1001.
+  number                  Int         @unique @default(autoincrement())
+  // Linked to User in feature 8; null for every order until then.
+  userId                  String?
+  // From Stripe's customer_details.email; how a guest order reaches an account.
+  customerEmail           String?
+  status                  OrderStatus @default(PENDING)
+  // Whole cents of `currency`, from the session's amount_total.
+  totalCents              Int
+  currency                String
+  stripeCheckoutSessionId String      @unique
+  stripePaymentIntentId   String?
+  items                   OrderItem[]
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  // Unit price paid, in cents, from the Stripe line item.
+  priceCents Int
+  quantity   Int
+
+  @@index([orderId])
+  @@index([productId])
 }

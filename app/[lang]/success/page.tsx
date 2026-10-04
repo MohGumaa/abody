@@ -7,6 +7,8 @@ import { checkoutState, isCheckoutSessionId } from "@/lib/checkout";
 import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatPriceCents } from "@/lib/money";
+import { findOrderNumber } from "@/lib/order-sync";
+import { formatOrderNumber } from "@/lib/orders";
 import { getStripe, isMissingResource } from "@/lib/stripe";
 
 const PRIMARY_LINK =
@@ -52,6 +54,14 @@ export default async function SuccessPage({
     session.amount_total !== null
       ? formatPriceCents(session.amount_total)
       : null;
+  // The webhook creates the order; until it arrives the page says it is
+  // still being confirmed.
+  const orderNumber =
+    state === "paid" ? await findOrderNumber(session.id) : null;
+  const body =
+    state === "paid" && orderNumber !== null
+      ? text.paid.confirmedBody
+      : text[state].body;
 
   return (
     <div className="flex-1 font-sans">
@@ -69,10 +79,18 @@ export default async function SuccessPage({
           <h1 className="text-2xl font-semibold tracking-tight">
             {text[state].title}
           </h1>
-          <p className="max-w-[48ch] text-muted">{text[state].body}</p>
+          <p className="max-w-[48ch] text-muted">{body}</p>
           {total && (
             <p className="text-lg">
               {text.total}: <strong className="font-semibold">{total}</strong>
+            </p>
+          )}
+          {orderNumber !== null && (
+            <p className="text-lg">
+              {text.orderNumber}:{" "}
+              <strong className="font-semibold" dir="ltr">
+                {formatOrderNumber(orderNumber)}
+              </strong>
             </p>
           )}
           <div className="mt-2 flex flex-wrap justify-center gap-3">

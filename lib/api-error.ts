@@ -2,6 +2,7 @@ export type ApiErrorCode =
   | "invalid_type"
   | "invalid_lang"
   | "not_found"
+  | "invalid_signature"
   | "internal_error";
 
 export function apiError(
