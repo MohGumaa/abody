@@ -90,6 +90,17 @@ export function formatDurationDays(days: number, locale: Locale): string {
   }).format(days);
 }
 
+// Free-text fields such as requirements hold one item per line.
+export function checklistLines(text: string | null): string[] {
+  if (text === null) {
+    return [];
+  }
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line !== "");
+}
+
 function hasText(value: string | null): value is string {
   return value !== null && value.trim() !== "";
 }

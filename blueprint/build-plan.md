@@ -9,7 +9,7 @@
 - [ ] 26. **Storefront Design Alignment** - Bring the customer site in line with the approved mockups in `prototypes/` in English and Arabic: the full header (navigation, sign in, cart, trust bar), the footer, the home page, the products and services listing pages, and the product and service detail pages.
   - [x] 26a. **Site Header and Footer** - Full header (navigation, sign in, cart, language switcher), trust bar, footer, and page canvas, shared by every customer page.
   - [x] 26b. **Store Listing Pages** - Shared product card, the `/products` and `/services` listing pages with a category filter, and related items using the card.
-  - [ ] 26c. **Product and Service Detail Pages** - Detail layout with the buy panel, chips, and How it works from the mockup.
+  - [x] 26c. **Product and Service Detail Pages** - Detail layout with the buy panel, chips, and How it works from the mockup.
   - [ ] 26d. **Home Page** - Hero, categories, featured products, services, value proposition, How it works, social proof, and call to action.
 - [ ] 22. **SEO & Social Sharing** - Add per-page titles and meta descriptions in English and Arabic, Open Graph and social images, language alternates (`hreflang`) between `/en` and `/ar` pages, canonical URLs, a sitemap covering both languages, robots configuration, and product structured data.
 - [ ] 5. **Stripe Checkout** - Integrate Stripe Checkout for secure customer payments and support successful, cancelled, and failed checkout states.

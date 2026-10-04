@@ -1,17 +1,10 @@
 import Link from "next/link";
-import { BoltIcon, ChartIcon, ClockIcon } from "@/components/icons";
-import {
-  formatDurationDays,
-  productPath,
-  publicImageSrc,
-  type PublicProduct,
-} from "@/lib/catalog";
+import { ProductCover } from "@/components/catalog/ProductCover";
+import { BoltIcon, ClockIcon } from "@/components/icons";
+import { productPath, type PublicProduct } from "@/lib/catalog";
 import { ProductType } from "@/lib/generated/prisma/enums";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { formatPriceCents } from "@/lib/money";
-
-// Placeholder covers cycle through the mockup tints by position.
-const PRODUCT_TINTS = ["bg-tint-1", "bg-tint-2", "bg-tint-3", "bg-tint-4"];
 
 export interface ProductCardText {
   instantDownload: string;
@@ -36,52 +29,11 @@ export function ProductCard({
   headingLevel: Heading = "h3",
 }: ProductCardProps) {
   const isService = product.type === ProductType.SERVICE;
-  const src = publicImageSrc(product.image);
-  const durationDays =
-    isService && product.durationDays && product.durationDays > 0
-      ? product.durationDays
-      : null;
-  const coverColor = isService
-    ? "bg-ink"
-    : PRODUCT_TINTS[index % PRODUCT_TINTS.length];
 
   return (
     <article className="relative flex h-full flex-col rounded-panel border border-border bg-panel p-3 transition-[box-shadow,border-color,transform] duration-200 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary-strong hover:border-primary hover:shadow-raised motion-safe:hover:-translate-y-0.5">
-      <div
-        className={`relative grid aspect-[4/3] place-items-center overflow-hidden rounded-card ${coverColor}`}
-      >
-        {src ? (
-          // Same reason as ProductImage: image hosts are not configured yet.
-          // The title names the card, so the image is decorative.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        ) : isService ? (
-          <span
-            aria-hidden="true"
-            className="grid aspect-square w-[30%] place-items-center rounded-full bg-primary-strong text-white"
-          >
-            <ChartIcon className="size-1/2" />
-          </span>
-        ) : (
-          <>
-            <span
-              aria-hidden="true"
-              className="absolute aspect-[3/4] w-[34%] translate-x-[18%] rotate-[8deg] rounded-control bg-panel/55"
-            />
-            <span
-              aria-hidden="true"
-              className="relative grid aspect-[3/4] w-[34%] -rotate-[4deg] place-items-center rounded-control bg-panel text-primary shadow-raised"
-            >
-              <BoltIcon className="size-2/5" />
-            </span>
-          </>
-        )}
-        {durationDays && (
-          <span className="absolute start-3 top-3 rounded-full bg-panel px-3 py-1 text-xs font-semibold whitespace-nowrap text-muted">
-            {formatDurationDays(durationDays, locale)}
-          </span>
-        )}
-      </div>
+      {/* The title names the card, so the cover image is decorative. */}
+      <ProductCover product={product} locale={locale} index={index} alt="" />
       <div className="flex flex-1 flex-col gap-3 px-2 pt-5 pb-2">
         <p
           dir="auto"

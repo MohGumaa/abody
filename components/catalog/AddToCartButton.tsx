@@ -7,6 +7,7 @@ import {
   type CartActionError,
   type CartActionOutcome,
 } from "@/actions/cart";
+import { CartIcon } from "@/components/icons";
 
 export interface AddToCartText {
   addToCart: string;
@@ -49,8 +50,9 @@ export function AddToCartButton({
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-full bg-primary-strong px-8 py-3.5 text-base font-semibold text-white outline-offset-2 hover:shadow-raised focus-visible:outline-2 focus-visible:outline-primary-strong disabled:cursor-wait disabled:opacity-60 sm:w-auto sm:min-w-56"
+        className="flex h-13 w-full items-center justify-center gap-2 rounded-full bg-primary-strong px-6 text-base font-semibold text-white outline-offset-2 hover:shadow-raised focus-visible:outline-2 focus-visible:outline-primary-strong disabled:cursor-wait disabled:opacity-60"
       >
+        <CartIcon />
         {pending ? text.adding : text.addToCart}
       </button>
       <p role="status" className="mt-2 text-sm text-success empty:mt-0">

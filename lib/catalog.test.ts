@@ -10,6 +10,7 @@ vi.mock("@/lib/db", () => ({
 }));
 
 import {
+  checklistLines,
   formatDurationDays,
   getPublishedProductBySlug,
   isProductType,
@@ -336,6 +337,34 @@ describe("formatDurationDays", () => {
     expect(result).toMatch(/[ء-ي]/);
     expect(result).toContain("30");
     expect(result).not.toMatch(/[٠-٩]/);
+  });
+});
+
+describe("checklistLines", () => {
+  it("returns no lines for missing or blank text", () => {
+    expect(checklistLines(null)).toEqual([]);
+    expect(checklistLines("")).toEqual([]);
+    expect(checklistLines("  \n\t\n ")).toEqual([]);
+  });
+
+  it("splits on LF and CRLF, trimming and dropping blank lines", () => {
+    expect(checklistLines(" One \r\n\r\nTwo\n  Three  \n")).toEqual([
+      "One",
+      "Two",
+      "Three",
+    ]);
+  });
+
+  it("keeps each seeded requirement as one line", () => {
+    expect(
+      checklistLines(
+        "Business name and website\nAccess to your advertising account\nCampaign goals and monthly budget",
+      ),
+    ).toEqual([
+      "Business name and website",
+      "Access to your advertising account",
+      "Campaign goals and monthly budget",
+    ]);
   });
 });
 

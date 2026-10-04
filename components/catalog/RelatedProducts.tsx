@@ -21,7 +21,10 @@ export async function RelatedProducts({ product }: RelatedProductsProps) {
     product.type === ProductType.SERVICE ? "/services" : "/products";
 
   return (
-    <section aria-labelledby="related-heading" className="mt-14">
+    <section
+      aria-labelledby="related-heading"
+      className="rounded-panel bg-panel p-5 shadow-soft min-[600px]:p-6 min-[960px]:p-10"
+    >
       <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <h2 id="related-heading" className="text-2xl font-semibold">
           {text.related}
