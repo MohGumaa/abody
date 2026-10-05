@@ -40,6 +40,15 @@ export function checkoutReturnUrls(locale: Locale) {
   };
 }
 
+// A signed-in customer's id travels to the webhook in client_reference_id
+// (set here, on the server), which links the order to their account. Guests
+// send neither field.
+export function checkoutCustomer(
+  user: { id: string; email: string } | null,
+): { client_reference_id?: string; customer_email?: string } {
+  return user ? { client_reference_id: user.id, customer_email: user.email } : {};
+}
+
 export function isCheckoutSessionId(value: unknown): value is string {
   return (
     typeof value === "string" &&

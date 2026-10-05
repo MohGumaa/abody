@@ -28,6 +28,17 @@ function isUniqueViolation(error: unknown): boolean {
   );
 }
 
+// Checkout sets the reference only for a signed-in customer. A user deleted
+// since then leaves a guest order.
+async function orderUserId(reference: string | null): Promise<string | null> {
+  if (!reference) return null;
+  const user = await db.user.findUnique({
+    where: { id: reference },
+    select: { id: true },
+  });
+  return user?.id ?? null;
+}
+
 async function createOrder(
   session: Stripe.Checkout.Session,
   status: OrderStatus,
@@ -43,10 +54,12 @@ async function createOrder(
     throw new Error(`Checkout session ${session.id} has no total or currency`);
   }
   const items = orderItemsFromLineItems(lineItems.data);
+  const userId = await orderUserId(session.client_reference_id);
   try {
     await db.order.create({
       data: {
         status,
+        userId,
         totalCents: session.amount_total,
         currency: session.currency,
         customerEmail: session.customer_details?.email ?? null,

@@ -5,6 +5,7 @@ vi.mock("@/lib/db", () => ({ db: {} }));
 import type { CartView } from "@/lib/cart";
 import type { PublicProduct } from "@/lib/catalog";
 import {
+  checkoutCustomer,
   checkoutLineItems,
   checkoutReturnUrls,
   checkoutState,
@@ -92,6 +93,19 @@ describe("checkoutLineItems", () => {
         },
       },
     ]);
+  });
+});
+
+describe("checkoutCustomer", () => {
+  it("sends a signed-in customer's id and email", () => {
+    expect(checkoutCustomer({ id: "u1", email: "a@b.co" })).toEqual({
+      client_reference_id: "u1",
+      customer_email: "a@b.co",
+    });
+  });
+
+  it("sends nothing for a guest", () => {
+    expect(checkoutCustomer(null)).toEqual({});
   });
 });
 

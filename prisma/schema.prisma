@@ -61,8 +61,9 @@ model Order {
   id                      String      @id @default(cuid())
   // Shown as #1001. The migration restarts the sequence at 1001.
   number                  Int         @unique @default(autoincrement())
-  // Linked to User in feature 8; null for every order until then.
+  // Set when the customer was signed in at checkout; null for guest orders.
   userId                  String?
+  user                    User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   // From Stripe's customer_details.email; how a guest order reaches an account.
   customerEmail           String?
   status                  OrderStatus @default(PENDING)
@@ -74,6 +75,8 @@ model Order {
   items                   OrderItem[]
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt
+
+  @@index([userId])
 }
 
 model OrderItem {
@@ -88,4 +91,34 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  // Trimmed and lowercased before every write and lookup.
+  email        String    @unique
+  // "scrypt$N$r$p$salt$hash", salt and hash base64url (lib/password.ts).
+  passwordHash String
+  role         Role      @default(CUSTOMER)
+  sessions     Session[]
+  orders       Order[]
+  createdAt    DateTime  @default(now())
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  // SHA-256 hex of the cookie token; the raw token is never stored.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

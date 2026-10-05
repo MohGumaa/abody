@@ -63,3 +63,19 @@
 **Suggested fix:** Give the `lib/seo.test.ts` fixture a distinct `categoryLabel` (for example `"قوالب"`) and expect that value in the `productJsonLd` assertion at line 162. Requirement lost: None.
 **Resolution:**
 
+### F-12 [P3] open - lib/session.ts does not carry the server-only guard the spec names
+
+**File:** lib/session.ts:1
+**Found:** 2026-10-05 by /audit independent (scope: current; lens: quality)
+**Why it matters:** Spec step 2 defines `lib/session.ts` as `server-only`, and Files / areas says to add the `server-only` package only if its import fails. The module has no `import "server-only"`; it relies on a "Server code only" comment (line 14). The practical exposure is low today: the module imports `next/headers` and `@/lib/db`, so a client import would already fail the build. The gap is contract drift: the guard the spec asked for, which gives a clear error if a later client component imports session helpers, is missing.
+**Suggested fix:** Add `import "server-only";` as the first line of `lib/session.ts` and confirm `pnpm build` and `pnpm test` still pass (the Vitest suites mock `@/lib/session`, so they do not load it). Add the `server-only` package with pnpm only if the import does not resolve. Requirement lost: None.
+**Resolution:** Re-examined 2026-10-05 by /audit independent (target 2bc0ef0, fresh subagent). Still present and unrepaired: `lib/session.ts` starts with `import { cookies } from "next/headers";` and has no `server-only` import (the comment is at line 14). The file is unchanged since this finding was raised. Status stays `open`. Re-checked 2026-10-05 by a second /audit independent pass (target 2bc0ef0, fresh subagent): `lib/session.ts:1` is still `import { cookies } from "next/headers";` with no `server-only` import; unchanged. Status stays `open`.
+
+### F-13 [P3] open - Password toggle changes its label and also sets aria-pressed, so screen readers hear "Hide password, pressed" while the password is shown
+
+**File:** components/auth/AuthForm.tsx:250
+**Found:** 2026-10-05 by /audit independent (scope: current; lens: quality)
+**Why it matters:** The show/hide button swaps `aria-label` between "Show password" and "Hide password" and also sets `aria-pressed={visible}` (lines 250-251). A toggle button's name has to stay fixed when its pressed state changes (WAI-ARIA APG button pattern). Otherwise the two signals contradict each other: when the password is visible, assistive tech announces "Hide password, toggle button, pressed", which suggests that hiding is active. Arabic has the same problem. Mouse and keyboard behavior is correct. The spec's step 10 asks for both the translated Show/Hide label and `aria-pressed`, so the code follows the spec. The contradiction comes from the contract itself.
+**Suggested fix:** User decision, and the spec changes with it. Either keep `aria-pressed` with a fixed label ("Show password" / "إظهار كلمة المرور"), or keep the switching label and drop `aria-pressed`. Both are one-line changes in `PasswordInput`. Requirement lost: None, apart from the spec wording.
+**Resolution:**
+

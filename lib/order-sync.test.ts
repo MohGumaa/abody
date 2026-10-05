@@ -1,7 +1,8 @@
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { order, listLineItems } = vi.hoisted(() => ({
+const { order, user, listLineItems } = vi.hoisted(() => ({
+  user: { findUnique: vi.fn() },
   order: {
     findUnique: vi.fn(),
     findUniqueOrThrow: vi.fn(),
@@ -11,7 +12,7 @@ const { order, listLineItems } = vi.hoisted(() => ({
   listLineItems: vi.fn(),
 }));
 
-vi.mock("@/lib/db", () => ({ db: { order } }));
+vi.mock("@/lib/db", () => ({ db: { order, user } }));
 vi.mock("@/lib/stripe", () => ({
   getStripe: () => ({ checkout: { sessions: { listLineItems } } }),
 }));
@@ -55,6 +56,7 @@ function lineItems(has_more = false, productId: string | null = "p1") {
 
 beforeEach(() => {
   for (const fn of Object.values(order)) fn.mockReset();
+  user.findUnique.mockReset().mockResolvedValue(null);
   listLineItems.mockReset();
 });
 
@@ -80,6 +82,7 @@ describe("syncCheckoutSession", () => {
     expect(order.create).toHaveBeenCalledWith({
       data: {
         status: "PAID",
+        userId: null,
         totalCents: 14700,
         currency: "usd",
         customerEmail: "buyer@example.com",
@@ -89,6 +92,48 @@ describe("syncCheckoutSession", () => {
       },
     });
     expect(order.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("links the order to the signed-in customer who checked out", async () => {
+    order.findUnique.mockResolvedValue(null);
+    listLineItems.mockResolvedValue(lineItems());
+    user.findUnique.mockResolvedValue({ id: "u1" });
+
+    await syncCheckoutSession(
+      "checkout.session.completed",
+      session({ client_reference_id: "u1" }),
+    );
+
+    expect(user.findUnique).toHaveBeenCalledWith({
+      where: { id: "u1" },
+      select: { id: true },
+    });
+    expect(order.create.mock.calls[0][0].data.userId).toBe("u1");
+  });
+
+  it("leaves the order unlinked when the referenced user is gone", async () => {
+    order.findUnique.mockResolvedValue(null);
+    listLineItems.mockResolvedValue(lineItems());
+
+    await syncCheckoutSession(
+      "checkout.session.completed",
+      session({ client_reference_id: "deleted" }),
+    );
+
+    expect(order.create.mock.calls[0][0].data.userId).toBeNull();
+  });
+
+  it("does not look up a user for a guest checkout", async () => {
+    order.findUnique.mockResolvedValue(null);
+    listLineItems.mockResolvedValue(lineItems());
+
+    await syncCheckoutSession(
+      "checkout.session.completed",
+      session({ client_reference_id: null }),
+    );
+
+    expect(user.findUnique).not.toHaveBeenCalled();
+    expect(order.create.mock.calls[0][0].data.userId).toBeNull();
   });
 
   it("reads an expanded payment intent's id and allows a missing email", async () => {

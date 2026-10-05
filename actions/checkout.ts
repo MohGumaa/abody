@@ -5,11 +5,13 @@ import { redirect } from "next/navigation";
 import { buildCartView, CART_COOKIE, parseCart } from "@/lib/cart";
 import { listPublishedProductsByIds } from "@/lib/catalog";
 import {
+  checkoutCustomer,
   checkoutLineItems,
   checkoutReturnUrls,
   stripeCheckoutLocale,
 } from "@/lib/checkout";
 import { isLocale } from "@/lib/i18n/config";
+import { getCurrentUser } from "@/lib/session";
 import { getStripe } from "@/lib/stripe";
 
 export type CheckoutActionError = "invalid_input" | "empty_cart" | "unexpected";
@@ -46,6 +48,7 @@ export async function startCheckout(
       ...checkoutReturnUrls(locale),
       locale: stripeCheckoutLocale(locale),
       metadata: { locale },
+      ...checkoutCustomer(await getCurrentUser()),
     });
     url = session.url;
   } catch (error) {

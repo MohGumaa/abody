@@ -106,9 +106,14 @@ PostgreSQL with Prisma 7 (`prisma/schema.prisma`, config in `prisma.config.ts`,
 - Digital files are never publicly reachable; serve them only to a customer whose
   purchase is confirmed
 
-> TODO: the auth provider (Clerk or Auth.js), validation library (the Blueprint
-> default is Zod), and private file storage (Cloudflare R2 or AWS S3) are not
-> chosen or installed yet.
+- Authentication is built in (feature 8a): scrypt password hashes in
+  `lib/password.ts`, database sessions in `lib/session.ts`. Read the signed-in
+  user with `getCurrentUser()`; only Server Actions and route handlers create or
+  delete sessions.
+
+> TODO: no validation library is installed (form parsing is hand-written, as in
+> `lib/auth.ts`), and private file storage (Cloudflare R2 or AWS S3) is not
+> chosen yet.
 
 ## Error Handling
 

@@ -2,7 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
-import { BoltIcon, CartIcon, ChartIcon, LockIcon } from "@/components/icons";
+import {
+  BoltIcon,
+  CartIcon,
+  ChartIcon,
+  LockIcon,
+  UserIcon,
+} from "@/components/icons";
 import {
   LanguageSwitcher,
   LanguageSwitcherFallback,
@@ -10,15 +16,18 @@ import {
 import { MainNav, type NavItem } from "@/components/layout/MainNav";
 import { CART_COOKIE, cartItemCount, parseCart } from "@/lib/cart";
 import { localizedPath } from "@/lib/i18n/config";
+import { SESSION_COOKIE } from "@/lib/session-token";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 
 export async function SiteHeader() {
   const locale = await getLocale();
   const { header } = await getDictionary();
   // Read straight from the cookie: the cart page and every write recheck items.
-  const count = cartItemCount(
-    parseCart((await cookies()).get(CART_COOKIE)?.value),
-  );
+  const cookieStore = await cookies();
+  const count = cartItemCount(parseCart(cookieStore.get(CART_COOKIE)?.value));
+  // Optimistic: a cookie is enough to offer the account link, so no database
+  // query runs on every page. The account page does the real check.
+  const signedIn = cookieStore.has(SESSION_COOKIE);
   // Only pages that exist are linked; each feature adds its own entry.
   const navItems: NavItem[] = [
     { href: localizedPath(locale, "/"), label: header.home },
@@ -53,6 +62,16 @@ export async function SiteHeader() {
           <Suspense fallback={<LanguageSwitcherFallback locale={locale} />}>
             <LanguageSwitcher locale={locale} />
           </Suspense>
+          <Link
+            href={localizedPath(locale, signedIn ? "/account" : "/login")}
+            className="flex h-11 items-center gap-2 rounded-card px-3 text-sm font-semibold text-foreground outline-offset-2 hover:bg-primary-soft hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary-strong"
+          >
+            <UserIcon />
+            {/* Below 600px the icon stays and the label is read by screen readers. */}
+            <span className="sr-only min-[600px]:not-sr-only">
+              {signedIn ? header.account : header.signIn}
+            </span>
+          </Link>
           <Link
             href={localizedPath(locale, "/cart")}
             aria-label={header.cartLabel(count)}
