@@ -212,6 +212,14 @@ export const en = {
     viewServices: "Browse services",
     backToCart: "Back to your cart",
     orderNumber: "Order",
+    downloads: {
+      title: "Your downloads",
+      download: "Download",
+      keepLink:
+        "Keep the link to this page to download your files again later.",
+      pending:
+        "Your downloads will appear here in a moment. Refresh the page to check.",
+    },
     paid: {
       title: "Payment received",
       body: "Thank you for your purchase. We are confirming your order now.",

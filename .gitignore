@@ -43,3 +43,8 @@ next-env.d.ts
 
 # prisma generated client
 /lib/generated/prisma
+
+# private digital product files; real product files are never committed,
+# only the development samples the seed points at
+/storage/*
+!/storage/seed/

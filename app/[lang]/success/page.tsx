@@ -3,11 +3,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { CartIcon, CheckIcon, ClockIcon } from "@/components/icons";
+import { localizedName } from "@/lib/catalog";
 import { checkoutState, isCheckoutSessionId } from "@/lib/checkout";
+import { listOrderDownloads } from "@/lib/downloads";
 import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatPriceCents } from "@/lib/money";
-import { findOrderNumber } from "@/lib/order-sync";
 import { formatOrderNumber } from "@/lib/orders";
 import { getStripe, isMissingResource } from "@/lib/stripe";
 
@@ -15,6 +16,8 @@ const PRIMARY_LINK =
   "inline-flex h-13 items-center rounded-card bg-primary-strong px-6 font-semibold text-white outline-offset-2 hover:shadow-raised focus-visible:outline-2 focus-visible:outline-primary-strong";
 const SECONDARY_LINK =
   "inline-flex h-13 items-center rounded-card border border-border px-6 font-semibold text-primary-strong outline-offset-2 hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-primary-strong";
+const DOWNLOAD_LINK =
+  "inline-flex h-10 items-center rounded-card bg-primary-strong px-4 font-semibold text-white outline-offset-2 hover:shadow-raised focus-visible:outline-2 focus-visible:outline-primary-strong";
 
 // One Stripe call per request, shared by generateMetadata and the page. An
 // invalid or unknown id is a 404; any other Stripe failure reaches error.tsx.
@@ -56,8 +59,9 @@ export default async function SuccessPage({
       : null;
   // The webhook creates the order; until it arrives the page says it is
   // still being confirmed.
-  const orderNumber =
-    state === "paid" ? await findOrderNumber(session.id) : null;
+  const order = state === "paid" ? await listOrderDownloads(session.id) : null;
+  const orderNumber = order?.number ?? null;
+  const downloads = order?.downloads ?? [];
   const body =
     state === "paid" && orderNumber !== null
       ? text.paid.confirmedBody
@@ -80,6 +84,9 @@ export default async function SuccessPage({
             {text[state].title}
           </h1>
           <p className="max-w-[48ch] text-muted">{body}</p>
+          {state === "paid" && order === null && (
+            <p className="max-w-[48ch] text-muted">{text.downloads.pending}</p>
+          )}
           {total && (
             <p className="text-lg">
               {text.total}: <strong className="font-semibold">{total}</strong>
@@ -92,6 +99,39 @@ export default async function SuccessPage({
                 {formatOrderNumber(orderNumber)}
               </strong>
             </p>
+          )}
+          {downloads.length > 0 && (
+            <section className="mt-2 grid w-full max-w-xl gap-3 text-start">
+              <h2 className="text-lg font-semibold">{text.downloads.title}</h2>
+              <ul className="grid gap-2">
+                {downloads.map((item) => {
+                  const name = localizedName(item, locale);
+                  const query = new URLSearchParams({ session_id: session.id });
+                  return (
+                    <li
+                      key={item.itemId}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border px-4 py-3"
+                    >
+                      <span className="min-w-0 font-medium wrap-break-word" dir="auto">
+                        {name}
+                      </span>
+                      <a
+                        href={`/api/downloads/${encodeURIComponent(item.itemId)}?${query}`}
+                        download
+                        className={DOWNLOAD_LINK}
+                      >
+                        {text.downloads.download}
+                        <span className="sr-only">
+                          {": "}
+                          <span dir="auto">{name}</span>
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="text-sm text-muted">{text.downloads.keepLink}</p>
+            </section>
           )}
           <div className="mt-2 flex flex-wrap justify-center gap-3">
             {state === "not_completed" ? (

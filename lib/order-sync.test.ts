@@ -17,7 +17,7 @@ vi.mock("@/lib/stripe", () => ({
 }));
 
 import { Prisma } from "@/lib/generated/prisma/client";
-import { findOrderNumber, syncCheckoutSession } from "@/lib/order-sync";
+import { syncCheckoutSession } from "@/lib/order-sync";
 
 function session(
   overrides: Partial<Stripe.Checkout.Session> = {},
@@ -206,15 +206,5 @@ describe("syncCheckoutSession", () => {
         session({ amount_total: null }),
       ),
     ).rejects.toThrow(/total/);
-  });
-});
-
-describe("findOrderNumber", () => {
-  it("returns the number or null", async () => {
-    order.findUnique.mockResolvedValueOnce({ number: 1001 });
-    expect(await findOrderNumber("cs_test_1")).toBe(1001);
-
-    order.findUnique.mockResolvedValueOnce(null);
-    expect(await findOrderNumber("cs_test_2")).toBeNull();
   });
 });

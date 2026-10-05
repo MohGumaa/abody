@@ -93,14 +93,3 @@ export async function syncCheckoutSession(
     },
   });
 }
-
-// The success page shows only the order number for its session.
-export async function findOrderNumber(
-  stripeCheckoutSessionId: string,
-): Promise<number | null> {
-  const order = await db.order.findUnique({
-    where: { stripeCheckoutSessionId },
-    select: { number: true },
-  });
-  return order?.number ?? null;
-}

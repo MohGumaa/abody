@@ -105,6 +105,13 @@ function hasText(value: string | null): value is string {
   return value !== null && value.trim() !== "";
 }
 
+export function localizedName(
+  row: { name: string; nameAr: string | null },
+  locale: Locale,
+): string {
+  return locale === "ar" && hasText(row.nameAr) ? row.nameAr : row.name;
+}
+
 // Arabic content is optional, so each field falls back to English on its own.
 export function toPublicProduct(
   row: PublicProductRow,
@@ -113,7 +120,7 @@ export function toPublicProduct(
   const arabic = locale === "ar";
   return {
     id: row.id,
-    name: arabic && hasText(row.nameAr) ? row.nameAr : row.name,
+    name: localizedName(row, locale),
     slug: row.slug,
     shortDescription:
       arabic && hasText(row.shortDescriptionAr)
