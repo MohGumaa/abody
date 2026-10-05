@@ -37,6 +37,7 @@ model Product {
   requirements       String?       @db.Text
   // Arabic content. Optional: a missing value falls back to the English field.
   nameAr             String?
+  categoryAr         String?
   shortDescriptionAr String?
   descriptionAr      String?       @db.Text
   includedAr         String[]      @default([])

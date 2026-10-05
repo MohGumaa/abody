@@ -9,6 +9,7 @@ const SERVICES_LIMIT = 2;
 export interface HomeCategory {
   type: ProductType;
   category: string;
+  label: string;
   count: number;
 }
 
@@ -22,7 +23,7 @@ export interface HomeSections<T> {
 // Items arrive newest first, so "featured" means newest until feature 21 adds
 // curated picks. Product categories come before service categories.
 export function selectHomeSections<
-  T extends { type: ProductType; category: string },
+  T extends { type: ProductType; category: string; categoryLabel: string },
 >(items: T[]): HomeSections<T> {
   const products = items.filter(
     (item) => item.type === ProductType.DIGITAL_PRODUCT,

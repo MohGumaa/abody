@@ -27,6 +27,7 @@ function product(overrides: Partial<PublicProduct>): PublicProduct {
     currency: "USD",
     type: "DIGITAL_PRODUCT",
     category: "Templates",
+    categoryLabel: "Templates",
     image: null,
     included: [],
     durationDays: null,

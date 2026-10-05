@@ -158,13 +158,14 @@ One model for both product types; `type` decides delivery.
 - `shortDescription` (string), `description` (text)
 - `priceCents` (integer) - whole US cents; the store currency is USD
 - `type` (enum: `DIGITAL_PRODUCT`, `SERVICE`)
-- `category` (string, free text, one language only)
+- `category` (string, free text) - English; the key for filters, `?category=`
+  URLs, and related items
 - `image` (string, optional) - URL or storage key
 - `digitalFile` (string, optional) - private storage key, digital products only;
   never returned in a public response
 - `included` (string list) - "What's Included" lines
 - `durationDays` (integer, optional), `requirements` (text, optional) - services
-- `nameAr`, `shortDescriptionAr` (string, optional), `descriptionAr`,
+- `nameAr`, `categoryAr`, `shortDescriptionAr` (string, optional), `descriptionAr`,
   `requirementsAr` (text, optional), `includedAr` (string list) - Arabic
   content; a missing value falls back to English
 - `status` (enum: `PUBLISHED`, `UNPUBLISHED`)
@@ -317,8 +318,9 @@ Resolve these in the plans, then re-run `/overview`.
    route list is still unprefixed.
 2. **Admin dashboard language.** Undecided. If admin stays in one language,
    feature 12 must exclude `/admin` from the language redirect.
-3. **Category language.** `category` stays in one language, so Arabic pages show
-   an untranslated category. Neither plan says whether that is intended.
+3. **Category language.** Resolved by the fix "Translate categories and complete
+   Arabic content": an optional per-product `categoryAr` is shown on Arabic
+   pages, and `category` stays the language-neutral key.
 4. **About and Contact pages.** Named in the navigation but have no build-plan
    item or mockup.
 5. **Coupons conflict.** Build-plan item 20 is a discount and coupon system. The

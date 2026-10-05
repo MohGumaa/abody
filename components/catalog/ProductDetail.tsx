@@ -116,7 +116,7 @@ export async function ProductDetail({ product }: ProductDetailProps) {
               <p className="text-xs font-semibold tracking-[0.06em] text-primary-strong uppercase rtl:tracking-normal">
                 {text.typeLabels[product.type]}
                 {" · "}
-                <span dir="auto">{product.category}</span>
+                <span dir="auto">{product.categoryLabel}</span>
               </p>
               <h1
                 dir="auto"

@@ -5,7 +5,7 @@ import { selectHomeSections } from "@/lib/home";
 const { DIGITAL_PRODUCT, SERVICE } = ProductType;
 
 function item(id: string, type: ProductType, category: string) {
-  return { id, type, category };
+  return { id, type, category, categoryLabel: `${category} label` };
 }
 
 describe("selectHomeSections", () => {
@@ -28,8 +28,8 @@ describe("selectHomeSections", () => {
     expect(sections.featured).toEqual(items);
     expect(sections.services).toEqual([]);
     expect(sections.categories).toEqual([
-      { type: DIGITAL_PRODUCT, category: "Guides", count: 1 },
-      { type: DIGITAL_PRODUCT, category: "Templates", count: 1 },
+      { type: DIGITAL_PRODUCT, category: "Guides", label: "Guides label", count: 1 },
+      { type: DIGITAL_PRODUCT, category: "Templates", label: "Templates label", count: 1 },
     ]);
   });
 
@@ -40,7 +40,7 @@ describe("selectHomeSections", () => {
     expect(sections.featured).toEqual([]);
     expect(sections.services).toEqual(items);
     expect(sections.categories).toEqual([
-      { type: SERVICE, category: "Marketing Services", count: 1 },
+      { type: SERVICE, category: "Marketing Services", label: "Marketing Services label", count: 1 },
     ]);
   });
 
@@ -65,9 +65,9 @@ describe("selectHomeSections", () => {
     ]);
     expect(sections.services.map(({ id }) => id)).toEqual(["s1", "s2"]);
     expect(sections.categories).toEqual([
-      { type: DIGITAL_PRODUCT, category: "Guides", count: 3 },
-      { type: DIGITAL_PRODUCT, category: "Templates", count: 2 },
-      { type: SERVICE, category: "Ads", count: 3 },
+      { type: DIGITAL_PRODUCT, category: "Guides", label: "Guides label", count: 3 },
+      { type: DIGITAL_PRODUCT, category: "Templates", label: "Templates label", count: 2 },
+      { type: SERVICE, category: "Ads", label: "Ads label", count: 3 },
     ]);
   });
 
@@ -77,8 +77,8 @@ describe("selectHomeSections", () => {
       item("p1", DIGITAL_PRODUCT, "Social"),
     ]);
     expect(sections.categories).toEqual([
-      { type: DIGITAL_PRODUCT, category: "Social", count: 1 },
-      { type: SERVICE, category: "Social", count: 1 },
+      { type: DIGITAL_PRODUCT, category: "Social", label: "Social label", count: 1 },
+      { type: SERVICE, category: "Social", label: "Social label", count: 1 },
     ]);
   });
 });

@@ -150,7 +150,7 @@ export default async function Home() {
               link={{ href: productsPath, label: home.viewAll }}
             />
             <ul className="grid grid-cols-2 gap-4 min-[600px]:grid-cols-3 min-[960px]:grid-cols-5">
-              {categories.map(({ type, category, count }) => (
+              {categories.map(({ type, category, label, count }) => (
                 <li key={`${type}-${category}`}>
                   <Link
                     href={categoryHref(
@@ -173,7 +173,7 @@ export default async function Home() {
                         dir="auto"
                         className="leading-[1.3] font-semibold break-words"
                       >
-                        {category}
+                        {label}
                       </strong>
                       <span className="text-sm text-muted">
                         {formatItemCount(

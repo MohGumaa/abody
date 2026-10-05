@@ -55,3 +55,11 @@
 **Suggested fix:** Call `const stripe = getStripe();` before the `try` (or inside the existing secret check), letting a missing key return `apiError(500, "internal_error", ...)` with its cause logged, and keep only `stripe.webhooks.constructEvent(...)` inside the `try`. Add a route test that stubs `STRIPE_SECRET_KEY` to `""` and expects 500 with no sync. Requirement lost: None.
 **Resolution:**
 
+### F-09 [P3] open - Product JSON-LD test cannot tell the category label from the key
+
+**File:** lib/seo.test.ts:29
+**Found:** 2026-10-05 by /audit independent (scope: current; lens: tests)
+**Why it matters:** The spec requires the product JSON-LD `category` to use the localized label (`lib/seo.ts:106` now reads `product.categoryLabel`). The test fixture sets both `category` and `categoryLabel` to `"Templates"`, so reverting `lib/seo.ts` to `product.category` would leave `pnpm test` green. The shipped code is correct today; this is a coverage gap only.
+**Suggested fix:** Give the `lib/seo.test.ts` fixture a distinct `categoryLabel` (for example `"قوالب"`) and expect that value in the `productJsonLd` assertion at line 162. Requirement lost: None.
+**Resolution:**
+

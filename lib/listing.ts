@@ -2,6 +2,8 @@
 
 export interface CategorySummary {
   category: string;
+  // The localized name to show; the first item in the group supplies it.
+  label: string;
   count: number;
 }
 
@@ -13,17 +15,20 @@ export function parseCategoryParam(
   return typeof value === "string" && value !== "" ? value : null;
 }
 
-// Category is stored in one language, so the order is the same on both sites.
+// Sorted by the language-neutral key, so the order is the same on both sites.
+// Items arrive newest first, so the newest item's label names the category.
 export function summarizeCategories(
-  products: { category: string }[],
+  products: { category: string; categoryLabel: string }[],
 ): CategorySummary[] {
-  const counts = new Map<string, number>();
-  for (const { category } of products) {
-    counts.set(category, (counts.get(category) ?? 0) + 1);
+  const summaries = new Map<string, CategorySummary>();
+  for (const { category, categoryLabel } of products) {
+    const summary = summaries.get(category);
+    if (summary) summary.count += 1;
+    else summaries.set(category, { category, label: categoryLabel, count: 1 });
   }
-  return [...counts]
-    .map(([category, count]) => ({ category, count }))
-    .sort((a, b) => a.category.localeCompare(b.category, "en"));
+  return [...summaries.values()].sort((a, b) =>
+    a.category.localeCompare(b.category, "en"),
+  );
 }
 
 export function filterByCategory<T extends { category: string }>(

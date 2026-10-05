@@ -7,10 +7,10 @@ import {
 } from "@/lib/listing";
 
 const products = [
-  { id: "a", category: "Templates" },
-  { id: "b", category: "Guides" },
-  { id: "c", category: "Templates" },
-  { id: "d", category: "Marketing Resources" },
+  { id: "a", category: "Templates", categoryLabel: "قوالب" },
+  { id: "b", category: "Guides", categoryLabel: "أدلة" },
+  { id: "c", category: "Templates", categoryLabel: "قوالب قديمة" },
+  { id: "d", category: "Marketing Resources", categoryLabel: "موارد تسويقية" },
 ];
 
 describe("parseCategoryParam", () => {
@@ -26,11 +26,11 @@ describe("parseCategoryParam", () => {
 });
 
 describe("summarizeCategories", () => {
-  it("counts each category and sorts by name", () => {
+  it("counts each category, sorts by key, and labels it from the first item", () => {
     expect(summarizeCategories(products)).toEqual([
-      { category: "Guides", count: 1 },
-      { category: "Marketing Resources", count: 1 },
-      { category: "Templates", count: 2 },
+      { category: "Guides", label: "أدلة", count: 1 },
+      { category: "Marketing Resources", label: "موارد تسويقية", count: 1 },
+      { category: "Templates", label: "قوالب", count: 2 },
     ]);
   });
 

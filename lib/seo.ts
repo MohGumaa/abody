@@ -103,7 +103,7 @@ export function productJsonLd(product: PublicProduct, url: string) {
     description: product.shortDescription,
     ...(image ? { image: absoluteImageUrl(image) } : {}),
     sku: product.id,
-    category: product.category,
+    category: product.categoryLabel,
     offers: {
       "@type": "Offer",
       price: (product.priceCents / 100).toFixed(2),

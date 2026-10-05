@@ -38,6 +38,7 @@ const row = {
   durationDays: 30,
   requirements: "Line one\nLine two",
   nameAr: null as string | null,
+  categoryAr: null as string | null,
   shortDescriptionAr: null as string | null,
   descriptionAr: null as string | null,
   includedAr: [] as string[],
@@ -48,6 +49,7 @@ const row = {
 
 const arabic = {
   nameAr: "قالب التسويق الرقمي",
+  categoryAr: "قوالب",
   shortDescriptionAr: "قصير",
   descriptionAr: "طويل",
   includedAr: ["واحد", "اثنان"],
@@ -86,6 +88,7 @@ describe("toPublicProduct", () => {
       currency: "USD",
       type: "DIGITAL_PRODUCT",
       category: "Templates",
+      categoryLabel: "Templates",
       image: null,
       included: ["One", "Two"],
       durationDays: 30,
@@ -109,6 +112,7 @@ describe("toPublicProduct", () => {
     expect(result.description).toBe("Long");
     expect(result.included).toEqual(["One", "Two"]);
     expect(result.requirements).toBe("Line one\nLine two");
+    expect(result.categoryLabel).toBe("Templates");
   });
 
   it("returns Arabic content in Arabic under the same field names", () => {
@@ -119,6 +123,7 @@ describe("toPublicProduct", () => {
     expect(result.included).toEqual(arabic.includedAr);
     expect(result.requirements).toBe(arabic.requirementsAr);
     expect(result.category).toBe("Templates");
+    expect(result.categoryLabel).toBe(arabic.categoryAr);
   });
 
   it("falls back to English per field when Arabic text is missing or blank", () => {
@@ -127,12 +132,14 @@ describe("toPublicProduct", () => {
         {
           ...row,
           ...arabic,
+          categoryAr: blank,
           shortDescriptionAr: blank,
           requirementsAr: blank,
         },
         "ar",
       );
       expect(result.name).toBe(arabic.nameAr);
+      expect(result.categoryLabel).toBe("Templates");
       expect(result.shortDescription).toBe("Short");
       expect(result.description).toBe(arabic.descriptionAr);
       expect(result.requirements).toBe("Line one\nLine two");

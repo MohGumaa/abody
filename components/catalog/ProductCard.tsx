@@ -39,7 +39,7 @@ export function ProductCard({
           dir="auto"
           className="text-xs font-semibold tracking-[0.06em] text-primary-strong uppercase"
         >
-          {product.category}
+          {product.categoryLabel}
         </p>
         <Heading dir="auto" className="text-lg font-semibold break-words">
           {/* The stretched link makes the whole card clickable while its

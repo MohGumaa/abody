@@ -19,6 +19,7 @@ const publicProductSelect = {
   durationDays: true,
   requirements: true,
   nameAr: true,
+  categoryAr: true,
   shortDescriptionAr: true,
   descriptionAr: true,
   includedAr: true,
@@ -40,7 +41,10 @@ export interface PublicProduct {
   priceCents: number;
   currency: "USD";
   type: ProductType;
+  // Language-neutral key for filters, URLs, and related items.
   category: string;
+  // What pages show for the category.
+  categoryLabel: string;
   image: string | null;
   included: string[];
   durationDays: number | null;
@@ -134,6 +138,8 @@ export function toPublicProduct(
     currency: "USD",
     type: row.type,
     category: row.category,
+    categoryLabel:
+      arabic && hasText(row.categoryAr) ? row.categoryAr : row.category,
     image: row.image,
     included:
       arabic && row.includedAr.some(hasText) ? row.includedAr : row.included,
@@ -200,7 +206,7 @@ export async function listCartSuggestions(
 }
 
 // Same type only: same category first, then other categories, newest first.
-// Category is stored in one language, so matching is the same in both.
+// Matching uses the category key, so it is the same in both languages.
 export async function listRelatedProducts(
   product: Pick<PublicProduct, "id" | "type" | "category">,
   locale: Locale,

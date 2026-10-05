@@ -20,6 +20,7 @@ const products: Prisma.ProductCreateInput[] = [
       "Monthly reporting dashboard",
     ],
     nameAr: "قالب التسويق الرقمي",
+    categoryAr: "قوالب",
     shortDescriptionAr: "قالب تسويقي متكامل لتخطيط حملاتك.",
     descriptionAr:
       "قالب تسويقي جاهز للاستخدام يغطي تخطيط الحملات وتقويم المحتوى والتقارير.",
@@ -43,8 +44,12 @@ const products: Prisma.ProductCreateInput[] = [
     category: "Guides",
     image: null,
     included: [],
-    // Name only, so the per-field English fallback stays visible in Arabic.
+    // No includedAr: there is no English list to translate.
     nameAr: "دليل إعلانات فيسبوك",
+    categoryAr: "أدلة",
+    shortDescriptionAr: "دليل خطوة بخطوة لإطلاق أول حملة إعلانية لك.",
+    descriptionAr:
+      "دليل عملي يشرح استهداف الجمهور والتصاميم الإعلانية والميزانيات وقياس النتائج.",
     digitalFile: "seed/facebook-ads-guide.pdf",
     status: "PUBLISHED",
     createdAt: new Date("2026-01-02T00:00:00.000Z"),
@@ -69,6 +74,7 @@ const products: Prisma.ProductCreateInput[] = [
     requirements:
       "Business name and website\nAccess to your advertising account\nCampaign goals and monthly budget",
     nameAr: "إدارة الإعلانات",
+    categoryAr: "خدمات تسويقية",
     shortDescriptionAr: "نخطط حملاتك الإعلانية ونطلقها ونديرها.",
     descriptionAr:
       "عبودي يدير حملاتك الإعلانية من البداية إلى النهاية، من الإعداد إلى التحسين المستمر والتقارير.",
@@ -92,6 +98,7 @@ const products: Prisma.ProductCreateInput[] = [
     priceCents: 2900,
     type: "DIGITAL_PRODUCT",
     category: "Marketing Resources",
+    categoryAr: "موارد تسويقية",
     image: null,
     digitalFile: "seed/social-media-resources.zip",
     status: "UNPUBLISHED",

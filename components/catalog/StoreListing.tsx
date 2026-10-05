@@ -55,7 +55,7 @@ export async function StoreListing({ type, category }: StoreListingProps) {
     { key: "all", label: text.all, count: products.length, value: null },
     ...categories.map((item) => ({
       key: `category-${item.category}`,
-      label: item.category,
+      label: item.label,
       count: item.count,
       value: item.category,
     })),

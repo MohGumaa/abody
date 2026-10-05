@@ -26,6 +26,7 @@ const product: PublicProduct = {
   currency: "USD",
   type: ProductType.DIGITAL_PRODUCT,
   category: "Templates",
+  categoryLabel: "Templates",
   image: "/seed/cover.png",
   included: [],
   durationDays: null,

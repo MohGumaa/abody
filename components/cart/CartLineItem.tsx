@@ -47,7 +47,7 @@ export function CartLineItem({ line, locale, text }: CartLineItemProps) {
 
       <div className="min-w-0">
         <p className="text-xs font-semibold tracking-[0.06em] text-primary-strong uppercase rtl:tracking-normal">
-          {text.typeLabel} · <span dir="auto">{product.category}</span>
+          {text.typeLabel} · <span dir="auto">{product.categoryLabel}</span>
         </p>
         <h2 className="mt-1 text-lg font-semibold">
           <Link
