@@ -17,14 +17,15 @@ export const ar: Dictionary = {
     services: "الخدمات",
     trust: {
       download: "تحميل فوري بعد الدفع",
-      payment: "دفع آمن عبر Stripe",
+      payment: "دفع مشفّر بجميع البطاقات الرئيسية",
       tracking: "تابع كل خدماتك من حسابك",
     },
   },
   footer: {
     blurb: "منتجات رقمية تحمّلها اليوم وخدمات ينفذها فريق عبودي.",
     rights: (year: number) => `© ${year} عبودي. جميع الحقوق محفوظة.`,
-    stripe: "مدفوعات مؤمّنة عبر Stripe",
+    securePayment: "دفع آمن",
+    acceptedCards: "البطاقات المقبولة",
     shop: "المتجر",
   },
   product: {
@@ -39,7 +40,7 @@ export const ar: Dictionary = {
     alreadyInCart: "هذه الخدمة موجودة بالفعل في سلتك.",
     maxQuantity: "لديك بالفعل الحد الأقصى من هذا المنتج في سلتك.",
     viewCart: "عرض السلة",
-    securePayment: "دفع آمن عبر Stripe",
+    securePayment: "دفع آمن",
     description: "الوصف",
     included: "ماذا يتضمن",
     requirements: "ما نحتاجه منك",
@@ -136,7 +137,7 @@ export const ar: Dictionary = {
       },
       secure: {
         title: "دفع آمن",
-        body: "الدفع يتم عبر Stripe. عبودي لا يطّلع على بيانات بطاقتك ولا يخزنها.",
+        body: "عملية الدفع مشفّرة. عبودي لا يطّلع على بيانات بطاقتك ولا يخزنها.",
       },
       people: {
         title: "فريق حقيقي يعمل على خدماتك",
@@ -146,7 +147,7 @@ export const ar: Dictionary = {
     howItWorks: "كيف تعمل المنصة",
     steps: [
       { title: "اكتشف", body: "تصفح المنتجات والخدمات واختر ما يناسبك." },
-      { title: "اشترِ", body: "ادفع بأمان عبر Stripe بنقرات قليلة." },
+      { title: "اشترِ", body: "ادفع بأمان بنقرات قليلة." },
       { title: "استلم", body: "حمّل ملفاتك أو املأ بيانات الخدمة." },
       { title: "تابع", body: "تجد طلباتك وتحميلاتك وخدماتك في حسابك." },
     ],
@@ -182,9 +183,9 @@ export const ar: Dictionary = {
     subtotal: "المجموع الفرعي",
     total: "الإجمالي",
     checkout: "متابعة إلى الدفع",
-    redirecting: "جارٍ التحويل إلى Stripe…",
+    redirecting: "جارٍ التحويل إلى صفحة الدفع الآمنة…",
     checkoutCancelled: "تم إلغاء الدفع. سلتك محفوظة.",
-    secureNote: "تدفع عبر صفحة Stripe الآمنة",
+    secureNote: "تدفع عبر صفحة آمنة ومشفّرة",
     checkoutErrors: {
       empty_cart:
         "العناصر في سلتك لم تعد متاحة. حدّث الصفحة لعرض سلتك.",
@@ -216,7 +217,7 @@ export const ar: Dictionary = {
     },
     processing: {
       title: "جارٍ معالجة الدفع",
-      body: "لا تزال Stripe تؤكد عملية الدفع. قد يستغرق ذلك بعض الوقت مع بعض طرق الدفع.",
+      body: "لا نزال نؤكد عملية الدفع. قد يستغرق ذلك بعض الوقت مع بعض طرق الدفع.",
     },
     not_completed: {
       title: "لم يكتمل الدفع",

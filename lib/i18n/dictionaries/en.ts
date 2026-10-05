@@ -16,7 +16,7 @@ export const en = {
     services: "Services",
     trust: {
       download: "Instant download after payment",
-      payment: "Secure payment with Stripe",
+      payment: "Encrypted checkout with all major cards",
       tracking: "Track every service from your account",
     },
   },
@@ -24,7 +24,8 @@ export const en = {
     blurb:
       "Digital products you can download today and services run by the Abody team.",
     rights: (year: number) => `© ${year} Abody. All rights reserved.`,
-    stripe: "Payments secured by Stripe",
+    securePayment: "Secure payment",
+    acceptedCards: "Accepted cards",
     shop: "Shop",
   },
   product: {
@@ -39,7 +40,7 @@ export const en = {
     alreadyInCart: "This service is already in your cart.",
     maxQuantity: "You already have the maximum quantity of this item in your cart.",
     viewCart: "View cart",
-    securePayment: "Secure payment powered by Stripe",
+    securePayment: "Secure payment",
     description: "Description",
     included: "What's included",
     requirements: "What we need from you",
@@ -137,7 +138,7 @@ export const en = {
       },
       secure: {
         title: "Secure payment",
-        body: "Checkout runs on Stripe. Abody never sees or stores your card details.",
+        body: "Your payment is encrypted. Abody never sees or stores your card details.",
       },
       people: {
         title: "Real people on your services",
@@ -150,7 +151,7 @@ export const en = {
         title: "Discover",
         body: "Browse products and services and pick what fits.",
       },
-      { title: "Purchase", body: "Pay securely with Stripe in a few clicks." },
+      { title: "Purchase", body: "Pay securely in a few clicks." },
       {
         title: "Receive",
         body: "Download your files or fill in the service brief.",
@@ -193,9 +194,9 @@ export const en = {
     subtotal: "Subtotal",
     total: "Total",
     checkout: "Continue to checkout",
-    redirecting: "Redirecting to Stripe…",
+    redirecting: "Redirecting to secure checkout…",
     checkoutCancelled: "Checkout cancelled. Your cart is saved.",
-    secureNote: "You pay on Stripe's secure page",
+    secureNote: "You pay on a secure, encrypted page",
     checkoutErrors: {
       empty_cart:
         "The items in your cart are no longer available. Refresh the page to see your cart.",
@@ -229,7 +230,7 @@ export const en = {
     },
     processing: {
       title: "Your payment is processing",
-      body: "Stripe is still confirming your payment. This can take a little while for some payment methods.",
+      body: "We are still confirming your payment. This can take a little while for some payment methods.",
     },
     not_completed: {
       title: "Payment not completed",

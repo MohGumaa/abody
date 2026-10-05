@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LockIcon } from "@/components/icons";
 import type { NavItem } from "@/components/layout/MainNav";
+import { PaymentCards } from "@/components/layout/PaymentCards";
 import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 
@@ -67,10 +68,13 @@ export async function SiteFooter() {
         </div>
         <div className="mt-10 flex flex-wrap justify-between gap-3 border-t border-border pt-6 text-sm text-muted">
           <span>{footer.rights(new Date().getFullYear())}</span>
-          <span className="inline-flex items-center gap-2">
-            <LockIcon className="size-[1.25em]" />
-            {footer.stripe}
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-2">
+              <LockIcon className="size-[1.25em]" />
+              {footer.securePayment}
+            </span>
+            <PaymentCards label={footer.acceptedCards} />
+          </div>
         </div>
       </div>
     </footer>
