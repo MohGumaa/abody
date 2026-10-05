@@ -1,13 +1,27 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { order, orderItem } = vi.hoisted(() => ({
+const { order, orderItem, stat } = vi.hoisted(() => ({
   order: { findUnique: vi.fn() },
   orderItem: { findFirst: vi.fn() },
+  stat: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ db: { order, orderItem } }));
 
-import { findDownload, listOrderDownloads } from "@/lib/downloads";
+// Real fs, except stat can be made to fail in one test.
+vi.mock("node:fs/promises", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:fs/promises")>()),
+  stat,
+}));
+
+import {
+  findDownload,
+  listOrderDownloads,
+  openStoredFile,
+  STORAGE_ROOT,
+} from "@/lib/downloads";
 
 // Every key named in a select tree, at any depth.
 function selectedKeys(select: Record<string, unknown>): string[] {
@@ -117,5 +131,55 @@ describe("listOrderDownloads", () => {
       product: { type: "DIGITAL_PRODUCT", digitalFile: { not: null } },
     });
     expect(selectedKeys(query.select)).not.toContain("digitalFile");
+  });
+});
+
+describe("openStoredFile", () => {
+  beforeEach(async () => {
+    const real =
+      await vi.importActual<typeof import("node:fs/promises")>(
+        "node:fs/promises",
+      );
+    stat.mockReset();
+    stat.mockImplementation(real.stat);
+  });
+
+  it("streams a stored file with its exact size", async () => {
+    const key = "seed/facebook-ads-guide.pdf";
+    const expected = await readFile(path.join(STORAGE_ROOT, key));
+
+    const file = await openStoredFile(key);
+
+    expect(file).not.toBeNull();
+    expect(file!.size).toBe(expected.length);
+    const bytes = Buffer.from(await new Response(file!.stream).arrayBuffer());
+    expect(bytes.equals(expected)).toBe(true);
+  });
+
+  it.each([
+    ["a missing file", "seed/missing.pdf"],
+    ["a path through a file", "seed/facebook-ads-guide.pdf/extra"],
+    ["a directory", "seed"],
+  ])("returns null for %s", async (_label, key) => {
+    expect(await openStoredFile(key)).toBeNull();
+  });
+
+  it.each(["../package.json", "/etc/passwd"])(
+    "returns null for the unsafe key %s without touching the disk",
+    async (key) => {
+      expect(await openStoredFile(key)).toBeNull();
+      expect(stat).not.toHaveBeenCalled();
+    },
+  );
+
+  it("passes on any other file system error", async () => {
+    const denied = Object.assign(new Error("permission denied"), {
+      code: "EACCES",
+    });
+    stat.mockRejectedValue(denied);
+
+    await expect(openStoredFile("seed/facebook-ads-guide.pdf")).rejects.toBe(
+      denied,
+    );
   });
 });
