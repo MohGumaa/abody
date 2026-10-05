@@ -1,8 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
+import { Suspense } from "react";
 import { BoltIcon, CartIcon, ChartIcon, LockIcon } from "@/components/icons";
-import { LanguageSwitcher } from "@/components/layout/LanguageSwitcher";
+import {
+  LanguageSwitcher,
+  LanguageSwitcherFallback,
+} from "@/components/layout/LanguageSwitcher";
 import { MainNav, type NavItem } from "@/components/layout/MainNav";
 import { CART_COOKIE, cartItemCount, parseCart } from "@/lib/cart";
 import { localizedPath } from "@/lib/i18n/config";
@@ -46,7 +50,9 @@ export async function SiteHeader() {
         </Link>
         <MainNav label={header.nav} items={navItems} />
         <div className="ms-auto flex items-center gap-1 min-[600px]:gap-2">
-          <LanguageSwitcher locale={locale} />
+          <Suspense fallback={<LanguageSwitcherFallback locale={locale} />}>
+            <LanguageSwitcher locale={locale} />
+          </Suspense>
           <Link
             href={localizedPath(locale, "/cart")}
             aria-label={header.cartLabel(count)}

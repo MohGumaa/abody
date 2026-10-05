@@ -61,8 +61,15 @@ export function localizedPath(locale: Locale, path: string): string {
   return path === "/" ? `/${locale}` : `/${locale}${path}`;
 }
 
-export function switchLocalePath(pathname: string, locale: Locale): string {
+// `search` is the query without "?" (URLSearchParams.toString()). Keeping it
+// lets pages keyed by the query, such as /success?session_id=, survive a switch.
+export function switchLocalePath(
+  pathname: string,
+  locale: Locale,
+  search = "",
+): string {
   const current = pathLocale(pathname);
   const rest = current ? pathname.slice(current.length + 1) || "/" : pathname;
-  return localizedPath(locale, rest);
+  const path = localizedPath(locale, rest);
+  return search === "" ? path : `${path}?${search}`;
 }

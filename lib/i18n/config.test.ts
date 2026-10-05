@@ -102,4 +102,23 @@ describe("switchLocalePath", () => {
   it("prefixes a path that has no locale", () => {
     expect(switchLocalePath("/products/x", "ar")).toBe("/ar/products/x");
   });
+
+  it("keeps the query string", () => {
+    expect(
+      switchLocalePath("/en/success", "ar", "session_id=cs_test_1"),
+    ).toBe("/ar/success?session_id=cs_test_1");
+    expect(switchLocalePath("/ar", "en", "a=1&b=2")).toBe("/en?a=1&b=2");
+  });
+
+  it("adds no ? for an empty query", () => {
+    expect(switchLocalePath("/en/cart", "ar", "")).toBe("/ar/cart");
+  });
+
+  it("keeps an encoded Arabic value intact", () => {
+    const search = new URLSearchParams({ category: "قوالب" }).toString();
+    const href = switchLocalePath("/ar/products", "en", search);
+    const url = new URL(href, "https://example.com");
+    expect(url.pathname).toBe("/en/products");
+    expect(url.searchParams.get("category")).toBe("قوالب");
+  });
 });

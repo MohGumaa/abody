@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { GlobeIcon } from "@/components/icons";
 import {
   LOCALE_COOKIE,
@@ -16,7 +16,10 @@ interface LanguageSwitcherProps {
   locale: Locale;
 }
 
-export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
+function SwitcherLink({
+  locale,
+  search,
+}: LanguageSwitcherProps & { search: string }) {
   const pathname = usePathname();
   const target = otherLocale(locale);
 
@@ -28,7 +31,7 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
 
   return (
     <Link
-      href={switchLocalePath(pathname, target)}
+      href={switchLocalePath(pathname, target, search)}
       lang={target}
       hrefLang={target}
       onClick={saveChoice}
@@ -41,4 +44,16 @@ export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
       </span>
     </Link>
   );
+}
+
+// Keeps the query, so pages such as /success?session_id= survive a switch.
+// useSearchParams needs a Suspense boundary; render it inside one.
+export function LanguageSwitcher({ locale }: LanguageSwitcherProps) {
+  const searchParams = useSearchParams();
+  return <SwitcherLink locale={locale} search={searchParams.toString()} />;
+}
+
+// The Suspense fallback: the same link without the query.
+export function LanguageSwitcherFallback({ locale }: LanguageSwitcherProps) {
+  return <SwitcherLink locale={locale} search="" />;
 }
