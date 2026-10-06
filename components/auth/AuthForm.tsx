@@ -59,6 +59,7 @@ export function AuthForm({ mode, locale, next, text }: AuthFormProps) {
   );
   const formRef = useRef<HTMLFormElement>(null);
   const alertRef = useRef<HTMLParagraphElement>(null);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   // Errors belong to the last submit; a new submit clears them.
   const failed = !pending && state?.success === false ? state : null;
@@ -166,6 +167,9 @@ export function AuthForm({ mode, locale, next, text }: AuthFormProps) {
           name="password"
           showLabel={text.showPassword}
           hideLabel={text.hidePassword}
+          visible={passwordVisible}
+          onVisibleChange={setPasswordVisible}
+          controls={mode === "register" ? "confirm" : undefined}
           autoComplete={mode === "register" ? "new-password" : "current-password"}
           required
           maxLength={128}
@@ -191,8 +195,7 @@ export function AuthForm({ mode, locale, next, text }: AuthFormProps) {
           <PasswordInput
             id="confirm"
             name="confirm"
-            showLabel={text.showPassword}
-            hideLabel={text.hidePassword}
+            visible={passwordVisible}
             autoComplete="new-password"
             required
             maxLength={128}
@@ -228,13 +231,30 @@ export function IconInput({
   );
 }
 
-// Toggling only changes the input type, so the typed value is kept.
+type PasswordToggle =
+  | { showLabel: string; hideLabel: string }
+  | { showLabel?: undefined; hideLabel?: undefined };
+
+// Toggling only changes the input type, so the typed value is kept. A password
+// and its confirmation share one state: the field with labels draws the
+// button, and `controls` names the paired field it also reveals.
 export function PasswordInput({
   showLabel,
   hideLabel,
+  visible: sharedVisible,
+  onVisibleChange,
+  controls,
   ...props
-}: ComponentProps<"input"> & { id: string; showLabel: string; hideLabel: string }) {
-  const [visible, setVisible] = useState(false);
+}: ComponentProps<"input"> &
+  PasswordToggle & {
+    id: string;
+    visible?: boolean;
+    onVisibleChange?: (visible: boolean) => void;
+    controls?: string;
+  }) {
+  const [ownVisible, setOwnVisible] = useState(false);
+  const visible = sharedVisible ?? ownVisible;
+  const setVisible = onVisibleChange ?? setOwnVisible;
   const Toggle = visible ? EyeOffIcon : EyeIcon;
   return (
     <div className="relative">
@@ -242,18 +262,20 @@ export function PasswordInput({
       <input
         {...props}
         type={visible ? "text" : "password"}
-        className={PASSWORD_INPUT}
+        className={showLabel === undefined ? INPUT : PASSWORD_INPUT}
       />
-      <button
-        type="button"
-        onClick={() => setVisible((value) => !value)}
-        aria-label={visible ? hideLabel : showLabel}
-        aria-pressed={visible}
-        aria-controls={props.id}
-        className="absolute end-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-control text-muted outline-offset-1 hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary-strong"
-      >
-        <Toggle />
-      </button>
+      {showLabel !== undefined && (
+        <button
+          type="button"
+          onClick={() => setVisible(!visible)}
+          aria-label={visible ? hideLabel : showLabel}
+          aria-pressed={visible}
+          aria-controls={controls ? `${props.id} ${controls}` : props.id}
+          className="absolute end-1.5 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-control text-muted outline-offset-1 hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary-strong"
+        >
+          <Toggle />
+        </button>
+      )}
     </div>
   );
 }

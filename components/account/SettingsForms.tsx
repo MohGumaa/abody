@@ -4,6 +4,7 @@ import {
   useActionState,
   useEffect,
   useRef,
+  useState,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -275,12 +276,12 @@ export function PasswordForm(props: FormProps) {
     PASSWORD_IDS,
   );
   const ids = PASSWORD_IDS as Required<FieldIds>;
-  const passwordProps = {
+  const [newVisible, setNewVisible] = useState(false);
+  const toggleLabels = {
     showLabel: text.showPassword,
     hideLabel: text.hidePassword,
-    required: true,
-    maxLength: 128,
   };
+  const passwordProps = { required: true, maxLength: 128 };
 
   return (
     <form ref={formRef} action={action} noValidate className="grid gap-5">
@@ -299,6 +300,7 @@ export function PasswordForm(props: FormProps) {
           id={ids.currentPassword}
           name="currentPassword"
           autoComplete="current-password"
+          {...toggleLabels}
           {...passwordProps}
         />
         <FieldError
@@ -322,6 +324,10 @@ export function PasswordForm(props: FormProps) {
           id={ids.newPassword}
           name="newPassword"
           autoComplete="new-password"
+          {...toggleLabels}
+          visible={newVisible}
+          onVisibleChange={setNewVisible}
+          controls={ids.confirm}
           {...passwordProps}
         />
         <p id={`${ids.newPassword}-hint`} className={HINT}>
@@ -343,6 +349,7 @@ export function PasswordForm(props: FormProps) {
           id={ids.confirm}
           name="confirm"
           autoComplete="new-password"
+          visible={newVisible}
           {...passwordProps}
         />
         <FieldError id={ids.confirm} failed={failed} field="confirm" text={text} />
