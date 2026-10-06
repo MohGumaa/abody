@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "@/actions/auth";
 import { localizedPath } from "@/lib/i18n/config";
@@ -37,6 +38,12 @@ export default async function AccountPage() {
               {user.email}
             </dd>
           </dl>
+          <Link
+            href={localizedPath(locale, "/account/settings")}
+            className="justify-self-start font-semibold text-primary-strong underline-offset-4 outline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-primary-strong"
+          >
+            {text.settings}
+          </Link>
           <form action={signOut}>
             <input type="hidden" name="lang" value={locale} />
             <button

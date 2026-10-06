@@ -46,11 +46,11 @@ const FIELD_ORDER: AuthField[] = ["name", "email", "password", "confirm"];
 const INPUT_BASE =
   "h-11.5 w-full rounded-control border border-border bg-surface text-foreground outline-offset-1 placeholder:text-faint focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-primary-strong aria-invalid:border-danger";
 // Room for the leading icon, plus the show/hide button on password fields.
-const INPUT = `${INPUT_BASE} ps-11 pe-4`;
+export const INPUT = `${INPUT_BASE} ps-11 pe-4`;
 const PASSWORD_INPUT = `${INPUT_BASE} ps-11 pe-12`;
 // The address stays left-to-right inside Arabic pages, so both sides leave
 // room for the icon, which sits on the page's inline start.
-const EMAIL_INPUT = `${INPUT_BASE} px-11 rtl:text-right`;
+export const EMAIL_INPUT = `${INPUT_BASE} px-11 rtl:text-right`;
 
 export function AuthForm({ mode, locale, next, text }: AuthFormProps) {
   const [state, action, pending] = useActionState(
@@ -215,7 +215,7 @@ export function AuthForm({ mode, locale, next, text }: AuthFormProps) {
 }
 
 // A leading icon inside the field, on the inline start in both languages.
-function IconInput({
+export function IconInput({
   icon: Icon,
   className = INPUT,
   ...props
@@ -229,7 +229,7 @@ function IconInput({
 }
 
 // Toggling only changes the input type, so the typed value is kept.
-function PasswordInput({
+export function PasswordInput({
   showLabel,
   hideLabel,
   ...props

@@ -5,6 +5,8 @@ import {
   LOGIN_WINDOW_MS,
   normalizeEmail,
   parseLoginForm,
+  parsePasswordChangeForm,
+  parseProfileForm,
   parseRegisterForm,
   reserveLoginAttempt,
   safeNextPath,
@@ -230,5 +232,110 @@ describe("login rate limit", () => {
     clearLoginFailures("a@b.co");
 
     expect(reserveLoginAttempt("a@b.co")).toBe(true);
+  });
+});
+
+describe("parseProfileForm", () => {
+  const current = "layla@example.com";
+  const profile = { name: " Layla ", email: " Layla@Example.com ", currentPassword: "" };
+
+  it("accepts a name change without the current password", () => {
+    expect(parseProfileForm(form(profile), current)).toEqual({
+      ok: true,
+      data: { name: "Layla", email: current, currentPassword: null },
+    });
+  });
+
+  it("requires the current password to change the email", () => {
+    const result = parseProfileForm(
+      form({ ...profile, email: "new@example.com" }),
+      current,
+    );
+    expect(result).toEqual({
+      ok: false,
+      invalidInput: false,
+      fieldErrors: { currentPassword: "current_password_required" },
+      values: { name: "Layla", email: "new@example.com" },
+    });
+  });
+
+  it("passes the current password on when the email changes", () => {
+    const result = parseProfileForm(
+      form({ ...profile, email: "New@Example.com", currentPassword: "secret pass" }),
+      current,
+    );
+    expect(result).toEqual({
+      ok: true,
+      data: { name: "Layla", email: "new@example.com", currentPassword: "secret pass" },
+    });
+  });
+
+  it("rejects a current password no account can hold", () => {
+    const result = parseProfileForm(
+      form({ ...profile, email: "new@example.com", currentPassword: "x".repeat(129) }),
+      current,
+    );
+    expect(result).toMatchObject({
+      fieldErrors: { currentPassword: "current_password_wrong" },
+    });
+  });
+
+  it("reports name and email errors", () => {
+    expect(
+      parseProfileForm(form({ ...profile, name: "  ", email: "nope" }), current),
+    ).toMatchObject({ fieldErrors: { name: "name_required", email: "email_invalid" } });
+    expect(
+      parseProfileForm(form({ ...profile, name: "x".repeat(101) }), current),
+    ).toMatchObject({ fieldErrors: { name: "name_too_long" } });
+  });
+
+  it("rejects a missing field as invalid input", () => {
+    expect(parseProfileForm(form({ name: "Layla", email: current }), current)).toEqual({
+      ok: false,
+      invalidInput: true,
+    });
+  });
+});
+
+describe("parsePasswordChangeForm", () => {
+  const change = {
+    currentPassword: "old password",
+    newPassword: "new password",
+    confirm: "new password",
+  };
+
+  it("returns the current and new passwords", () => {
+    expect(parsePasswordChangeForm(form(change))).toEqual({
+      ok: true,
+      data: { currentPassword: "old password", newPassword: "new password" },
+    });
+  });
+
+  it("checks every field without echoing passwords", () => {
+    expect(
+      parsePasswordChangeForm(
+        form({ currentPassword: "", newPassword: "short", confirm: "short" }),
+      ),
+    ).toEqual({
+      ok: false,
+      invalidInput: false,
+      fieldErrors: {
+        currentPassword: "current_password_required",
+        newPassword: "password_too_short",
+      },
+      values: {},
+    });
+    expect(
+      parsePasswordChangeForm(form({ ...change, newPassword: "x".repeat(129) })),
+    ).toMatchObject({ fieldErrors: { newPassword: "password_too_long" } });
+    expect(
+      parsePasswordChangeForm(form({ ...change, confirm: "different" })),
+    ).toMatchObject({ fieldErrors: { confirm: "password_mismatch" } });
+  });
+
+  it("rejects a missing field as invalid input", () => {
+    expect(
+      parsePasswordChangeForm(form({ currentPassword: "a", newPassword: "b" })),
+    ).toEqual({ ok: false, invalidInput: true });
   });
 });

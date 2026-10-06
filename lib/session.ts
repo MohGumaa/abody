@@ -60,3 +60,12 @@ export async function deleteCurrentSession(): Promise<void> {
   }
   store.delete(SESSION_COOKIE);
 }
+
+// Every session of the user except the one this request uses, for signing out
+// other devices. Without a cookie no session is current, so all match.
+export async function otherSessionsWhere(userId: string) {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  return token
+    ? { userId, tokenHash: { not: hashSessionToken(token) } }
+    : { userId };
+}
