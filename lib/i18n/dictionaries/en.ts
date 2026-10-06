@@ -25,7 +25,7 @@ export const en = {
       "Digital products you can download today and services run by the Abody team.",
     rights: (year: number) => `© ${year} Abody. All rights reserved.`,
     securePayment: "Secure payment",
-    acceptedCards: "Accepted cards",
+    acceptedCards: "Accepted payment methods",
     shop: "Shop",
   },
   product: {

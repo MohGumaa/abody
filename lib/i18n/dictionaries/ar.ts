@@ -25,7 +25,7 @@ export const ar: Dictionary = {
     blurb: "منتجات رقمية تحمّلها اليوم وخدمات ينفذها فريق عبودي.",
     rights: (year: number) => `© ${year} عبودي. جميع الحقوق محفوظة.`,
     securePayment: "دفع آمن",
-    acceptedCards: "البطاقات المقبولة",
+    acceptedCards: "طرق الدفع المقبولة",
     shop: "المتجر",
   },
   product: {

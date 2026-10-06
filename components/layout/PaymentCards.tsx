@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Image from "next/image";
 
 // Simplified card brand marks for the footer. Each badge keeps a white card
 // face so the brand colors read the same in both languages and themes.
@@ -62,6 +63,12 @@ export function PaymentCards({ label }: { label: string }) {
           AMEX
         </text>
       </CardBadge>
+      <li>
+        <Image src="/apple-pay.svg" alt="Apple Pay" width={58} height={40} className="h-6 w-auto" />
+      </li>
+      <li>
+        <Image src="/google-pay.svg" alt="Google Pay" width={70} height={48} className="h-6 w-auto" />
+      </li>
     </ul>
   );
 }
