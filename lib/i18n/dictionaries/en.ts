@@ -223,6 +223,10 @@ export const en = {
       pending:
         "Your downloads will appear here in a moment. Refresh the page to check.",
     },
+    services: {
+      title: "Your services",
+      intro: "Tell the Abody team what it needs to get started.",
+    },
     paid: {
       title: "Payment received",
       body: "Thank you for your purchase. We are confirming your order now.",
@@ -414,6 +418,52 @@ export const en = {
       current_password_required: "Enter your current password.",
       current_password_wrong: "Your current password is incorrect.",
     },
+  },
+  onboarding: {
+    title: "Service details",
+    heading: "Tell us about your business",
+    intro: "The Abody team uses these details to start your service.",
+    orderLabel: "Order",
+    required: "Required",
+    fields: {
+      businessName: "Business name",
+      website: "Website",
+      adAccount: "Ad account details",
+      campaignGoals: "Campaign goals",
+      budget: "Monthly budget",
+      notes: "Additional notes",
+    },
+    hints: {
+      adAccount: "Your ad account ID or page name. Never enter a password.",
+      budget: "For example, $1,000 per month.",
+    },
+    notProvided: "Not provided",
+    submit: "Send details",
+    update: "Save changes",
+    pending: "Sending…",
+    saved: "Thank you. We received your details.",
+    locked:
+      "The Abody team has started on this service, so these details can no longer be changed. Contact Abody if something needs to change.",
+    signedOut: "Your session has ended.",
+    signInAgain: "Sign in again",
+    errors: {
+      invalid_fields: "Please fix the highlighted fields.",
+      not_found: "This service is no longer available. Refresh the page.",
+      locked:
+        "The Abody team has started on this service, so these details can no longer be changed.",
+      unexpected: "Something went wrong. Please try again.",
+    },
+    fieldErrors: {
+      business_name_required: "Enter your business name.",
+      too_long: "Use {max} characters or fewer.",
+    },
+    state: {
+      needed: "Details needed",
+      received: "Details received",
+      locked: "Details received",
+    },
+    add: "Add your details",
+    edit: "Update your details",
   },
   notFound: {
     title: "Page not found",

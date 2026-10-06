@@ -7,6 +7,7 @@ import {
   PageHead,
   StatusChip,
 } from "@/components/account/AccountParts";
+import { OnboardingStatus } from "@/components/onboarding/OnboardingStatus";
 import { listAccountServices } from "@/lib/account";
 import { localizedName } from "@/lib/catalog";
 import { formatDate } from "@/lib/dates";
@@ -19,8 +20,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: account.services.title, robots: { index: false, follow: false } };
 }
 
-// Purchased service items only. Onboarding and service progress arrive with
-// features 10 and 11.
+// Purchased service items with their onboarding state. Service progress
+// arrives with feature 11.
 export default async function AccountServicesPage() {
   const locale = await getLocale();
   const user = await getCurrentUser();
@@ -28,7 +29,7 @@ export default async function AccountServicesPage() {
     const next = localizedPath(locale, "/account/services");
     redirect(`${localizedPath(locale, "/login")}?${new URLSearchParams({ next })}`);
   }
-  const { account: text } = await getDictionary();
+  const { account: text, onboarding } = await getDictionary();
   const services = await listAccountServices(user.id);
 
   return (
@@ -42,27 +43,39 @@ export default async function AccountServicesPage() {
           />
         ) : (
           <ul className="grid gap-4">
-            {services.map((service) => (
-              <li
-                key={service.itemId}
-                className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-border p-4"
-              >
-                <div className="grid min-w-0 flex-1 gap-1">
-                  <strong className="font-semibold wrap-break-word" dir="auto">
-                    {localizedName(service, locale)}
-                  </strong>
-                  <span className="text-sm text-muted">
-                    {text.purchased.replace(
-                      "{date}",
-                      formatDate(service.purchasedAt, locale),
-                    )}
-                    {" · "}
-                    {text.orderLabel} <OrderNumber number={service.orderNumber} />
-                  </span>
-                </div>
-                <StatusChip status={service.orderStatus} text={text} />
-              </li>
-            ))}
+            {services.map((service) => {
+              const name = localizedName(service, locale);
+              return (
+                <li
+                  key={service.itemId}
+                  className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-border p-4"
+                >
+                  <div className="grid min-w-0 flex-1 gap-1">
+                    <strong className="font-semibold wrap-break-word" dir="auto">
+                      {name}
+                    </strong>
+                    <span className="text-sm text-muted">
+                      {text.purchased.replace(
+                        "{date}",
+                        formatDate(service.purchasedAt, locale),
+                      )}
+                      {" · "}
+                      {text.orderLabel} <OrderNumber number={service.orderNumber} />
+                    </span>
+                    <OnboardingStatus
+                      status={service.serviceStatus}
+                      href={localizedPath(
+                        locale,
+                        `/onboarding/${encodeURIComponent(service.itemId)}`,
+                      )}
+                      name={name}
+                      text={onboarding}
+                    />
+                  </div>
+                  <StatusChip status={service.orderStatus} text={text} />
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

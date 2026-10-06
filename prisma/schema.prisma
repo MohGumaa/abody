@@ -88,9 +88,36 @@ model OrderItem {
   // Unit price paid, in cents, from the Stripe line item.
   priceCents Int
   quantity   Int
+  // Service items only, once the customer has sent their onboarding details.
+  service    Service?
 
   @@index([orderId])
   @@index([productId])
+}
+
+enum ServiceStatus {
+  NEW
+  WAITING_FOR_INFORMATION
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// A purchased service being delivered. The catalog entry is a Product with
+// type SERVICE; this is the work record for one paid order item, created when
+// the customer first sends their onboarding details.
+model Service {
+  id            String        @id @default(cuid())
+  orderItemId   String        @unique
+  orderItem     OrderItem     @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  status        ServiceStatus @default(NEW)
+  // Onboarding answers; the shape is OnboardingRequirements in lib/onboarding.ts.
+  requirements  Json
+  adminNotes    String?       @db.Text
+  startDate     DateTime?
+  completedDate DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 enum Role {

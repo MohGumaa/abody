@@ -1,7 +1,10 @@
 import { db } from "@/lib/db";
 import { PAID_ORDER_STATUSES } from "@/lib/delivery";
 import { DOWNLOADABLE_PRODUCT } from "@/lib/downloads";
-import type { OrderStatus } from "@/lib/generated/prisma/enums";
+import type {
+  OrderStatus,
+  ServiceStatus,
+} from "@/lib/generated/prisma/enums";
 
 // Server code only. What the customer account pages show. Every query is
 // scoped to the signed-in user's own orders, and none selects digitalFile.
@@ -131,6 +134,8 @@ export interface AccountService {
   orderNumber: number;
   orderStatus: OrderStatus;
   purchasedAt: Date;
+  // Null until the customer sends their onboarding details.
+  serviceStatus: ServiceStatus | null;
 }
 
 export async function listAccountServices(
@@ -143,15 +148,17 @@ export async function listAccountServices(
       id: true,
       product: { select: { name: true, nameAr: true } },
       order: { select: { number: true, status: true, createdAt: true } },
+      service: { select: { status: true } },
     },
   });
-  return items.map(({ id, product, order }) => ({
+  return items.map(({ id, product, order, service }) => ({
     itemId: id,
     name: product.name,
     nameAr: product.nameAr,
     orderNumber: order.number,
     orderStatus: order.status,
     purchasedAt: order.createdAt,
+    serviceStatus: service?.status ?? null,
   }));
 }
 

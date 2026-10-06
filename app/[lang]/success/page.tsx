@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import { CartIcon, CheckIcon, ClockIcon } from "@/components/icons";
+import { OnboardingStatus } from "@/components/onboarding/OnboardingStatus";
 import { localizedName } from "@/lib/catalog";
 import { checkoutState, isCheckoutSessionId } from "@/lib/checkout";
 import { listOrderDownloads } from "@/lib/downloads";
@@ -10,6 +11,7 @@ import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatPriceCents } from "@/lib/money";
 import { formatOrderNumber } from "@/lib/orders";
+import { listOrderServices } from "@/lib/services";
 import { getStripe, isMissingResource } from "@/lib/stripe";
 
 const PRIMARY_LINK =
@@ -62,6 +64,8 @@ export default async function SuccessPage({
   const order = state === "paid" ? await listOrderDownloads(session.id) : null;
   const orderNumber = order?.number ?? null;
   const downloads = order?.downloads ?? [];
+  const services = order ? await listOrderServices(session.id) : [];
+  const { onboarding } = await getDictionary();
   const body =
     state === "paid" && orderNumber !== null
       ? text.paid.confirmedBody
@@ -131,6 +135,36 @@ export default async function SuccessPage({
                 })}
               </ul>
               <p className="text-sm text-muted">{text.downloads.keepLink}</p>
+            </section>
+          )}
+          {services.length > 0 && (
+            <section className="mt-2 grid w-full max-w-xl gap-3 text-start">
+              <div className="grid gap-1">
+                <h2 className="text-lg font-semibold">{text.services.title}</h2>
+                <p className="text-sm text-muted">{text.services.intro}</p>
+              </div>
+              <ul className="grid gap-2">
+                {services.map((item) => {
+                  const name = localizedName(item, locale);
+                  const query = new URLSearchParams({ session_id: session.id });
+                  return (
+                    <li
+                      key={item.itemId}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-border px-4 py-3"
+                    >
+                      <span className="min-w-0 font-medium wrap-break-word" dir="auto">
+                        {name}
+                      </span>
+                      <OnboardingStatus
+                        status={item.status}
+                        href={`${localizedPath(locale, `/onboarding/${encodeURIComponent(item.itemId)}`)}?${query}`}
+                        name={name}
+                        text={onboarding}
+                      />
+                    </li>
+                  );
+                })}
+              </ul>
             </section>
           )}
           <div className="mt-2 flex flex-wrap justify-center gap-3">

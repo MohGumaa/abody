@@ -95,3 +95,11 @@
 **Suggested fix:** Smallest option: drop `aria-current="page"` from the breadcrumb span (keep the visual styling), leaving the side nav as the single current-page marker. Alternatively render "Account" as a link to `/account` on subpages and keep `aria-current` only on the overview. Requirement lost: None.
 **Resolution:**
 
+### F-16 [P3] open - Textarea line breaks count once in the browser's maxLength but twice on the server, so a note within the visible limit can be rejected as too long
+
+**File:** lib/onboarding.ts:56
+**Found:** 2026-10-06 by /audit independent (scope: current; lens: quality, tests)
+**Why it matters:** `OnboardingForm` sets `maxLength={ONBOARDING_MAX_LENGTH[field]}` on the `campaignGoals` and `notes` textareas (`components/onboarding/OnboardingForm.tsx:157`). Under the HTML standard, a textarea's maxlength counts each line break as one character. On submit, though, the browser sends each break as `\r\n`, and the spec's own evidence notes that stored line breaks arrive that way. `parseOnboardingForm` only trims and then compares `value.length`, so each break counts as two. A customer who writes 2000 visible characters, including line breaks, in "Campaign goals" or "Additional notes" passes the browser limit, then gets "Use 2000 characters or fewer" for text the browser already said fits. They have to delete content without knowing why. This matches the spec's "JavaScript string length after the trim" rule, so nothing is lost or exposed. It is an edge-case usability gap that only appears near the 2000-character limit. Not exercised in a browser in this pass. No test covers a line-break value near the limit.
+**Suggested fix:** In `parseOnboardingForm`, normalize `\r\n` to `\n` before trimming and counting (for example `value.replace(/\r\n/g, "\n").trim()`). Add a test where a value of exactly the limit, made of `\r\n`-separated lines, parses as `ok`. This also stores a single line-break form. Requirement lost: None. It is a small rule change, so the spec's "Limits count JavaScript string length" line should say the count is taken after line-break normalization.
+**Resolution:**
+

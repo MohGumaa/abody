@@ -43,7 +43,7 @@ interface AuthFormProps {
 }
 
 const FIELD_ORDER: AuthField[] = ["name", "email", "password", "confirm"];
-const INPUT_BASE =
+export const INPUT_BASE =
   "h-11.5 w-full rounded-control border border-border bg-surface text-foreground outline-offset-1 placeholder:text-faint focus-visible:border-transparent focus-visible:outline-2 focus-visible:outline-primary-strong aria-invalid:border-danger";
 // Room for the leading icon, plus the show/hide button on password fields.
 export const INPUT = `${INPUT_BASE} ps-11 pe-4`;

@@ -148,6 +148,13 @@ describe("listAccountServices", () => {
         id: "i2",
         product: { name: "Ads Management", nameAr: "إدارة الإعلانات" },
         order: { number: 1004, status: "PROCESSING", createdAt },
+        service: { status: "NEW" },
+      },
+      {
+        id: "i3",
+        product: { name: "Account Management", nameAr: null },
+        order: { number: 1003, status: "PAID", createdAt },
+        service: null,
       },
     ]);
 
@@ -159,6 +166,16 @@ describe("listAccountServices", () => {
         orderNumber: 1004,
         orderStatus: "PROCESSING",
         purchasedAt: createdAt,
+        serviceStatus: "NEW",
+      },
+      {
+        itemId: "i3",
+        name: "Account Management",
+        nameAr: null,
+        orderNumber: 1003,
+        orderStatus: "PAID",
+        purchasedAt: createdAt,
+        serviceStatus: null,
       },
     ]);
     const args = orderItem.findMany.mock.calls[0][0];
@@ -169,6 +186,7 @@ describe("listAccountServices", () => {
     expect(args.orderBy[0]).toEqual({ order: { createdAt: "desc" } });
     expect(selectedKeys(args.select)).not.toContain("digitalFile");
     expect(selectedKeys(args.select)).not.toContain("stripeCheckoutSessionId");
+    expect(selectedKeys(args.select)).not.toContain("requirements");
   });
 });
 
