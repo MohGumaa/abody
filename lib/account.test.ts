@@ -1,0 +1,181 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { order, orderItem } = vi.hoisted(() => ({
+  order: { count: vi.fn(), findMany: vi.fn() },
+  orderItem: { count: vi.fn(), findMany: vi.fn() },
+}));
+
+vi.mock("@/lib/db", () => ({ db: { order, orderItem } }));
+
+import {
+  getAccountCounts,
+  initials,
+  listAccountDownloads,
+  listAccountOrders,
+  listAccountServices,
+} from "@/lib/account";
+
+const PAID = { in: ["PAID", "PROCESSING", "COMPLETED"] };
+
+// Every key named in a select tree, at any depth.
+function selectedKeys(select: Record<string, unknown>): string[] {
+  return Object.entries(select).flatMap(([key, value]) => {
+    if (value && typeof value === "object" && "select" in value) {
+      return [key, ...selectedKeys(value.select as Record<string, unknown>)];
+    }
+    return [key];
+  });
+}
+
+beforeEach(() => {
+  order.count.mockReset();
+  order.findMany.mockReset();
+  orderItem.count.mockReset();
+  orderItem.findMany.mockReset();
+});
+
+describe("getAccountCounts", () => {
+  it("counts the user's orders and paid downloads and services", async () => {
+    order.count.mockResolvedValue(4);
+    orderItem.count.mockResolvedValueOnce(3).mockResolvedValueOnce(1);
+
+    await expect(getAccountCounts("u1")).resolves.toEqual({
+      orders: 4,
+      downloads: 3,
+      services: 1,
+    });
+    expect(order.count).toHaveBeenCalledWith({ where: { userId: "u1" } });
+    expect(orderItem.count).toHaveBeenNthCalledWith(1, {
+      where: {
+        order: { userId: "u1", status: PAID },
+        product: { type: "DIGITAL_PRODUCT", digitalFile: { not: null } },
+      },
+    });
+    expect(orderItem.count).toHaveBeenNthCalledWith(2, {
+      where: {
+        order: { userId: "u1", status: PAID },
+        product: { type: "SERVICE" },
+      },
+    });
+  });
+});
+
+describe("listAccountOrders", () => {
+  it("lists only the user's orders, newest first, with flat items", async () => {
+    const createdAt = new Date("2026-09-20T00:00:00Z");
+    order.findMany.mockResolvedValue([
+      {
+        id: "o1",
+        number: 1004,
+        status: "PAID",
+        totalCents: 4900,
+        createdAt,
+        items: [
+          {
+            id: "i1",
+            priceCents: 4900,
+            quantity: 1,
+            product: { name: "Guide", nameAr: "دليل" },
+          },
+        ],
+      },
+    ]);
+
+    await expect(listAccountOrders("u1", 5)).resolves.toEqual([
+      {
+        id: "o1",
+        number: 1004,
+        status: "PAID",
+        totalCents: 4900,
+        createdAt,
+        items: [
+          { id: "i1", priceCents: 4900, quantity: 1, name: "Guide", nameAr: "دليل" },
+        ],
+      },
+    ]);
+    const args = order.findMany.mock.calls[0][0];
+    expect(args.where).toEqual({ userId: "u1" });
+    expect(args.orderBy).toEqual([{ createdAt: "desc" }, { number: "desc" }]);
+    expect(args.take).toBe(5);
+    expect(selectedKeys(args.select)).not.toContain("digitalFile");
+    expect(selectedKeys(args.select)).not.toContain("stripeCheckoutSessionId");
+  });
+
+  it("passes no limit when none is given", async () => {
+    order.findMany.mockResolvedValue([]);
+    await expect(listAccountOrders("u1")).resolves.toEqual([]);
+    expect(order.findMany.mock.calls[0][0].take).toBeUndefined();
+  });
+});
+
+describe("listAccountDownloads", () => {
+  it("lists downloadable items in the user's paid orders", async () => {
+    const createdAt = new Date("2026-09-12T00:00:00Z");
+    orderItem.findMany.mockResolvedValue([
+      {
+        id: "i1",
+        product: { name: "Template", nameAr: null },
+        order: { number: 1003, createdAt, stripeCheckoutSessionId: "cs_test_1" },
+      },
+    ]);
+
+    await expect(listAccountDownloads("u1", 3)).resolves.toEqual([
+      {
+        itemId: "i1",
+        name: "Template",
+        nameAr: null,
+        orderNumber: 1003,
+        purchasedAt: createdAt,
+        checkoutSessionId: "cs_test_1",
+      },
+    ]);
+    const args = orderItem.findMany.mock.calls[0][0];
+    expect(args.where).toEqual({
+      order: { userId: "u1", status: PAID },
+      product: { type: "DIGITAL_PRODUCT", digitalFile: { not: null } },
+    });
+    expect(args.orderBy[0]).toEqual({ order: { createdAt: "desc" } });
+    expect(args.take).toBe(3);
+    expect(selectedKeys(args.select)).not.toContain("digitalFile");
+  });
+});
+
+describe("listAccountServices", () => {
+  it("lists service items in the user's paid orders", async () => {
+    const createdAt = new Date("2026-09-20T00:00:00Z");
+    orderItem.findMany.mockResolvedValue([
+      {
+        id: "i2",
+        product: { name: "Ads Management", nameAr: "إدارة الإعلانات" },
+        order: { number: 1004, status: "PROCESSING", createdAt },
+      },
+    ]);
+
+    await expect(listAccountServices("u1")).resolves.toEqual([
+      {
+        itemId: "i2",
+        name: "Ads Management",
+        nameAr: "إدارة الإعلانات",
+        orderNumber: 1004,
+        orderStatus: "PROCESSING",
+        purchasedAt: createdAt,
+      },
+    ]);
+    const args = orderItem.findMany.mock.calls[0][0];
+    expect(args.where).toEqual({
+      order: { userId: "u1", status: PAID },
+      product: { type: "SERVICE" },
+    });
+    expect(args.orderBy[0]).toEqual({ order: { createdAt: "desc" } });
+    expect(selectedKeys(args.select)).not.toContain("digitalFile");
+    expect(selectedKeys(args.select)).not.toContain("stripeCheckoutSessionId");
+  });
+});
+
+describe("initials", () => {
+  it("takes the first letters of the first two words", () => {
+    expect(initials("layla mansour ahmed")).toBe("LM");
+    expect(initials("  Layla  ")).toBe("L");
+    expect(initials("ليلى منصور")).toBe("لم");
+  });
+});

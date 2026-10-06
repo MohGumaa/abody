@@ -4,12 +4,17 @@ import type { OrderStatus } from "@/lib/generated/prisma/enums";
 // No node:fs, db, or next/* imports here: route handlers, server code, and
 // Vitest all load this module.
 
-// Paid orders, including the later fulfilment statuses, keep their downloads.
-const DOWNLOADABLE_STATUSES: ReadonlySet<OrderStatus> = new Set([
+// Paid orders, including the later fulfilment statuses. They keep their
+// downloads and count as purchases in the account.
+export const PAID_ORDER_STATUSES: readonly OrderStatus[] = [
   "PAID",
   "PROCESSING",
   "COMPLETED",
-]);
+];
+
+const DOWNLOADABLE_STATUSES: ReadonlySet<OrderStatus> = new Set(
+  PAID_ORDER_STATUSES,
+);
 
 const KEY_MAX_LENGTH = 255;
 // Each segment starts with a letter or digit, so "." and ".." never match.

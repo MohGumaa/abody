@@ -87,3 +87,11 @@
 **Suggested fix:** Add a small Vitest suite for `otherSessionsWhere` that mocks `next/headers` `cookies()` (and `@/lib/db` so the module loads), and asserts that with a session cookie it returns `{ userId, tokenHash: { not: hashSessionToken(token) } }` and without one it returns `{ userId }`. Requirement lost: None.
 **Resolution:**
 
+### F-15 [P3] open - Account breadcrumb marks "Account" as the current page on every account subpage
+
+**File:** app/[lang]/account/layout.tsx:38
+**Found:** 2026-10-06 by /audit independent (scope: current; lens: quality)
+**Why it matters:** The breadcrumb is rendered once by the shared account layout, so its last item ("Account" / "حسابي") always carries `aria-current="page"`. On `/account/orders`, `/account/downloads`, `/account/services`, and `/account/settings`, the current page is the subpage, which the side nav already marks with its own `aria-current="page"`. Screen-reader users therefore hear two different "current page" items, and the breadcrumb's one is wrong on four of the five pages. Visual behavior and the spec's "Home → Account" breadcrumb are otherwise met; this is an accessibility accuracy issue only.
+**Suggested fix:** Smallest option: drop `aria-current="page"` from the breadcrumb span (keep the visual styling), leaving the side nav as the single current-page marker. Alternatively render "Account" as a link to `/account` on subpages and keep `aria-current` only on the overview. Requirement lost: None.
+**Resolution:**
+

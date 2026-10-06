@@ -11,7 +11,7 @@ import { canDownload, storagePath } from "@/lib/delivery";
 export const STORAGE_ROOT = path.join(process.cwd(), "storage");
 
 // Order items that deliver a file.
-const DOWNLOADABLE_PRODUCT = {
+export const DOWNLOADABLE_PRODUCT = {
   type: "DIGITAL_PRODUCT",
   digitalFile: { not: null },
 } as const;
