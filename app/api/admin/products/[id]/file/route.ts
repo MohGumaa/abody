@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { ADMIN_PRODUCT_TYPE, isProductId } from "@/lib/admin";
+import { isProductId } from "@/lib/admin";
 import { PRODUCT_FILE_MAX_BYTES, productFileExtension } from "@/lib/admin-product-rules";
 import { apiError } from "@/lib/api-error";
 import { db } from "@/lib/db";
@@ -80,7 +80,7 @@ export async function PUT(
   let key: string | null = null;
   try {
     const product = await db.product.findFirst({
-      where: { id, type: ADMIN_PRODUCT_TYPE },
+      where: { id, type: "DIGITAL_PRODUCT" },
       select: { digitalFile: true },
     });
     if (!product) return notFound();
@@ -94,7 +94,7 @@ export async function PUT(
 
     // The product points at the new file only once it is fully on disk.
     const { count } = await db.product.updateMany({
-      where: { id, type: ADMIN_PRODUCT_TYPE },
+      where: { id, type: "DIGITAL_PRODUCT" },
       data: { digitalFile: saved.key },
     });
     if (count === 0) {

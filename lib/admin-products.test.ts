@@ -35,7 +35,7 @@ function form(fields: Record<string, string>): FormData {
 }
 
 function errorsFor(fields: Record<string, string>) {
-  const parsed = parseProductForm(form({ ...valid, ...fields }));
+  const parsed = parseProductForm(form({ ...valid, ...fields }), "DIGITAL_PRODUCT");
   if (parsed.ok) throw new Error("expected a failure");
   return parsed.fieldErrors;
 }
@@ -68,7 +68,7 @@ describe("parsePriceToCents", () => {
 
 describe("parseProductForm", () => {
   it("parses valid input", () => {
-    const parsed = parseProductForm(form(valid));
+    const parsed = parseProductForm(form(valid), "DIGITAL_PRODUCT");
     expect(parsed).toMatchObject({
       ok: true,
       data: {
@@ -97,6 +97,7 @@ describe("parseProductForm", () => {
         nameAr: " دليل إعلانات فيسبوك ",
         includedAr: "دليل\nقائمة",
       }),
+      "DIGITAL_PRODUCT",
     );
     expect(parsed.ok && parsed.data).toMatchObject({
       image: "https://cdn.example.com/a.png",
@@ -115,7 +116,7 @@ describe("parseProductForm", () => {
   it("treats a missing field as empty", () => {
     const data = form(valid);
     data.delete("name");
-    const parsed = parseProductForm(data);
+    const parsed = parseProductForm(data, "DIGITAL_PRODUCT");
     expect(!parsed.ok && parsed.fieldErrors.name).toBe("required");
   });
 
@@ -133,7 +134,7 @@ describe("parseProductForm", () => {
       category: "too_long",
       shortDescription: "too_long",
     });
-    expect(parseProductForm(form({ ...valid, name: "x".repeat(120) })).ok).toBe(true);
+    expect(parseProductForm(form({ ...valid, name: "x".repeat(120) }), "DIGITAL_PRODUCT").ok).toBe(true);
   });
 
   it.each(["Facebook-Ads", "ads guide", "-ads", "ads--guide", "ads_guide"])(
@@ -157,21 +158,21 @@ describe("parseProductForm", () => {
   });
 
   it("accepts a local image path", () => {
-    const parsed = parseProductForm(form({ ...valid, image: "/seed/a.svg" }));
+    const parsed = parseProductForm(form({ ...valid, image: "/seed/a.svg" }), "DIGITAL_PRODUCT");
     expect(parsed.ok && parsed.data.image).toBe("/seed/a.svg");
   });
 
   it("limits What's Included lines", () => {
     const lines = (count: number) =>
       Array.from({ length: count }, (_, i) => `Item ${i}`).join("\n");
-    expect(parseProductForm(form({ ...valid, included: lines(20) })).ok).toBe(true);
+    expect(parseProductForm(form({ ...valid, included: lines(20) }), "DIGITAL_PRODUCT").ok).toBe(true);
     expect(errorsFor({ included: lines(21) }).included).toBe("too_many_lines");
     expect(errorsFor({ includedAr: "x".repeat(201) }).includedAr).toBe("too_long");
   });
 
   it("counts a submitted CRLF line break as one character", () => {
     const description = `${"x".repeat(4999)}\r\n${"y".repeat(5000)}`;
-    const parsed = parseProductForm(form({ ...valid, description }));
+    const parsed = parseProductForm(form({ ...valid, description }), "DIGITAL_PRODUCT");
     expect(parsed.ok && parsed.data.description).toBe(
       `${"x".repeat(4999)}\n${"y".repeat(5000)}`,
     );
@@ -180,11 +181,94 @@ describe("parseProductForm", () => {
   });
 
   it("echoes the typed values on failure", () => {
-    const parsed = parseProductForm(form({ ...valid, price: "abc", name: " Guide " }));
+    const parsed = parseProductForm(form({ ...valid, price: "abc", name: " Guide " }), "DIGITAL_PRODUCT");
     expect(parsed).toMatchObject({
       ok: false,
       values: { price: "abc", name: "Guide", slug: "facebook-ads-guide" },
     });
+  });
+});
+
+describe("parseProductForm for services", () => {
+  const service = {
+    ...valid,
+    name: "Facebook Ads Management",
+    slug: "facebook-ads-management",
+    durationDays: "30",
+    requirements: "Business name\r\n\n  Ad account access  \n",
+    requirementsAr: "",
+  };
+
+  function serviceErrors(fields: Record<string, string>) {
+    const parsed = parseProductForm(form({ ...service, ...fields }), "SERVICE");
+    if (parsed.ok) throw new Error("expected a failure");
+    return parsed.fieldErrors;
+  }
+
+  it("parses duration and requirements", () => {
+    const parsed = parseProductForm(form(service), "SERVICE");
+    expect(parsed).toMatchObject({
+      ok: true,
+      data: {
+        slug: "facebook-ads-management",
+        durationDays: 30,
+        requirements: "Business name\nAd account access",
+        requirementsAr: null,
+      },
+    });
+  });
+
+  it("keeps Arabic requirements", () => {
+    const parsed = parseProductForm(
+      form({ ...service, requirementsAr: " اسم النشاط \r\nحساب الإعلانات" }),
+      "SERVICE",
+    );
+    expect(parsed.ok && parsed.data.requirementsAr).toBe("اسم النشاط\nحساب الإعلانات");
+  });
+
+  it("treats empty duration and requirements as null", () => {
+    const parsed = parseProductForm(
+      form({ ...service, durationDays: "  ", requirements: "\n \n" }),
+      "SERVICE",
+    );
+    expect(parsed.ok && parsed.data).toMatchObject({ durationDays: null, requirements: null });
+  });
+
+  it.each([
+    ["1", 1],
+    ["365", 365],
+    [" 30 ", 30],
+  ])("reads the duration %s as %i days", (durationDays, days) => {
+    const parsed = parseProductForm(form({ ...service, durationDays }), "SERVICE");
+    expect(parsed.ok && parsed.data.durationDays).toBe(days);
+  });
+
+  it.each(["0", "366", "1.5", "-1", "1e2", "abc", "1000"])(
+    "rejects the duration %s",
+    (durationDays) => {
+      expect(serviceErrors({ durationDays }).durationDays).toBe("invalid_duration");
+    },
+  );
+
+  it("limits requirements lines", () => {
+    const lines = Array.from({ length: 21 }, (_, i) => `Need ${i}`).join("\n");
+    expect(serviceErrors({ requirements: lines }).requirements).toBe("too_many_lines");
+    expect(serviceErrors({ requirementsAr: "x".repeat(201) }).requirementsAr).toBe("too_long");
+  });
+
+  it("echoes service values on failure", () => {
+    const parsed = parseProductForm(form({ ...service, durationDays: "0" }), "SERVICE");
+    expect(parsed).toMatchObject({ ok: false, values: { durationDays: "0" } });
+  });
+
+  it("ignores posted service fields for a digital product", () => {
+    const parsed = parseProductForm(form(service), "DIGITAL_PRODUCT");
+    expect(parsed.ok && parsed.data).toMatchObject({
+      durationDays: null,
+      requirements: null,
+      requirementsAr: null,
+    });
+    expect(parsed.values).not.toHaveProperty("durationDays");
   });
 });
 

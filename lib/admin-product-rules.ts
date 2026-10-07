@@ -12,6 +12,9 @@ export const INCLUDED_LINE_MAX = 200;
 // Stripe's minimum USD charge is $0.50.
 export const PRICE_MIN_CENTS = 50;
 export const PRICE_MAX_CENTS = 9_999_999;
+// Services only (feature 14): an optional whole number of days.
+export const DURATION_MIN_DAYS = 1;
+export const DURATION_MAX_DAYS = 365;
 
 export const PRODUCT_FILE_MAX_BYTES = 25 * 1024 * 1024;
 export const PRODUCT_FILE_EXTENSIONS = [".pdf", ".zip"] as const;
@@ -29,7 +32,11 @@ export type ProductField =
   | "categoryAr"
   | "shortDescriptionAr"
   | "descriptionAr"
-  | "includedAr";
+  | "includedAr"
+  // Services only.
+  | "durationDays"
+  | "requirements"
+  | "requirementsAr";
 
 export type ProductFieldError =
   | "required"
@@ -38,7 +45,8 @@ export type ProductFieldError =
   | "slug_taken"
   | "invalid_price"
   | "invalid_image"
-  | "too_many_lines";
+  | "too_many_lines"
+  | "invalid_duration";
 
 export type ProductFieldErrors = Partial<Record<ProductField, ProductFieldError>>;
 

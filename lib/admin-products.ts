@@ -2,6 +2,8 @@ import path from "node:path";
 import {
   CATEGORY_MAX,
   DESCRIPTION_MAX,
+  DURATION_MAX_DAYS,
+  DURATION_MIN_DAYS,
   IMAGE_MAX,
   INCLUDED_LINE_MAX,
   INCLUDED_MAX_LINES,
@@ -15,8 +17,9 @@ import {
   type ProductFormValues,
 } from "@/lib/admin-product-rules";
 import { checklistLines, isValidSlug, publicImageSrc } from "@/lib/catalog";
+import type { ProductType } from "@/lib/generated/prisma/enums";
 
-// Admin product form parsing and storage keys (feature 13). Server code only:
+// Admin product and service form parsing (features 13 and 14) and storage keys. Server code only:
 // it loads lib/catalog. No next/* imports, so Vitest can load it.
 
 const FILE_NAME_MAX = 100;
@@ -35,6 +38,10 @@ export interface ProductFormData {
   shortDescriptionAr: string | null;
   descriptionAr: string | null;
   includedAr: string[];
+  // Services only; always null for digital products.
+  durationDays: number | null;
+  requirements: string | null;
+  requirementsAr: string | null;
 }
 
 export type ParsedProductForm =
@@ -57,7 +64,14 @@ const FIELDS: readonly ProductField[] = [
   "includedAr",
 ];
 
+const SERVICE_FIELDS: readonly ProductField[] = [
+  "durationDays",
+  "requirements",
+  "requirementsAr",
+];
+
 const PRICE_PATTERN = /^(\d{1,5})(?:\.(\d{1,2}))?$/;
+const DURATION_PATTERN = /^\d{1,3}$/;
 
 // Dollars as typed ("49", "49.5", "49.50") to whole cents with integer math.
 export function parsePriceToCents(input: string): number | null {
@@ -80,9 +94,17 @@ function text(formData: FormData, field: ProductField): string {
   return typeof value === "string" ? value.replace(/\r\n?/g, "\n").trim() : "";
 }
 
-export function parseProductForm(formData: FormData): ParsedProductForm {
+// The type comes from the calling action, never from the form. Service fields
+// are read only for services.
+export function parseProductForm(
+  formData: FormData,
+  type: ProductType,
+): ParsedProductForm {
+  const isService = type === "SERVICE";
   const values: ProductFormValues = {};
-  for (const field of FIELDS) values[field] = text(formData, field);
+  for (const field of isService ? [...FIELDS, ...SERVICE_FIELDS] : FIELDS) {
+    values[field] = text(formData, field);
+  }
   const fieldErrors: ProductFieldErrors = {};
 
   function required(field: ProductField, max: number): string {
@@ -134,6 +156,22 @@ export function parseProductForm(formData: FormData): ParsedProductForm {
   const shortDescriptionAr = optional("shortDescriptionAr", SHORT_DESCRIPTION_MAX);
   const descriptionAr = optional("descriptionAr", DESCRIPTION_MAX);
 
+  let durationDays: number | null = null;
+  let requirements: string | null = null;
+  let requirementsAr: string | null = null;
+  if (isService) {
+    const duration = values.durationDays ?? "";
+    if (duration !== "") {
+      const days = DURATION_PATTERN.test(duration) ? Number(duration) : NaN;
+      if (days >= DURATION_MIN_DAYS && days <= DURATION_MAX_DAYS) durationDays = days;
+      else fieldErrors.durationDays = "invalid_duration";
+    }
+    // Stored as the cleaned lines; the storefront splits them again.
+    const joined = (list: string[]) => (list.length > 0 ? list.join("\n") : null);
+    requirements = joined(lines("requirements"));
+    requirementsAr = joined(lines("requirementsAr"));
+  }
+
   if (Object.keys(fieldErrors).length > 0) {
     return { ok: false, fieldErrors, values };
   }
@@ -154,6 +192,9 @@ export function parseProductForm(formData: FormData): ParsedProductForm {
       shortDescriptionAr,
       descriptionAr,
       includedAr,
+      durationDays,
+      requirements,
+      requirementsAr,
     },
   };
 }

@@ -3,7 +3,9 @@
 import { useActionState, useEffect, useRef, useState, type RefObject } from "react";
 import {
   createProduct,
+  createService,
   updateProduct,
+  updateService,
   type ProductActionResult,
 } from "@/actions/admin-products";
 import { INPUT_BASE } from "@/components/auth/AuthForm";
@@ -18,6 +20,8 @@ import {
 import {
   CATEGORY_MAX,
   DESCRIPTION_MAX,
+  DURATION_MAX_DAYS,
+  DURATION_MIN_DAYS,
   IMAGE_MAX,
   INCLUDED_LINE_MAX,
   INCLUDED_MAX_LINES,
@@ -31,6 +35,7 @@ import {
   type ProductFieldError,
   type ProductFormValues,
 } from "@/lib/admin-product-rules";
+import type { ProductType } from "@/lib/generated/prisma/enums";
 
 const INPUT = `${INPUT_BASE} px-4`;
 const TEXTAREA = `${INPUT_BASE} h-auto px-4 py-3 leading-relaxed`;
@@ -46,15 +51,20 @@ const FIELD_ERRORS: Record<ProductFieldError, string> = {
   invalid_price: "Enter a price from 0.50 to 99999.99, with at most two decimals.",
   invalid_image: "Use an https:// URL or a site path starting with /.",
   too_many_lines: `Use at most ${INCLUDED_MAX_LINES} lines.`,
+  invalid_duration: `Enter a whole number of days from ${DURATION_MIN_DAYS} to ${DURATION_MAX_DAYS}, or leave it empty.`,
 };
 
-const FORM_ERRORS: Record<Exclude<ProductActionResult, null | { success: true }>["error"], string> = {
-  invalid_fields: "Some fields need attention. Fix them and save again.",
-  not_found: "This product no longer exists.",
-  file_required: "Upload a file before publishing.",
-  has_orders: "This product has orders.",
-  unexpected: "Something went wrong. Try again.",
-};
+type FormError = Exclude<ProductActionResult, null | { success: true }>["error"];
+
+function formErrors(noun: string): Record<FormError, string> {
+  return {
+    invalid_fields: "Some fields need attention. Fix them and save again.",
+    not_found: `This ${noun} no longer exists.`,
+    file_required: "Upload a file before publishing.",
+    has_orders: `This ${noun} has orders.`,
+    unexpected: "Something went wrong. Try again.",
+  };
+}
 
 interface FieldSpec {
   field: ProductField;
@@ -64,51 +74,75 @@ interface FieldSpec {
   multiline?: number;
   arabic?: boolean;
   required?: boolean;
-  inputMode?: "decimal";
+  inputMode?: "decimal" | "numeric";
   dir?: "ltr";
 }
 
-const CATEGORY_HINT = "Groups products in the store filter.";
 // Select item values are never submitted, so they cannot clash with a name.
 const NEW_CATEGORY = "new";
 const optionValue = (index: number) => `option:${index}`;
 
 const LINES_HINT = `One item per line, up to ${INCLUDED_MAX_LINES} lines of ${INCLUDED_LINE_MAX} characters.`;
+const REQUIREMENTS_HINT = `What the customer needs to provide. ${LINES_HINT}`;
 
-const ENGLISH: FieldSpec[] = [
-  { field: "name", label: "Name", max: NAME_MAX, required: true },
-  {
-    field: "slug",
-    label: "Slug",
-    hint: "Used in the address: /en/products/your-slug.",
-    max: SLUG_MAX,
-    required: true,
-    dir: "ltr",
-  },
-  { field: "shortDescription", label: "Short description", max: SHORT_DESCRIPTION_MAX, multiline: 2, required: true },
-  { field: "description", label: "Description", max: DESCRIPTION_MAX, multiline: 6, required: true },
-  // The line limits are checked on the server; maxLength would cap the total.
-  { field: "included", label: "What's included", hint: LINES_HINT, max: 0, multiline: 4 },
-];
-
-const PRICING: FieldSpec[] = [
-  { field: "price", label: "Price (USD)", hint: "For example 49 or 49.99.", max: 9, required: true, inputMode: "decimal", dir: "ltr" },
-  {
-    field: "image",
-    label: "Image URL",
-    hint: "Optional. An https:// URL or a site path such as /seed/cover.svg.",
-    max: IMAGE_MAX,
-    dir: "ltr",
-  },
-];
-
-const ARABIC: FieldSpec[] = [
-  { field: "nameAr", label: "Name (Arabic)", max: NAME_MAX, arabic: true },
-  { field: "shortDescriptionAr", label: "Short description (Arabic)", max: SHORT_DESCRIPTION_MAX, multiline: 2, arabic: true },
-  { field: "descriptionAr", label: "Description (Arabic)", max: DESCRIPTION_MAX, multiline: 6, arabic: true },
-  { field: "categoryAr", label: "Category (Arabic)", max: CATEGORY_MAX, arabic: true },
-  { field: "includedAr", label: "What's included (Arabic)", hint: LINES_HINT, max: 0, multiline: 4, arabic: true },
-];
+// Products and services share every field; services add a duration and
+// requirements. The line limits are checked on the server; maxLength would
+// cap the total.
+function fieldSpecs(type: ProductType) {
+  const isService = type === "SERVICE";
+  const english: FieldSpec[] = [
+    { field: "name", label: "Name", max: NAME_MAX, required: true },
+    {
+      field: "slug",
+      label: "Slug",
+      hint: `Used in the address: /en/${isService ? "services" : "products"}/your-slug.`,
+      max: SLUG_MAX,
+      required: true,
+      dir: "ltr",
+    },
+    { field: "shortDescription", label: "Short description", max: SHORT_DESCRIPTION_MAX, multiline: 2, required: true },
+    { field: "description", label: "Description", max: DESCRIPTION_MAX, multiline: 6, required: true },
+  ];
+  const lists: FieldSpec[] = [
+    { field: "included", label: "What's included", hint: LINES_HINT, max: 0, multiline: 4 },
+    ...(isService
+      ? [{ field: "requirements", label: "Requirements", hint: REQUIREMENTS_HINT, max: 0, multiline: 4 } as const]
+      : []),
+  ];
+  const pricing: FieldSpec[] = [
+    { field: "price", label: "Price (USD)", hint: "For example 49 or 49.99.", max: 9, required: true, inputMode: "decimal", dir: "ltr" },
+    ...(isService
+      ? [
+          {
+            field: "durationDays",
+            label: "Duration (days)",
+            hint: `A whole number from ${DURATION_MIN_DAYS} to ${DURATION_MAX_DAYS}. Leave it empty to show no duration.`,
+            max: 3,
+            inputMode: "numeric",
+            dir: "ltr",
+          } as const,
+        ]
+      : []),
+    {
+      field: "image",
+      label: "Image URL",
+      hint: "Optional. An https:// URL or a site path such as /seed/cover.svg.",
+      max: IMAGE_MAX,
+      dir: "ltr",
+    },
+  ];
+  const arabic: FieldSpec[] = [
+    { field: "nameAr", label: "Name (Arabic)", max: NAME_MAX, arabic: true },
+    { field: "shortDescriptionAr", label: "Short description (Arabic)", max: SHORT_DESCRIPTION_MAX, multiline: 2, arabic: true },
+    { field: "descriptionAr", label: "Description (Arabic)", max: DESCRIPTION_MAX, multiline: 6, arabic: true },
+    { field: "categoryAr", label: "Category (Arabic)", max: CATEGORY_MAX, arabic: true },
+    { field: "includedAr", label: "What's included (Arabic)", hint: LINES_HINT, max: 0, multiline: 4, arabic: true },
+    ...(isService
+      ? [{ field: "requirementsAr", label: "Requirements (Arabic)", hint: LINES_HINT, max: 0, multiline: 4, arabic: true } as const]
+      : []),
+  ];
+  return { english, lists, pricing, arabic };
+}
 
 function Field({
   spec,
@@ -172,11 +206,13 @@ function CategoryField({
   options,
   pick,
   onPick,
+  hint,
   error,
   newInputRef,
   formResetting,
 }: {
   options: CategoryOption[];
+  hint: string;
   pick: CategoryPick;
   onPick: (pick: CategoryPick) => void;
   error: ProductFieldError | undefined;
@@ -271,7 +307,7 @@ function CategoryField({
         newInput
       )}
       <p id={`${id}-hint`} className="text-xs text-muted">
-        {CATEGORY_HINT}
+        {hint}
       </p>
       {error && (
         <p id={`${id}-error`} className="text-sm text-danger">
@@ -282,19 +318,25 @@ function CategoryField({
   );
 }
 
-// Creates a product (no id) or edits one. Status and the file have their own
-// controls on the edit page.
+// Creates a product or service (no id) or edits one. Status and the file have
+// their own controls on the edit page. The type picks the server action, which
+// binds the type itself; the form never sends it.
 export function ProductForm({
+  type,
   id,
   initial,
   categories,
 }: {
+  type: ProductType;
   id?: string;
   initial: ProductFormValues;
   categories: CategoryOption[];
 }) {
+  const isService = type === "SERVICE";
+  const noun = isService ? "service" : "product";
+  const specs = fieldSpecs(type);
   const [state, action, pending] = useActionState<ProductActionResult, FormData>(
-    id ? updateProduct : createProduct,
+    isService ? (id ? updateService : createService) : id ? updateProduct : createProduct,
     null,
   );
   const alertRef = useRef<HTMLDivElement>(null);
@@ -375,30 +417,31 @@ export function ProductForm({
             : "sr-only"
         }
       >
-        {failed && FORM_ERRORS[failed.error]}
+        {failed && formErrors(noun)[failed.error]}
       </div>
 
       <section aria-labelledby="product-english" className={CARD}>
         <h2 id="product-english" className="text-lg font-semibold">
           Details
         </h2>
-        {fields(ENGLISH.filter((spec) => spec.field !== "included"))}
+        {fields(specs.english)}
         <CategoryField
           options={categories}
           pick={pick}
           onPick={choose}
+          hint={`Groups ${noun}s in the store filter.`}
           error={failed?.fieldErrors?.category}
           newInputRef={newCategoryRef}
           formResetting={formResetting}
         />
-        {fields(ENGLISH.filter((spec) => spec.field === "included"))}
+        {fields(specs.lists)}
       </section>
 
       <section aria-labelledby="product-pricing" className={CARD}>
         <h2 id="product-pricing" className="text-lg font-semibold">
-          Price and image
+          {isService ? "Price, duration, and image" : "Price and image"}
         </h2>
-        {fields(PRICING)}
+        {fields(specs.pricing)}
       </section>
 
       <section aria-labelledby="product-arabic" className={CARD}>
@@ -410,12 +453,12 @@ export function ProductForm({
             Optional. Empty fields show the English text on Arabic pages.
           </p>
         </div>
-        {fields(ARABIC)}
+        {fields(specs.arabic)}
       </section>
 
       <div className="flex flex-wrap items-center gap-4">
         <button type="submit" disabled={pending} className={SUBMIT}>
-          {pending ? "Saving…" : id ? "Save changes" : "Create product"}
+          {pending ? "Saving…" : id ? "Save changes" : `Create ${noun}`}
         </button>
         <p role="status" className={saved ? "text-sm font-medium text-success" : "sr-only"}>
           {saved ? "Changes saved." : ""}

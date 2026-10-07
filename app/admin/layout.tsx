@@ -49,6 +49,7 @@ const NAV_SECTIONS: SideNavSection[] = [
     links: [
       { href: "/admin", label: "Dashboard", icon: "dashboard" },
       { href: "/admin/products", label: "Products", icon: "grid" },
+      { href: "/admin/services", label: "Services", icon: "megaphone" },
     ],
   },
   {

@@ -20,7 +20,10 @@ export async function generateMetadata({
 }: PageProps<"/admin/products/[id]">): Promise<Metadata> {
   // Only an admin's request reads the product; anyone else gets the 404 title.
   const user = await getCurrentUser();
-  const product = user?.role === "ADMIN" ? await getAdminProduct((await params).id) : null;
+  const product =
+    user?.role === "ADMIN"
+      ? await getAdminProduct((await params).id, "DIGITAL_PRODUCT")
+      : null;
   return adminMetadata(product ? `Edit ${product.name}` : "Edit product");
 }
 
@@ -32,8 +35,8 @@ const BACK_LINK =
 export default async function EditProductPage({ params }: PageProps<"/admin/products/[id]">) {
   await requireAdmin();
   const [product, categories] = await Promise.all([
-    getAdminProduct((await params).id),
-    listAdminCategories(),
+    getAdminProduct((await params).id, "DIGITAL_PRODUCT"),
+    listAdminCategories("DIGITAL_PRODUCT"),
   ]);
   if (!product) notFound();
 
@@ -78,7 +81,7 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
       </div>
 
       <div className="grid items-start gap-6 min-[1100px]:grid-cols-[minmax(0,1fr)_22rem]">
-        <ProductForm id={product.id} initial={initial} categories={categories} />
+        <ProductForm type="DIGITAL_PRODUCT" id={product.id} initial={initial} categories={categories} />
 
         <div className="grid gap-6">
           <section aria-labelledby="product-file-title" className={CARD}>
@@ -92,6 +95,7 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
               Visibility
             </h2>
             <ProductStatusControl
+              type="DIGITAL_PRODUCT"
               productId={product.id}
               status={product.status}
               hasFile={product.fileName !== null}
@@ -101,7 +105,7 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
             <h2 id="product-delete-title" className="text-lg font-semibold">
               Delete
             </h2>
-            <DeleteProduct productId={product.id} />
+            <DeleteProduct type="DIGITAL_PRODUCT" productId={product.id} />
           </section>
         </div>
       </div>

@@ -32,9 +32,13 @@ vi.mock("next/navigation", () => ({ redirect, notFound: vi.fn() }));
 import { Prisma } from "@/lib/generated/prisma/client";
 import {
   createProduct,
+  createService,
   deleteProduct,
+  deleteService,
   setProductStatus,
+  setServiceStatus,
   updateProduct,
+  updateService,
 } from "./admin-products";
 
 const valid = {
@@ -277,5 +281,137 @@ describe("deleteProduct", () => {
     await expect(deleteProduct(null, form({ id: "p1" }))).rejects.toThrow(
       "redirect:/admin/products",
     );
+  });
+});
+
+describe("service actions", () => {
+  const service = {
+    ...valid,
+    name: "Facebook Ads Management",
+    slug: "facebook-ads-management",
+    price: "299",
+    category: "Ads",
+    durationDays: "30",
+    requirements: "Business name\nAd account access",
+    requirementsAr: "",
+  };
+  const SERVICE = { id: "s1", type: "SERVICE" };
+
+  it.each([
+    ["createService", () => createService(null, form(service))],
+    ["updateService", () => updateService(null, form({ ...service, id: "s1" }))],
+    ["setServiceStatus", () => setServiceStatus(null, form({ id: "s1", status: "PUBLISHED" }))],
+    ["deleteService", () => deleteService(null, form({ id: "s1" }))],
+  ])("%s never reaches the database for a non-admin", async (_name, run) => {
+    requireAdmin.mockRejectedValue(new Error("notFound"));
+    await expect(run()).rejects.toThrow("notFound");
+    expect(db.product.create).not.toHaveBeenCalled();
+    expect(db.product.updateMany).not.toHaveBeenCalled();
+    expect(db.product.deleteMany).not.toHaveBeenCalled();
+    expect(db.orderItem.count).not.toHaveBeenCalled();
+  });
+
+  it("creates an unpublished service with its duration and requirements", async () => {
+    db.product.create.mockResolvedValue({ id: "s1" });
+    await expect(
+      createService(null, form({ ...service, type: "DIGITAL_PRODUCT", status: "PUBLISHED" })),
+    ).rejects.toThrow("redirect:/admin/services/s1");
+    const { data } = db.product.create.mock.calls[0][0];
+    expect(data).toMatchObject({
+      type: "SERVICE",
+      status: "UNPUBLISHED",
+      priceCents: 29_900,
+      durationDays: 30,
+      requirements: "Business name\nAd account access",
+      requirementsAr: null,
+    });
+    expect(data).not.toHaveProperty("digitalFile");
+  });
+
+  it("returns field errors with the typed values", async () => {
+    expect(await createService(null, form({ ...service, durationDays: "0" }))).toMatchObject({
+      success: false,
+      error: "invalid_fields",
+      fieldErrors: { durationDays: "invalid_duration" },
+      values: { durationDays: "0", name: "Facebook Ads Management" },
+    });
+    expect(db.product.create).not.toHaveBeenCalled();
+  });
+
+  it("reports a taken slug", async () => {
+    db.product.create.mockRejectedValue(prismaError("P2002"));
+    expect(await createService(null, form(service))).toMatchObject({
+      fieldErrors: { slug: "slug_taken" },
+      values: { slug: "facebook-ads-management" },
+    });
+    db.product.updateMany.mockRejectedValue(prismaError("P2002"));
+    expect(await updateService(null, form({ ...service, id: "s1" }))).toMatchObject({
+      fieldErrors: { slug: "slug_taken" },
+    });
+  });
+
+  it("updates only a service, never status or file", async () => {
+    expect(await updateService(null, form({ ...service, id: "s1" }))).toEqual({
+      success: true,
+    });
+    const { where, data } = db.product.updateMany.mock.calls[0][0];
+    expect(where).toEqual(SERVICE);
+    expect(data).toMatchObject({ durationDays: 30 });
+    expect(data).not.toHaveProperty("status");
+    expect(data).not.toHaveProperty("digitalFile");
+  });
+
+  it("publishes without a file condition", async () => {
+    expect(
+      await setServiceStatus(null, form({ id: "s1", status: "PUBLISHED" })),
+    ).toEqual({ success: true });
+    expect(db.product.updateMany).toHaveBeenCalledWith({
+      where: SERVICE,
+      data: { status: "PUBLISHED" },
+    });
+  });
+
+  it("returns not_found for a digital product id on every service action", async () => {
+    db.product.updateMany.mockResolvedValue({ count: 0 });
+    db.product.deleteMany.mockResolvedValue({ count: 0 });
+    expect(await updateService(null, form({ ...service, id: "p1" }))).toEqual({
+      success: false,
+      error: "not_found",
+    });
+    expect(
+      await setServiceStatus(null, form({ id: "p1", status: "PUBLISHED" })),
+    ).toEqual({ success: false, error: "not_found" });
+    expect(await deleteService(null, form({ id: "p1" }))).toEqual({
+      success: false,
+      error: "not_found",
+    });
+    expect(db.product.updateMany.mock.calls[0][0].where).toEqual({ id: "p1", type: "SERVICE" });
+    expect(db.product.deleteMany).toHaveBeenCalledWith({ where: { id: "p1", type: "SERVICE" } });
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("deletes an unordered service without touching files", async () => {
+    await expect(deleteService(null, form({ id: "s1" }))).rejects.toThrow(
+      "redirect:/admin/services",
+    );
+    expect(db.orderItem.count).toHaveBeenCalledWith({
+      where: { productId: "s1", product: { type: "SERVICE" } },
+    });
+    expect(db.product.deleteMany).toHaveBeenCalledWith({ where: SERVICE });
+    expect(removeProductUploads).not.toHaveBeenCalled();
+  });
+
+  it("refuses a service with orders, including the race", async () => {
+    db.orderItem.count.mockResolvedValue(1);
+    expect(await deleteService(null, form({ id: "s1" }))).toEqual({
+      success: false,
+      error: "has_orders",
+    });
+    db.orderItem.count.mockResolvedValue(0);
+    db.product.deleteMany.mockRejectedValue(prismaError("P2003"));
+    expect(await deleteService(null, form({ id: "s1" }))).toEqual({
+      success: false,
+      error: "has_orders",
+    });
   });
 });

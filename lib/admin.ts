@@ -164,8 +164,8 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   };
 }
 
-// Feature 13: digital products only; services are managed in feature 14.
-export const ADMIN_PRODUCT_TYPE: ProductType = "DIGITAL_PRODUCT";
+// Products (feature 13) and services (feature 14) share these queries. Each
+// takes the type from its page, so one area never reads the other's rows.
 
 // Ids are cuids; anything longer is not worth a query.
 const PRODUCT_ID_MAX_LENGTH = 64;
@@ -186,12 +186,13 @@ export interface AdminProductRow {
   priceCents: number;
   status: ProductStatus;
   hasFile: boolean;
+  durationDays: number | null;
   updatedAt: Date;
 }
 
-export async function listAdminProducts(): Promise<AdminProductRow[]> {
+export async function listAdminProducts(type: ProductType): Promise<AdminProductRow[]> {
   const rows = await db.product.findMany({
-    where: { type: ADMIN_PRODUCT_TYPE },
+    where: { type },
     orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
     select: {
       id: true,
@@ -200,6 +201,7 @@ export async function listAdminProducts(): Promise<AdminProductRow[]> {
       category: true,
       priceCents: true,
       status: true,
+      durationDays: true,
       updatedAt: true,
       digitalFile: true,
     },
@@ -225,6 +227,9 @@ export interface AdminProduct {
   shortDescriptionAr: string | null;
   descriptionAr: string | null;
   includedAr: string[];
+  durationDays: number | null;
+  requirements: string | null;
+  requirementsAr: string | null;
   status: ProductStatus;
   // Only the download name; the storage key never leaves the server.
   fileName: string | null;
@@ -232,10 +237,13 @@ export interface AdminProduct {
   updatedAt: Date;
 }
 
-export async function getAdminProduct(id: string): Promise<AdminProduct | null> {
+export async function getAdminProduct(
+  id: string,
+  type: ProductType,
+): Promise<AdminProduct | null> {
   if (!isProductId(id)) return null;
   const row = await db.product.findFirst({
-    where: { id, type: ADMIN_PRODUCT_TYPE },
+    where: { id, type },
     select: {
       id: true,
       name: true,
@@ -251,6 +259,9 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
       shortDescriptionAr: true,
       descriptionAr: true,
       includedAr: true,
+      durationDays: true,
+      requirements: true,
+      requirementsAr: true,
       status: true,
       digitalFile: true,
       updatedAt: true,
@@ -266,10 +277,11 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
   };
 }
 
-// Categories digital products already use, for the admin category picker.
-export async function listAdminCategories(): Promise<CategoryOption[]> {
+// Categories this type already uses, for the admin category picker. The store
+// filters products and services separately, so their categories stay apart.
+export async function listAdminCategories(type: ProductType): Promise<CategoryOption[]> {
   const rows = await db.product.findMany({
-    where: { type: ADMIN_PRODUCT_TYPE },
+    where: { type },
     orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
     select: { category: true, categoryAr: true },
   });

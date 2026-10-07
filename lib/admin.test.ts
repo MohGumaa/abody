@@ -254,7 +254,7 @@ describe("admin products", () => {
       { id: "p1", name: "A", slug: "a", category: "Guides", priceCents: 900, status: "PUBLISHED", updatedAt, digitalFile: "seed/a.pdf" },
       { id: "p2", name: "B", slug: "b", category: "Guides", priceCents: 900, status: "UNPUBLISHED", updatedAt, digitalFile: null },
     ]);
-    const rows = await listAdminProducts();
+    const rows = await listAdminProducts("DIGITAL_PRODUCT");
     expect(db.product.findMany.mock.calls[0][0].where).toEqual({ type: "DIGITAL_PRODUCT" });
     expect(rows.map((row) => row.hasFile)).toEqual([true, false]);
     expect(rows[0]).not.toHaveProperty("digitalFile");
@@ -268,7 +268,7 @@ describe("admin products", () => {
       _count: { orderItems: 3 },
       updatedAt,
     });
-    const product = await getAdminProduct("p1");
+    const product = await getAdminProduct("p1", "DIGITAL_PRODUCT");
     expect(db.product.findFirst.mock.calls[0][0].where).toEqual({ id: "p1", type: "DIGITAL_PRODUCT" });
     expect(product).toMatchObject({ id: "p1", fileName: "Guide.pdf", orderCount: 3 });
     expect(product).not.toHaveProperty("digitalFile");
@@ -276,10 +276,61 @@ describe("admin products", () => {
 
   it("returns null for an unknown, service, or oversized id", async () => {
     db.product.findFirst.mockResolvedValue(null);
-    expect(await getAdminProduct("s1")).toBeNull();
+    expect(await getAdminProduct("s1", "DIGITAL_PRODUCT")).toBeNull();
     db.product.findFirst.mockClear();
-    expect(await getAdminProduct("x".repeat(65))).toBeNull();
+    expect(await getAdminProduct("x".repeat(65), "DIGITAL_PRODUCT")).toBeNull();
     expect(db.product.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe("admin services", () => {
+  const updatedAt = new Date("2026-10-01T00:00:00Z");
+
+  beforeEach(() => {
+    db.product.findMany.mockReset();
+    db.product.findFirst.mockReset();
+  });
+
+  it("lists only services, with their duration", async () => {
+    db.product.findMany.mockResolvedValue([
+      { id: "s1", name: "Ads", slug: "ads", category: "Ads", priceCents: 9900, status: "PUBLISHED", durationDays: 30, updatedAt, digitalFile: null },
+    ]);
+    const rows = await listAdminProducts("SERVICE");
+    expect(db.product.findMany.mock.calls[0][0].where).toEqual({ type: "SERVICE" });
+    expect(rows[0]).toMatchObject({ id: "s1", durationDays: 30, hasFile: false });
+  });
+
+  it("reads a service with its service fields", async () => {
+    db.product.findFirst.mockResolvedValue({
+      id: "s1",
+      name: "Ads",
+      durationDays: 30,
+      requirements: "Business name",
+      requirementsAr: null,
+      digitalFile: null,
+      _count: { orderItems: 0 },
+      updatedAt,
+    });
+    const service = await getAdminProduct("s1", "SERVICE");
+    const query = db.product.findFirst.mock.calls[0][0];
+    expect(query.where).toEqual({ id: "s1", type: "SERVICE" });
+    expect(query.select).toMatchObject({ durationDays: true, requirements: true, requirementsAr: true });
+    expect(service).toMatchObject({ durationDays: 30, requirements: "Business name", fileName: null });
+  });
+
+  it("never returns a row of the other type", async () => {
+    // The type is part of the query, so the database finds no match.
+    db.product.findFirst.mockResolvedValue(null);
+    expect(await getAdminProduct("p1", "SERVICE")).toBeNull();
+    expect(db.product.findFirst.mock.calls[0][0].where).toEqual({ id: "p1", type: "SERVICE" });
+    expect(await getAdminProduct("s1", "DIGITAL_PRODUCT")).toBeNull();
+    expect(db.product.findFirst.mock.calls[1][0].where).toEqual({ id: "s1", type: "DIGITAL_PRODUCT" });
+  });
+
+  it("builds service categories from services only", async () => {
+    db.product.findMany.mockResolvedValue([{ category: "Ads", categoryAr: "إعلانات" }]);
+    expect(await listAdminCategories("SERVICE")).toEqual([{ category: "Ads", categoryAr: "إعلانات" }]);
+    expect(db.product.findMany.mock.calls[0][0].where).toEqual({ type: "SERVICE" });
   });
 });
 
@@ -289,7 +340,7 @@ describe("listAdminCategories", () => {
       { category: "Guides", categoryAr: "أدلة" },
       { category: "Guides", categoryAr: null },
     ]);
-    expect(await listAdminCategories()).toEqual([{ category: "Guides", categoryAr: "أدلة" }]);
+    expect(await listAdminCategories("DIGITAL_PRODUCT")).toEqual([{ category: "Guides", categoryAr: "أدلة" }]);
     const query = db.product.findMany.mock.calls[0][0];
     expect(query.where).toEqual({ type: "DIGITAL_PRODUCT" });
     expect(query.orderBy[0]).toEqual({ updatedAt: "desc" });

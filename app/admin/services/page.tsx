@@ -11,55 +11,56 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { adminMetadata, listAdminProducts, requireAdmin } from "@/lib/admin";
+import { formatDurationDays } from "@/lib/catalog";
 import { formatDate } from "@/lib/dates";
 import { formatPriceCents } from "@/lib/money";
 
 export function generateMetadata(): Promise<Metadata> {
-  return adminMetadata("Products");
+  return adminMetadata("Services");
 }
 
 const FOCUS =
   "outline-offset-2 focus-visible:outline-2 focus-visible:outline-primary-strong";
 
-export default async function AdminProductsPage() {
+export default async function AdminServicesPage() {
   await requireAdmin();
-  const products = await listAdminProducts("DIGITAL_PRODUCT");
+  const services = await listAdminProducts("SERVICE");
 
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid gap-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Services</h1>
           <p className="text-sm text-muted">
-            Digital products customers download after paying.
+            Services customers buy, then send their requirements for.
           </p>
         </div>
         <Link
-          href="/admin/products/new"
+          href="/admin/services/new"
           className={`flex h-11 items-center gap-2 rounded-control bg-primary-strong px-5 text-sm font-semibold text-white hover:shadow-raised ${FOCUS}`}
         >
           <PlusIcon className="h-4 w-4" />
-          New product
+          New service
         </Link>
       </div>
 
       <section
-        aria-labelledby="products-title"
+        aria-labelledby="services-title"
         className="min-w-0 overflow-hidden rounded-card border border-border bg-panel shadow-soft"
       >
-        <h2 id="products-title" className="sr-only">
-          All products
+        <h2 id="services-title" className="sr-only">
+          All services
         </h2>
-        {products.length === 0 ? (
+        {services.length === 0 ? (
           <div className="p-5 min-[600px]:p-6">
             {/* Not the shared EmptyState: admin links have no hover underline. */}
             <div className="grid justify-items-start gap-3 rounded-card bg-surface p-5 text-sm">
-              <p className="text-muted">No products yet.</p>
+              <p className="text-muted">No services yet.</p>
               <Link
-                href="/admin/products/new"
+                href="/admin/services/new"
                 className={`rounded-control font-semibold text-primary-strong hover:text-foreground ${FOCUS}`}
               >
-                Create the first product
+                Create the first service
               </Link>
             </div>
           </div>
@@ -67,46 +68,49 @@ export default async function AdminProductsPage() {
           <Table className="min-w-190">
             <TableHeader>
               <TableRow>
-                <TableHead scope="col">Product</TableHead>
+                <TableHead scope="col">Service</TableHead>
                 <TableHead scope="col">Category</TableHead>
                 <TableHead scope="col" className="text-end">Price</TableHead>
+                <TableHead scope="col">Duration</TableHead>
                 <TableHead scope="col">Status</TableHead>
-                <TableHead scope="col">File</TableHead>
                 <TableHead scope="col">Updated</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {products.map((product) => (
-                <TableRow key={product.id}>
+              {services.map((service) => (
+                <TableRow key={service.id}>
                   <TableCell>
                     {/* React text: admin-entered names never render as HTML. */}
                     <Link
-                      href={`/admin/products/${product.id}`}
+                      href={`/admin/services/${service.id}`}
                       className={`rounded-control font-semibold text-foreground hover:text-primary-strong ${FOCUS}`}
                       dir="auto"
                     >
-                      {product.name}
+                      {service.name}
                     </Link>
-                    <span className="block text-xs text-faint">{product.slug}</span>
+                    <span className="block text-xs text-faint">{service.slug}</span>
                   </TableCell>
                   <TableCell className="text-muted" dir="auto">
-                    {product.category}
+                    {service.category}
                   </TableCell>
                   <TableCell className="text-end font-semibold tabular-nums">
-                    {formatPriceCents(product.priceCents)}
+                    {formatPriceCents(service.priceCents)}
                   </TableCell>
-                  <TableCell>
-                    <ProductStatusChip status={product.status} />
-                  </TableCell>
-                  <TableCell>
-                    {product.hasFile ? (
-                      <span className="text-success">Attached</span>
+                  <TableCell className="whitespace-nowrap text-muted">
+                    {service.durationDays ? (
+                      formatDurationDays(service.durationDays, "en")
                     ) : (
-                      <span className="font-medium text-warning">Missing</span>
+                      <>
+                        <span aria-hidden="true">—</span>
+                        <span className="sr-only">None</span>
+                      </>
                     )}
                   </TableCell>
+                  <TableCell>
+                    <ProductStatusChip status={service.status} />
+                  </TableCell>
                   <TableCell className="whitespace-nowrap text-faint">
-                    {formatDate(product.updatedAt, "en")}
+                    {formatDate(service.updatedAt, "en")}
                   </TableCell>
                 </TableRow>
               ))}
