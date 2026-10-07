@@ -1,19 +1,19 @@
 import type { Metadata } from "next";
 import type { ComponentType } from "react";
 import {
-  ACCOUNT_PANEL,
   EmptyState,
   OrderNumber,
-  SectionHead,
   StatusChip,
 } from "@/components/account/AccountParts";
 import {
   BoxIcon,
+  CalendarIcon,
   ChartIcon,
   GridIcon,
   MegaphoneIcon,
   UsersIcon,
 } from "@/components/icons";
+import { initials } from "@/lib/account";
 import { adminMetadata, getAdminOverview, requireAdmin } from "@/lib/admin";
 import { formatDate } from "@/lib/dates";
 import { en } from "@/lib/i18n/dictionaries/en";
@@ -30,12 +30,14 @@ interface Stat {
   Icon: ComponentType<{ className?: string }>;
 }
 
+const AVATAR_TINTS = ["bg-tint-1", "bg-tint-2", "bg-tint-3", "bg-tint-4"];
+
 function plural(count: number, one: string, many: string): string {
   return `${count} ${count === 1 ? one : many}`;
 }
 
 export default async function AdminDashboardPage() {
-  await requireAdmin("/admin");
+  await requireAdmin();
   const overview = await getAdminOverview();
 
   const stats: Stat[] = [
@@ -79,72 +81,123 @@ export default async function AdminDashboardPage() {
 
   return (
     <>
-      <section className={ACCOUNT_PANEL} aria-labelledby="dashboard-title">
-        <div className="grid gap-2">
-          <h1 id="dashboard-title" className="text-2xl font-semibold tracking-tight">
-            Dashboard
-          </h1>
-          <p className="text-muted">An overview of the store. Revenue is all time.</p>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="grid gap-1">
+          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted">
+            An overview of the store. Revenue is all time.
+          </p>
         </div>
-        <dl className="grid gap-3 min-[600px]:grid-cols-2 min-[1100px]:grid-cols-3">
-          {stats.map(({ label, value, detail, Icon }) => (
-            // A dl group may hold only dt and dd, so the decorative icon sits
-            // inside the term and is positioned at the card's start edge.
-            <div
-              key={label}
-              className="relative grid content-center rounded-card bg-surface p-4 ps-18"
-            >
-              <dt className="text-sm text-muted">
-                <span
-                  aria-hidden="true"
-                  className="absolute start-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-card bg-primary-soft text-primary-strong"
+        <p className="flex items-center gap-2 rounded-full border border-border bg-panel px-3 py-1.5 text-xs text-muted">
+          <CalendarIcon className="h-4 w-4" />
+          {formatDate(new Date(), "en")}
+        </p>
+      </div>
+
+      <section aria-labelledby="stats-title">
+        <h2 id="stats-title" className="sr-only">
+          Store totals
+        </h2>
+        <dl className="grid gap-4 min-[640px]:grid-cols-2 min-[1100px]:grid-cols-3">
+          {stats.map(({ label, value, detail, Icon }, index) => {
+            const featured = index === 0;
+            return (
+              // A dl group may hold only dt and dd, so the decorative icon sits
+              // inside the term and is positioned at the card's top end.
+              <div
+                key={label}
+                className={`relative grid content-start gap-3 rounded-card border p-5 shadow-soft ${
+                  featured
+                    ? "border-transparent bg-linear-140 from-ink to-ink-raised text-ink-text"
+                    : "border-border bg-panel"
+                }`}
+              >
+                <dt
+                  className={`flex min-h-9 items-center pe-12 text-sm font-medium ${
+                    featured ? "text-ink-muted" : "text-muted"
+                  }`}
                 >
-                  <Icon className="h-5 w-5" />
-                </span>
-                {label}
-              </dt>
-              <dd className="text-xl font-semibold">{value}</dd>
-              <dd className="text-xs text-faint">{detail}</dd>
-            </div>
-          ))}
+                  <span
+                    aria-hidden="true"
+                    className={`absolute end-5 top-5 grid h-9 w-9 place-items-center rounded-[10px] ${
+                      featured
+                        ? "bg-white/10 text-ink-text"
+                        : "bg-primary-soft text-primary-strong"
+                    }`}
+                  >
+                    <Icon className="h-4.5 w-4.5" />
+                  </span>
+                  {label}
+                </dt>
+                <dd className="text-[1.875rem] leading-tight font-semibold tracking-tight tabular-nums">
+                  {value}
+                </dd>
+                <dd className={`text-xs ${featured ? "text-ink-muted" : "text-faint"}`}>
+                  {detail}
+                </dd>
+              </div>
+            );
+          })}
         </dl>
       </section>
 
-      <section className={ACCOUNT_PANEL} aria-labelledby="recent-orders">
-        <SectionHead id="recent-orders" title="Recent orders" />
+      <section
+        aria-labelledby="recent-orders"
+        className="min-w-0 overflow-hidden rounded-card border border-border bg-panel shadow-soft"
+      >
+        <div className="grid gap-0.5 border-b border-border px-5 py-5 min-[600px]:px-6">
+          <h2 id="recent-orders" className="text-lg font-semibold">
+            Recent orders
+          </h2>
+          <p className="text-xs text-faint">The latest orders of any status</p>
+        </div>
         {overview.recentOrders.length === 0 ? (
-          <EmptyState message="No orders yet." />
+          <div className="p-5 min-[600px]:p-6">
+            <EmptyState message="No orders yet." />
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left text-sm">
-              <thead className="border-b border-border text-xs text-muted">
+            <table className="w-full min-w-170 text-left text-sm">
+              <thead className="bg-surface text-[0.6875rem] tracking-wider text-faint uppercase">
                 <tr>
-                  <th scope="col" className="py-2 pe-4 font-medium">Order</th>
-                  <th scope="col" className="py-2 pe-4 font-medium">Customer</th>
-                  <th scope="col" className="py-2 pe-4 font-medium">Items</th>
-                  <th scope="col" className="py-2 pe-4 font-medium">Total</th>
-                  <th scope="col" className="py-2 pe-4 font-medium">Status</th>
-                  <th scope="col" className="py-2 font-medium">Date</th>
+                  <th scope="col" className="px-6 py-3 font-semibold">Order</th>
+                  <th scope="col" className="px-6 py-3 font-semibold">Customer</th>
+                  <th scope="col" className="px-6 py-3 text-end font-semibold">Items</th>
+                  <th scope="col" className="px-6 py-3 text-end font-semibold">Total</th>
+                  <th scope="col" className="px-6 py-3 font-semibold">Status</th>
+                  <th scope="col" className="px-6 py-3 font-semibold">Date</th>
                 </tr>
               </thead>
               <tbody>
-                {overview.recentOrders.map((order) => (
-                  <tr key={order.id} className="border-b border-border last:border-0">
-                    <td className="py-3 pe-4">
+                {overview.recentOrders.map((order, index) => (
+                  <tr key={order.id} className="border-t border-border hover:bg-surface/60">
+                    <td className="px-6 py-4 text-xs">
                       <OrderNumber number={order.number} />
                     </td>
-                    {/* React text: names and emails never render as HTML. */}
-                    <td className="max-w-56 py-3 pe-4 break-all" dir="auto">
-                      {order.customer}
+                    <td className="px-6 py-4">
+                      <span className="flex items-center gap-3">
+                        <span
+                          aria-hidden="true"
+                          className={`grid h-7.5 w-7.5 shrink-0 place-items-center rounded-full text-[0.6875rem] font-semibold text-primary-strong ${
+                            AVATAR_TINTS[index % AVATAR_TINTS.length]
+                          }`}
+                        >
+                          {initials(order.customer)}
+                        </span>
+                        {/* React text: names and emails never render as HTML. */}
+                        <span className="max-w-56 break-all" dir="auto">
+                          {order.customer}
+                        </span>
+                      </span>
                     </td>
-                    <td className="py-3 pe-4">{order.itemCount}</td>
-                    <td className="py-3 pe-4 font-semibold">
+                    <td className="px-6 py-4 text-end tabular-nums">{order.itemCount}</td>
+                    <td className="px-6 py-4 text-end font-semibold tabular-nums">
                       {formatPriceCents(order.totalCents)}
                     </td>
-                    <td className="py-3 pe-4">
+                    <td className="px-6 py-4">
                       <StatusChip status={order.status} text={en.account} />
                     </td>
-                    <td className="py-3 whitespace-nowrap text-muted">
+                    <td className="px-6 py-4 whitespace-nowrap text-faint">
                       {formatDate(order.createdAt, "en")}
                     </td>
                   </tr>

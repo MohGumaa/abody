@@ -103,7 +103,6 @@
 **Suggested fix:** In `parseOnboardingForm`, normalize `\r\n` to `\n` before trimming and counting (for example `value.replace(/\r\n/g, "\n").trim()`). Add a test where a value of exactly the limit, made of `\r\n`-separated lines, parses as `ok`. This also stores a single line-break form. Requirement lost: None. It is a small rule change, so the spec's "Limits count JavaScript string length" line should say the count is taken after line-break normalization.
 **Resolution:**
 
-
 ### F-17 [P3] fixed - The WAITING_FOR_INFORMATION message does not link to the onboarding form itself
 
 **File:** app/[lang]/account/services/[itemId]/page.tsx:88
@@ -111,19 +110,3 @@
 **Why it matters:** The spec's In scope list says that for `WAITING_FOR_INFORMATION` "the message asks the customer to update their details and links to the onboarding form." The page renders the status message as plain text in the Progress section (`<p>{text.messages[...]}</p>`). The only link to `/onboarding/<itemId>` is the "Update your details" link in the separate "Your details" section head (line 104, shown because `canEditOnboarding` includes that status). So the customer can still reach the form from the same page and nothing is broken, but the message the spec ties to the link has none. A screen-reader or mobile user who reads "Please update your details" in the Progress panel has to find the link in the next section. The `none` ("Send your details...") message has the same layout.
 **Suggested fix:** When `editable` is true, render the onboarding link right after the status message in the Progress section (reusing `onboardingHref` and the existing `onboarding.add` / `onboarding.edit` labels), or record in the spec that the details-section link meets this requirement. Requirement lost: None.
 **Resolution:** Fixed 2026-10-07 by fix "Clean up service tracking status display". When `onboardingState(status)` is `needed` (no record or `WAITING_FOR_INFORMATION`), the detail page renders the add or update link directly under the status message in the Progress section. Verified live in `/en` and `/ar`. Awaiting `/audit` re-review to close.
-
-### F-20 [P3] open - The client chunk that a non-admin's /admin 404 loads still exports the name "AdminNav"
-
-**File:** components/admin/AdminNav.tsx:29
-**Found:** 2026-10-07 by /audit independent (scope: current; lens: security)
-**Why it matters:** Step 7 removed the nav labels from client code, but Turbopack keeps module export names in production chunks. The `app/admin/layout` entry chunk `.next/static/chunks/137hquc5a9w-2.js` (1.3 KB, listed for the layout, page, error, and not-found entries in `.next/server/app/admin/page_client-reference-manifest.js`) registers the export as `e.s(["AdminNav",0,function(...){...}])`. That script loads on every response from the admin root layout, including the 404 a signed-in customer gets at `/admin`. Its only admin-revealing text is that name. Spec step 7's literal Done-when ("Storefront", "Admin navigation", "Dashboard") is met, but the contract intent ("non-admin -> 404, does not reveal that `/admin` exists") is not fully met. The impact is very small: no data or capability is exposed, `/_next/static` chunks are public anyway, and the spec already accepts that a signed-out visitor is redirected to `/en/login?next=%2Fadmin`.
-**Suggested fix:** Rename the component and its exported type to a neutral name (for example `SideNav` / `SideNavSection` in `components/admin/SideNav.tsx`, or a neutral folder), rebuild, and confirm `grep -rlF Admin .next/static` finds nothing. Alternatively, record in the spec that a component name in static client code is acceptable (user decision). Requirement lost: None.
-**Resolution:**
-
-### F-21 [P3] fixed - Dashboard stat groups put a span inside the dl's div group, which the HTML content model does not allow
-
-**File:** app/admin/page.tsx:95
-**Found:** 2026-10-07 by /audit independent (scope: current; lens: quality)
-**Why it matters:** Each stat card is a `<div>` inside `<dl>` that holds the icon `<span>` followed by `<dt>` and two `<dd>`s. In HTML, a `div` inside a `dl` may contain only `dt` and `dd` elements (plus script-supporting elements). The span is not `aria-hidden` (only the SVG inside it is), so the markup is invalid, and checkers such as axe's `definition-list`/`dlitem` rules can flag it. Screen readers usually still read the term and value, so the practical impact is small. Other `dl`s in the project (`components/cart/CartSummary.tsx:38`) keep their groups to `dt`/`dd` only.
-**Suggested fix:** Move the icon into the `<dt>` (for example `<dt><span ...><Icon /></span>Revenue</dt>`, adjusting the grid), or put the decorative icon box on a wrapper outside the `dt`/`dd` group. Marking the span `aria-hidden="true"` alone hides it from assistive tech but leaves the markup invalid. Requirement lost: None.
-**Resolution:** Fixed 2026-10-07 by fix "Valid markup for dashboard stat cards": the icon box moved inside each `<dt>` with `aria-hidden="true"`, positioned absolutely at the card's start edge. Browser check on `/admin`: `dl > div > :not(dt):not(dd)` matched 0 elements across 6 groups, terms read as the bare labels, layout unchanged at 390px and 1366px. Awaiting `/audit` closure.

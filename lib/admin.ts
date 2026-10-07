@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { PAID_ORDER_STATUSES } from "@/lib/delivery";
 import type {
@@ -8,7 +8,6 @@ import type {
   ProductType,
   ServiceStatus,
 } from "@/lib/generated/prisma/enums";
-import { localizedPath } from "@/lib/i18n/config";
 import { type CurrentUser, getCurrentUser } from "@/lib/session";
 
 // Server code only. The admin area (feature 12 onward) is English-only at /admin.
@@ -16,14 +15,11 @@ import { type CurrentUser, getCurrentUser } from "@/lib/session";
 
 // Every admin page, action, and route calls this first; the admin layout only
 // hides its chrome. The role comes from the session's user row, never from
-// input. A signed-in non-admin gets a 404, so the area's existence is not shown.
-export async function requireAdmin(path: string): Promise<CurrentUser> {
+// input. Anyone else, signed in or not, gets a 404 so the area's existence is
+// not shown; admins sign in through the store login, then open /admin.
+export async function requireAdmin(): Promise<CurrentUser> {
   const user = await getCurrentUser();
-  if (!user) {
-    const login = localizedPath("en", "/login");
-    redirect(`${login}?${new URLSearchParams({ next: path })}`);
-  }
-  if (user.role !== "ADMIN") notFound();
+  if (user?.role !== "ADMIN") notFound();
   return user;
 }
 

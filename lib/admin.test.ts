@@ -41,26 +41,24 @@ beforeEach(() => {
 });
 
 describe("requireAdmin", () => {
-  it("sends a signed-out visitor to sign in, returning to the admin page", async () => {
+  it("gives a signed-out visitor a 404, not a sign-in redirect", async () => {
     getCurrentUser.mockResolvedValue(null);
 
-    await expect(requireAdmin("/admin")).rejects.toThrow(
-      "redirect:/en/login?next=%2Fadmin",
-    );
-    expect(notFound).not.toHaveBeenCalled();
+    await expect(requireAdmin()).rejects.toThrow("notFound");
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   it("gives a signed-in customer a 404", async () => {
     getCurrentUser.mockResolvedValue(customer);
 
-    await expect(requireAdmin("/admin")).rejects.toThrow("notFound");
+    await expect(requireAdmin()).rejects.toThrow("notFound");
     expect(redirect).not.toHaveBeenCalled();
   });
 
   it("returns the admin", async () => {
     getCurrentUser.mockResolvedValue(admin);
 
-    await expect(requireAdmin("/admin")).resolves.toEqual(admin);
+    await expect(requireAdmin()).resolves.toEqual(admin);
     expect(redirect).not.toHaveBeenCalled();
     expect(notFound).not.toHaveBeenCalled();
   });

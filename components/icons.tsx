@@ -219,6 +219,51 @@ export function EyeIcon(props: IconProps) {
   );
 }
 
+export function DashboardIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="3.5" width="7" height="9" rx="1.5" />
+      <rect x="13.5" y="3.5" width="7" height="5" rx="1.5" />
+      <rect x="13.5" y="11.5" width="7" height="9" rx="1.5" />
+      <rect x="3.5" y="15.5" width="7" height="5" rx="1.5" />
+    </Icon>
+  );
+}
+
+export function SidebarIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+      <path d="M9.5 4.5v15" />
+    </Icon>
+  );
+}
+
+export function MenuIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M4 6.5h16M4 12h16M4 17.5h16" />
+    </Icon>
+  );
+}
+
+export function ExternalIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
+    </Icon>
+  );
+}
+
+export function CalendarIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="5" width="17" height="15.5" rx="2" />
+      <path d="M3.5 10h17M8 3v4M16 3v4" />
+    </Icon>
+  );
+}
+
 export function EyeOffIcon(props: IconProps) {
   return (
     <Icon {...props}>
