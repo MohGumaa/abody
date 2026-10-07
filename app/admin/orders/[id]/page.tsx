@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { OrderNumber, StatusChip } from "@/components/account/AccountParts";
+import { OrderRefund } from "@/components/admin/OrderRefund";
 import { OrderStatusControl } from "@/components/admin/OrderStatusControl";
 import {
   Table,
@@ -182,6 +183,26 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
               </p>
             )}
           </section>
+
+          {/* Only paid orders can be refunded; others follow Stripe. */}
+          {isFulfilmentStatus(order.status) && (
+            <section aria-labelledby="order-refund-title" className={CARD}>
+              <h2 id="order-refund-title" className="text-lg font-semibold">
+                Refund
+              </h2>
+              {order.stripePaymentIntentId ? (
+                <OrderRefund
+                  orderId={order.id}
+                  amount={`${formatPriceCents(order.totalCents)} ${order.currency.toUpperCase()}`}
+                />
+              ) : (
+                <p className="text-sm text-muted">
+                  No Stripe payment is recorded for this order, so it can&apos;t be refunded
+                  here. Refund it in the Stripe dashboard.
+                </p>
+              )}
+            </section>
+          )}
         </div>
       </div>
     </>

@@ -1,11 +1,14 @@
 import Stripe from "stripe";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { syncCheckoutSession } = vi.hoisted(() => ({
+const { syncCheckoutSession, syncChargeRefund, revalidatePath } = vi.hoisted(() => ({
   syncCheckoutSession: vi.fn(),
+  syncChargeRefund: vi.fn(),
+  revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/order-sync", () => ({ syncCheckoutSession }));
+vi.mock("@/lib/order-sync", () => ({ syncCheckoutSession, syncChargeRefund }));
+vi.mock("next/cache", () => ({ revalidatePath }));
 
 import { POST } from "./route";
 
@@ -43,6 +46,8 @@ beforeEach(() => {
   vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_route");
   vi.stubEnv("STRIPE_WEBHOOK_SECRET", SECRET);
   syncCheckoutSession.mockReset();
+  syncChargeRefund.mockReset().mockResolvedValue(0);
+  revalidatePath.mockClear();
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -133,5 +138,40 @@ describe("POST /api/stripe/webhook", () => {
 
     expect(response.status).toBe(500);
     expect((await response.json()).error.code).toBe("internal_error");
+  });
+
+  it("syncs a verified charge.refunded event and refreshes the pages", async () => {
+    const charge = { id: "ch_1", refunded: true, payment_intent: "pi_1" };
+    syncChargeRefund.mockResolvedValue(1);
+
+    const response = await POST(signed(eventBody("charge.refunded", charge)));
+
+    expect(response.status).toBe(200);
+    expect(syncChargeRefund).toHaveBeenCalledWith(charge);
+    expect(syncCheckoutSession).not.toHaveBeenCalled();
+    expect(revalidatePath).toHaveBeenCalledWith("/admin", "layout");
+    expect(revalidatePath).toHaveBeenCalledWith("/[lang]", "layout");
+  });
+
+  it("skips revalidation when a refund moves no order", async () => {
+    const response = await POST(signed(eventBody("charge.refunded", { id: "ch_1" })));
+
+    expect(response.status).toBe(200);
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it("ignores an unsigned charge.refunded event", async () => {
+    const response = await POST(request(eventBody("charge.refunded", { id: "ch_1" })));
+
+    expect(response.status).toBe(400);
+    expect(syncChargeRefund).not.toHaveBeenCalled();
+  });
+
+  it("returns 500 so Stripe retries when the refund sync fails", async () => {
+    syncChargeRefund.mockRejectedValue(new Error("db down"));
+
+    const response = await POST(signed(eventBody("charge.refunded", { id: "ch_1" })));
+
+    expect(response.status).toBe(500);
   });
 });

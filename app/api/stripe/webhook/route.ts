@@ -1,6 +1,7 @@
+import { revalidatePath } from "next/cache";
 import type Stripe from "stripe";
 import { apiError } from "@/lib/api-error";
-import { syncCheckoutSession } from "@/lib/order-sync";
+import { syncChargeRefund, syncCheckoutSession } from "@/lib/order-sync";
 import { getStripe } from "@/lib/stripe";
 
 // Stripe calls this endpoint; only a signature-verified event changes orders.
@@ -36,6 +37,13 @@ export async function POST(request: Request) {
       case "checkout.session.async_payment_succeeded":
       case "checkout.session.async_payment_failed":
         await syncCheckoutSession(event.type, event.data.object);
+        break;
+      case "charge.refunded":
+        if ((await syncChargeRefund(event.data.object)) > 0) {
+          // The admin pages and the customer's account pages.
+          revalidatePath("/admin", "layout");
+          revalidatePath("/[lang]", "layout");
+        }
         break;
       default:
         // Acknowledged so Stripe stops sending it; nothing to do.

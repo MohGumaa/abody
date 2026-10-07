@@ -1,5 +1,6 @@
 import type Stripe from "stripe";
 import { db } from "@/lib/db";
+import { PAID_ORDER_STATUSES } from "@/lib/delivery";
 import { Prisma } from "@/lib/generated/prisma/client";
 import type { OrderStatus } from "@/lib/generated/prisma/enums";
 import {
@@ -9,8 +10,9 @@ import {
 } from "@/lib/orders";
 import { getStripe } from "@/lib/stripe";
 
-// Server code only. Called from the verified Stripe webhook, the only writer of
-// orders and payment status.
+// Server code only. Called from the verified Stripe webhook, which writes orders
+// and payment status. The admin refund action (feature 15b) also marks orders
+// Refunded, with the same conditional write as syncChargeRefund.
 
 // The cart caps at 50 lines, so one page always holds the whole session.
 const LINE_ITEM_LIMIT = 100;
@@ -105,4 +107,21 @@ export async function syncCheckoutSession(
       stripePaymentIntentId: paymentIntentId(session) ?? undefined,
     },
   });
+}
+
+// A fully refunded charge marks its paid orders Refunded, which ends their
+// downloads. Partial refunds change nothing. Returns the number of orders moved.
+export async function syncChargeRefund(charge: Stripe.Charge): Promise<number> {
+  if (charge.refunded !== true) return 0;
+  const intent = charge.payment_intent;
+  const intentId = typeof intent === "string" ? intent : intent?.id;
+  if (!intentId) return 0;
+  const { count } = await db.order.updateMany({
+    where: {
+      stripePaymentIntentId: intentId,
+      status: { in: [...PAID_ORDER_STATUSES] },
+    },
+    data: { status: "REFUNDED" },
+  });
+  return count;
 }

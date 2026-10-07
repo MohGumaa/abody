@@ -1,6 +1,6 @@
 # Abody Digital Ecommerce Platform - Project Overview
 
-<!-- blueprint:source-hash 2913dd9960d8c26db8481f3e184d24f85e26c309538925f1483fe9b825d47bfe -->
+<!-- blueprint:source-hash 68384fc5aca46e709bf3bd2f49b31f74fb3722119a41537096769deba783410f -->
 
 > A bilingual (English and Arabic) storefront where customers buy Abody's
 > downloadable digital products and digital services with Stripe, plus an admin
@@ -34,7 +34,7 @@ through the store login and are promoted from a shell with
 
 ## Features
 
-In `build-plan.md` order. Shipped: 1-4, 26, 22, 5-13. Next: 14. The headline
+In `build-plan.md` order. Shipped: 1-4, 26, 22, 5-14, 15a. Next: 15b. The headline
 flow (discover, cart, pay, receive, manage) is complete; the remaining items
 are admin tools, storage, email, content, analytics, hardening, and launch.
 
@@ -69,10 +69,17 @@ are admin tools, storage, email, content, analytics, hardening, and launch.
     active services, recent orders.
 13. **Admin Product Management** (done) - create, edit, publish, unpublish, and
     delete digital products, upload their file, edit Arabic content.
-14. **Admin Service Management** - create and manage service offerings:
-    packages, pricing, duration, requirements, availability.
+14. **Admin Service Management** (done) - create, edit, publish, unpublish,
+    and delete service offerings: price, duration, requirements, Arabic
+    content. One service is one package; tiers are separate services.
 15. **Admin Order Management** - orders, purchased items, payment and order
     status, refunds.
+    - 15a. **Order List and Fulfilment** (done) - paged order list and detail
+      (customer, items, amounts, payment and order status, Stripe references);
+      admins move a paid order between Paid, Processing, and Completed only.
+    - 15b. **Refunds** - full refund from the admin via the Stripe Refunds API;
+      the verified `charge.refunded` webhook (also for dashboard refunds) marks
+      the order Refunded, ending download access.
 16. **Admin Service Management** - purchased service work: requirements, notes,
     progress, completion. (Same title as 14, different scope.)
 17. **Customer Management** - customers with their orders, purchases,
@@ -145,7 +152,11 @@ current `Product` rows. Digital products take quantity 1-99, services 1.
   checkout; guest orders keep only `customerEmail` (from Stripe)
 - `status` (enum: `PENDING` default, `PAID`, `PROCESSING`, `COMPLETED`,
   `CANCELLED`, `REFUNDED`); paid, processing, and completed orders keep their
-  downloads
+  downloads. Admins may only move between `PAID`, `PROCESSING`, and
+  `COMPLETED` (one conditional write); the other three are set by Stripe events
+  and refunds. Payment status is derived, not stored: Pending "Awaiting
+  payment", Paid/Processing/Completed "Paid", Cancelled "Not paid", Refunded
+  "Refunded"
 - `totalCents`, `currency` - from the Checkout session
 - `stripeCheckoutSessionId` (unique), `stripePaymentIntentId` (optional)
 - `createdAt`, `updatedAt`; has many `OrderItem`
@@ -176,7 +187,7 @@ first sends onboarding details. The catalog entry is a `Product` of type
 No local payments table. Stripe is the source of truth; the app stores only the
 references on `Order`.
 
-> TODO: no data shapes yet for service packages (14), discount codes (20),
+> TODO: no data shapes yet for discount codes (20),
 > managed website content (21), analytics events (23), `User.stripeCustomerId`,
 > or a signed-in customer's preferred language (today a `lang` cookie).
 
@@ -252,9 +263,10 @@ URL redirects to the visitor's language. `/admin` and `/api` are never prefixed.
 - `/<lang>/account`, `.../orders`, `.../downloads`, `.../services[/itemId]`,
   `.../settings` - customer dashboard (shipped)
 - `/<lang>/onboarding/[itemId]` - service onboarding form (shipped)
-- `/admin`, `/admin/products`, `/admin/products/new`, `/admin/products/[id]`
-  (shipped); `/admin/orders`, `/admin/customers`, `/admin/services`,
-  `/admin/settings` (planned)
+- `/admin`, `/admin/products[/new|/[id]]`, `/admin/services[/new|/[id]]`,
+  `/admin/orders[?page=N]`, `/admin/orders/[id]` (shipped); `/admin/customers`,
+  `/admin/settings` (planned). Service work (16) still needs an admin route;
+  `/admin/services` now holds the service catalog.
 - `/api/products`, `/api/products/[slug]` - catalog API, optional `?lang=en|ar`
 - `/api/downloads/[itemId]` - protected download for a paid order item
 - `PUT /api/admin/products/[id]/file` - admin file upload (PDF or ZIP, 25 MB)
@@ -291,13 +303,15 @@ Resolve these in the plans, then re-run `/overview`.
    webhooks, but the plan requires those protections as each feature ships.
 9. **Undecided providers.** Object storage (R2 or S3), email, analytics, and the
    deployment target.
-10. **Service packages.** Item 14 and the service flow mention choosing a
-    package; no package or pricing-tier data exists in either plan.
+10. **Service packages.** Feature 14 shipped "one service is one package"
+    (tiers are separate services), but item 14 and project-plan section 13
+    ("Choose Package") still read as if packages exist. Record the decision.
 11. **Cart after sign-in.** Neither plan says whether the cookie cart moves to
     the account.
 12. **Product reviews.** The detail sketch shows a star rating; no review
     feature or data exists.
-13. **Refunds.** Item 15 includes refunds; whether they are issued from the
-    admin or only mirrored from Stripe is not stated.
+13. **Payment vs order status.** The project plan lists them as separate
+    fields; 15a derives payment status from the single order status. Not
+    recorded in the plans.
 14. **Heading typo.** Project-plan section "9. Stripe Payment Flow" is missing
     its `##` marker.

@@ -142,3 +142,27 @@
 **Why it matters:** `generateMetadata` (line 32) and the page (line 53) each call `getAdminOrder(id)`, which is a plain async function rather than a React `cache()` wrapper, so every admin render of `/admin/orders/[id]` runs the same `findUnique` with its items and products join twice. This repeats the pattern already recorded for the product and service edit pages in F-18, as the spec directed ("as the product edit page does"). Admin-only traffic, so the cost is small; it is wasted work, not a defect.
 **Suggested fix:** Wrap `getAdminOrder` in React `cache()` (as `getCurrentUser` is in `lib/session.ts`) so metadata and page share one query. This can be done together with F-18. Requirement lost: None.
 **Resolution:**
+
+### F-22 [P3] open - The success message and focus target are inside the Refund card that the refreshed page removes
+
+**File:** components/admin/OrderRefund.tsx:88
+**Found:** 2026-10-07 by /audit independent (scope: current; lens: quality)
+**Why it matters:** The spec says the refund result appears in a `role="status"` live region. On success, `refundOrder` calls `revalidatePath`, so the action response carries the refreshed page in which the order is Refunded and `app/admin/orders/[id]/page.tsx:188` no longer renders the Refund card. The "Order refunded." status text and the focused "Confirm refund" button are both inside that card, so they unmount in the same update. A screen-reader user likely hears no confirmation, and keyboard focus drops to the document body. Sighted users still see the Refunded chip and payment status. Failure results are announced and return focus correctly. This comes from code-path reading only; it was not exercised in a browser in this pass.
+**Suggested fix:** Confirm it during `/check` with a screen reader or by checking `document.activeElement` after a refund. If confirmed, move focus to a stable element after success (for example, the order heading with `tabIndex={-1}`), or put a page-level status message outside the conditional card. Requirement lost: None.
+**Resolution:**
+
+### F-23 [P3] open - The confirm step shows the order total even when a partial dashboard refund means Stripe will refund less
+
+**File:** app/admin/orders/[id]/page.tsx:196
+**Found:** 2026-10-07 by /audit independent (scope: current; lens: quality)
+**Why it matters:** Under the spec's decision, a partial refund made in the Stripe dashboard leaves the order Paid, so the Refund card is still shown. `refunds.create` without an `amount` then refunds only the remaining balance, but the confirm text says "Refund <order total> to the customer". For example, after a $50 partial refund on a $147 order, the admin confirms "$147.00" and Stripe refunds $97. The money movement is correct, and the spec specifies `formatPriceCents(order.totalCents)`, so the code matches the contract. The gap is in the contract: an admin can confirm an amount that Stripe will not refund.
+**Suggested fix:** This is a user decision about the spec wording. The smallest option is to change the confirm copy to "Refund the remaining balance of this payment (order total $X.XX USD)…". Showing the exact remaining amount would need a Stripe read when the page renders, which is beyond what the current requirements call for. Requirement lost: None.
+**Resolution:**
+
+### F-24 [P3] open - The no_payment action message drops a clause from the spec's text
+
+**File:** components/admin/OrderRefund.tsx:17
+**Found:** 2026-10-07 by /audit independent (scope: current; lens: quality)
+**Why it matters:** Spec step 3 says the `no_payment` message is "the no-payment text from In scope": "No Stripe payment is recorded for this order, so it can't be refunded here. Refund it in the Stripe dashboard." The page note (`app/admin/orders/[id]/page.tsx:200-201`) uses that text. The action message leaves out ", so it can't be refunded here". This only shows if the payment intent disappears between page render and submit, so the impact is a small wording drift.
+**Suggested fix:** Use the exact In scope sentence in `MESSAGES.no_payment`. Requirement lost: None.
+**Resolution:**

@@ -18,7 +18,7 @@ vi.mock("@/lib/stripe", () => ({
 }));
 
 import { Prisma } from "@/lib/generated/prisma/client";
-import { syncCheckoutSession } from "@/lib/order-sync";
+import { syncChargeRefund, syncCheckoutSession } from "@/lib/order-sync";
 
 function session(
   overrides: Partial<Stripe.Checkout.Session> = {},
@@ -251,5 +251,61 @@ describe("syncCheckoutSession", () => {
         session({ amount_total: null }),
       ),
     ).rejects.toThrow(/total/);
+  });
+});
+
+function charge(overrides: Partial<Stripe.Charge> = {}): Stripe.Charge {
+  return {
+    id: "ch_1",
+    refunded: true,
+    amount: 14700,
+    amount_refunded: 14700,
+    payment_intent: "pi_1",
+    ...overrides,
+  } as Stripe.Charge;
+}
+
+describe("syncChargeRefund", () => {
+  const REFUND_WRITE = {
+    where: {
+      stripePaymentIntentId: "pi_1",
+      status: { in: ["PAID", "PROCESSING", "COMPLETED"] },
+    },
+    data: { status: "REFUNDED" },
+  };
+
+  it("marks the paid orders of a fully refunded charge Refunded", async () => {
+    order.updateMany.mockResolvedValue({ count: 1 });
+
+    await expect(syncChargeRefund(charge())).resolves.toBe(1);
+    expect(order.updateMany).toHaveBeenCalledWith(REFUND_WRITE);
+  });
+
+  it("reads an expanded payment intent", async () => {
+    order.updateMany.mockResolvedValue({ count: 1 });
+
+    await syncChargeRefund(
+      charge({ payment_intent: { id: "pi_1" } as Stripe.PaymentIntent }),
+    );
+
+    expect(order.updateMany).toHaveBeenCalledWith(REFUND_WRITE);
+  });
+
+  it("ignores a partial refund", async () => {
+    await expect(
+      syncChargeRefund(charge({ refunded: false, amount_refunded: 500 })),
+    ).resolves.toBe(0);
+    expect(order.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("ignores a charge without a payment intent", async () => {
+    await expect(syncChargeRefund(charge({ payment_intent: null }))).resolves.toBe(0);
+    expect(order.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("returns 0 when no paid order matches", async () => {
+    order.updateMany.mockResolvedValue({ count: 0 });
+
+    await expect(syncChargeRefund(charge())).resolves.toBe(0);
   });
 });
