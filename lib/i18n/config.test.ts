@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isAdminPath,
   isLocale,
   localeDirection,
   localizedPath,
@@ -69,6 +70,22 @@ describe("resolveLocale", () => {
       expect(resolveLocale(undefined, header)).toBe("en");
     }
   });
+});
+
+describe("isAdminPath", () => {
+  it.each(["/admin", "/admin/", "/admin/orders", "/admin?x=1"])(
+    "matches %s",
+    (path) => {
+      expect(isAdminPath(path)).toBe(true);
+    },
+  );
+
+  it.each(["/", "/administrator", "/admins", "/en/admin", "/ar/admin", "admin", "/Admin"])(
+    "does not match %s",
+    (path) => {
+      expect(isAdminPath(path)).toBe(false);
+    },
+  );
 });
 
 describe("pathLocale", () => {

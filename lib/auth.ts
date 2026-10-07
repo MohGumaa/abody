@@ -1,4 +1,4 @@
-import { isLocale, type Locale } from "@/lib/i18n/config";
+import { isAdminPath, isLocale, type Locale } from "@/lib/i18n/config";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/password";
 
 // Form parsing for the sign-in and register Server Actions. No next/* imports.
@@ -55,6 +55,11 @@ function emailError(email: string): AuthFieldError | undefined {
   return email.length <= EMAIL_MAX_LENGTH && EMAIL_PATTERN.test(email)
     ? undefined
     : "email_invalid";
+}
+
+// For an already normalized email.
+export function isValidEmail(email: string): boolean {
+  return emailError(email) === undefined;
 }
 
 export interface RegisterInput {
@@ -227,8 +232,8 @@ export function parsePasswordChangeForm(
   return { ok: true, data: { currentPassword, newPassword } };
 }
 
-// Where to go after signing in. Only a path inside this language's site is
-// accepted, so the parameter cannot send anyone to another origin.
+// Where to go after signing in. Only a path inside this language's site or the
+// admin area is accepted, so the parameter cannot send anyone to another origin.
 export function safeNextPath(value: unknown, locale: Locale): string {
   const fallback = `/${locale}/account`;
   if (typeof value !== "string" || value.length > NEXT_MAX_LENGTH) {
@@ -238,7 +243,8 @@ export function safeNextPath(value: unknown, locale: Locale): string {
   const inSite =
     value === prefix ||
     value.startsWith(`${prefix}/`) ||
-    value.startsWith(`${prefix}?`);
+    value.startsWith(`${prefix}?`) ||
+    isAdminPath(value);
   if (!inSite || value.includes("//") || value.includes("\\")) return fallback;
   // The sign-in pages redirect a signed-in visitor to next, so pointing next
   // back at them would loop.

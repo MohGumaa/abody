@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
+  isAdminPath,
   LOCALE_COOKIE,
   localizedPath,
   pathLocale,
@@ -8,7 +9,7 @@ import {
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  if (pathLocale(pathname)) return;
+  if (pathLocale(pathname) || isAdminPath(pathname)) return;
 
   const locale = resolveLocale(
     request.cookies.get(LOCALE_COOKIE)?.value,
@@ -21,6 +22,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Customer pages only: the API, Next.js internals, and files keep their URLs.
+  // Customer pages only: the API, Next.js internals, and files keep their URLs
+  // (the function also skips the unprefixed admin area).
   matcher: ["/((?!api/|_next/|.*\\..*).*)"],
 };

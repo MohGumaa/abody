@@ -173,6 +173,14 @@ describe("safeNextPath", () => {
     },
   );
 
+  it.each(["/admin", "/admin/orders", "/admin?x=1"])(
+    "accepts the admin path %s from either language",
+    (path) => {
+      expect(safeNextPath(path, "en")).toBe(path);
+      expect(safeNextPath(path, "ar")).toBe(path);
+    },
+  );
+
   it.each([
     null,
     undefined,
@@ -191,6 +199,11 @@ describe("safeNextPath", () => {
     "/en/login?next=/en",
     "/en/register",
     `/en/${"x".repeat(520)}`,
+    "//admin",
+    "/admin//evil.com",
+    "/admin/\\evil.com",
+    "/administrator",
+    `/admin/${"x".repeat(520)}`,
   ])("rejects %j", (value) => {
     expect(safeNextPath(value, "en")).toBe("/en/account");
   });

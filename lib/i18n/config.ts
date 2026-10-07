@@ -57,6 +57,14 @@ export function pathLocale(pathname: string): Locale | null {
   return isLocale(segment) ? segment : null;
 }
 
+// The admin area is English-only and never carries a language prefix. Takes a
+// pathname, optionally followed by a query.
+export function isAdminPath(path: string): boolean {
+  return (
+    path === "/admin" || path.startsWith("/admin/") || path.startsWith("/admin?")
+  );
+}
+
 export function localizedPath(locale: Locale, path: string): string {
   return path === "/" ? `/${locale}` : `/${locale}${path}`;
 }
