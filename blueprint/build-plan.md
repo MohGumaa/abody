@@ -22,7 +22,7 @@
 - [x] 10. **Service Purchase & Onboarding** - Create post-purchase onboarding forms for services such as Ads Management and Account Management.
 - [x] 11. **Customer Service Tracking** - Allow customers to view purchased services, submitted requirements, service status, and updates.
 - [x] 12. **Admin Dashboard** - Build the protected admin dashboard with revenue, orders, customers, products, services, and recent activity.
-- [ ] 13. **Admin Product Management** - Allow admins to create, edit, publish, unpublish, and delete digital products with pricing, images, descriptions, and downloadable files.
+- [x] 13. **Admin Product Management** - Allow admins to create, edit, publish, unpublish, and delete digital products with pricing, images, descriptions, and downloadable files.
 - [ ] 14. **Admin Service Management** - Allow admins to create and manage services, packages, pricing, duration, requirements, and availability.
 - [ ] 15. **Admin Order Management** - Allow admins to view and manage orders, customers, purchased items, payment status, order status, and refunds.
 - [ ] 16. **Admin Service Management** - Allow admins to manage service orders, customer requirements, notes, progress, and completion status.

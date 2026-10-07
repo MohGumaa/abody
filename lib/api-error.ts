@@ -3,6 +3,10 @@ export type ApiErrorCode =
   | "invalid_lang"
   | "not_found"
   | "invalid_signature"
+  | "forbidden"
+  | "invalid_file_type"
+  | "empty_file"
+  | "file_too_large"
   | "internal_error";
 
 export function apiError(

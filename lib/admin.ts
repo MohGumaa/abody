@@ -162,3 +162,105 @@ export async function getAdminOverview(): Promise<AdminOverview> {
     })),
   };
 }
+
+// Feature 13: digital products only; services are managed in feature 14.
+export const ADMIN_PRODUCT_TYPE: ProductType = "DIGITAL_PRODUCT";
+
+// Ids are cuids; anything longer is not worth a query.
+const PRODUCT_ID_MAX_LENGTH = 64;
+
+export function isProductId(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    value.length <= PRODUCT_ID_MAX_LENGTH
+  );
+}
+
+export interface AdminProductRow {
+  id: string;
+  name: string;
+  slug: string;
+  category: string;
+  priceCents: number;
+  status: ProductStatus;
+  hasFile: boolean;
+  updatedAt: Date;
+}
+
+export async function listAdminProducts(): Promise<AdminProductRow[]> {
+  const rows = await db.product.findMany({
+    where: { type: ADMIN_PRODUCT_TYPE },
+    orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      category: true,
+      priceCents: true,
+      status: true,
+      updatedAt: true,
+      digitalFile: true,
+    },
+  });
+  return rows.map(({ digitalFile, ...row }) => ({
+    ...row,
+    hasFile: digitalFile !== null,
+  }));
+}
+
+export interface AdminProduct {
+  id: string;
+  name: string;
+  slug: string;
+  shortDescription: string;
+  description: string;
+  priceCents: number;
+  category: string;
+  image: string | null;
+  included: string[];
+  nameAr: string | null;
+  categoryAr: string | null;
+  shortDescriptionAr: string | null;
+  descriptionAr: string | null;
+  includedAr: string[];
+  status: ProductStatus;
+  // Only the download name; the storage key never leaves the server.
+  fileName: string | null;
+  orderCount: number;
+  updatedAt: Date;
+}
+
+export async function getAdminProduct(id: string): Promise<AdminProduct | null> {
+  if (!isProductId(id)) return null;
+  const row = await db.product.findFirst({
+    where: { id, type: ADMIN_PRODUCT_TYPE },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      shortDescription: true,
+      description: true,
+      priceCents: true,
+      category: true,
+      image: true,
+      included: true,
+      nameAr: true,
+      categoryAr: true,
+      shortDescriptionAr: true,
+      descriptionAr: true,
+      includedAr: true,
+      status: true,
+      digitalFile: true,
+      updatedAt: true,
+      _count: { select: { orderItems: true } },
+    },
+  });
+  if (!row) return null;
+  const { digitalFile, _count, ...product } = row;
+  return {
+    ...product,
+    fileName: digitalFile ? digitalFile.slice(digitalFile.lastIndexOf("/") + 1) : null,
+    orderCount: _count.orderItems,
+  };
+}

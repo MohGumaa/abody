@@ -5,7 +5,7 @@ const { getCurrentUser, redirect, notFound, db } = vi.hoisted(() => ({
   db: {
     order: { aggregate: vi.fn(), count: vi.fn(), findMany: vi.fn() },
     user: { count: vi.fn() },
-    product: { groupBy: vi.fn() },
+    product: { groupBy: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
     orderItem: { count: vi.fn() },
   },
   // Both throw in Next.js, ending the page.
@@ -26,6 +26,8 @@ import {
   catalogCounts,
   customerLabel,
   getAdminOverview,
+  getAdminProduct,
+  listAdminProducts,
   requireAdmin,
 } from "@/lib/admin";
 
@@ -240,5 +242,42 @@ describe("getAdminOverview", () => {
         itemCount: 3,
       },
     ]);
+  });
+});
+
+describe("admin products", () => {
+  const updatedAt = new Date("2026-10-01T00:00:00Z");
+
+  it("lists digital products with a file flag, never the key", async () => {
+    db.product.findMany.mockResolvedValue([
+      { id: "p1", name: "A", slug: "a", category: "Guides", priceCents: 900, status: "PUBLISHED", updatedAt, digitalFile: "seed/a.pdf" },
+      { id: "p2", name: "B", slug: "b", category: "Guides", priceCents: 900, status: "UNPUBLISHED", updatedAt, digitalFile: null },
+    ]);
+    const rows = await listAdminProducts();
+    expect(db.product.findMany.mock.calls[0][0].where).toEqual({ type: "DIGITAL_PRODUCT" });
+    expect(rows.map((row) => row.hasFile)).toEqual([true, false]);
+    expect(rows[0]).not.toHaveProperty("digitalFile");
+  });
+
+  it("returns one digital product with only the file name", async () => {
+    db.product.findFirst.mockResolvedValue({
+      id: "p1",
+      name: "A",
+      digitalFile: "products/p1/0a1b/Guide.pdf",
+      _count: { orderItems: 3 },
+      updatedAt,
+    });
+    const product = await getAdminProduct("p1");
+    expect(db.product.findFirst.mock.calls[0][0].where).toEqual({ id: "p1", type: "DIGITAL_PRODUCT" });
+    expect(product).toMatchObject({ id: "p1", fileName: "Guide.pdf", orderCount: 3 });
+    expect(product).not.toHaveProperty("digitalFile");
+  });
+
+  it("returns null for an unknown, service, or oversized id", async () => {
+    db.product.findFirst.mockResolvedValue(null);
+    expect(await getAdminProduct("s1")).toBeNull();
+    db.product.findFirst.mockClear();
+    expect(await getAdminProduct("x".repeat(65))).toBeNull();
+    expect(db.product.findFirst).not.toHaveBeenCalled();
   });
 });

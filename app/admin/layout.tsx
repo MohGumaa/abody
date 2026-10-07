@@ -46,7 +46,10 @@ export function generateMetadata(): Promise<Metadata> {
 const NAV_SECTIONS: SideNavSection[] = [
   {
     label: "Admin",
-    links: [{ href: "/admin", label: "Dashboard", icon: "dashboard" }],
+    links: [
+      { href: "/admin", label: "Dashboard", icon: "dashboard" },
+      { href: "/admin/products", label: "Products", icon: "grid" },
+    ],
   },
   {
     label: "Storefront",
