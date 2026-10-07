@@ -162,6 +162,63 @@ export async function listAccountServices(
   }));
 }
 
+const ITEM_ID_MAX_LENGTH = 64;
+
+export interface AccountServiceDetail {
+  itemId: string;
+  name: string;
+  nameAr: string | null;
+  orderNumber: number;
+  purchasedAt: Date;
+  // Null until the customer sends their onboarding details.
+  service: {
+    status: ServiceStatus;
+    // Validate with readRequirements before showing.
+    requirements: unknown;
+    createdAt: Date;
+    startDate: Date | null;
+    completedDate: Date | null;
+    updatedAt: Date;
+  } | null;
+}
+
+// One service item in the user's paid orders, or null. Every miss looks the
+// same, so nothing tells whether the item exists. Never selects adminNotes.
+export async function findAccountService(
+  userId: string,
+  itemId: unknown,
+): Promise<AccountServiceDetail | null> {
+  if (typeof itemId !== "string" || itemId.length === 0) return null;
+  if (itemId.length > ITEM_ID_MAX_LENGTH) return null;
+  const item = await db.orderItem.findFirst({
+    where: { id: itemId, order: paidOrdersOf(userId), product: SERVICE_PRODUCT },
+    select: {
+      id: true,
+      product: { select: { name: true, nameAr: true } },
+      order: { select: { number: true, createdAt: true } },
+      service: {
+        select: {
+          status: true,
+          requirements: true,
+          createdAt: true,
+          startDate: true,
+          completedDate: true,
+          updatedAt: true,
+        },
+      },
+    },
+  });
+  if (!item) return null;
+  return {
+    itemId: item.id,
+    name: item.product.name,
+    nameAr: item.product.nameAr,
+    orderNumber: item.order.number,
+    purchasedAt: item.order.createdAt,
+    service: item.service,
+  };
+}
+
 // Up to two letters for the profile avatar.
 export function initials(name: string): string {
   const words = name.trim().split(/\s+/).filter(Boolean);

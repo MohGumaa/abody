@@ -4,7 +4,7 @@ import { DownloadIcon } from "@/components/icons";
 import type { AccountDownload } from "@/lib/account";
 import { localizedName } from "@/lib/catalog";
 import { formatDate } from "@/lib/dates";
-import type { OrderStatus } from "@/lib/generated/prisma/enums";
+import type { OrderStatus, ServiceStatus } from "@/lib/generated/prisma/enums";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/dictionaries/en";
 import { formatOrderNumber } from "@/lib/orders";
@@ -38,6 +38,33 @@ export function StatusChip({
       className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap ${STATUS_TONES[status]}`}
     >
       {text.status[status]}
+    </span>
+  );
+}
+
+const SERVICE_STATUS_TONES: Record<ServiceStatus | "none", string> = {
+  none: "bg-warning-soft text-warning",
+  NEW: "bg-primary-soft text-primary-strong",
+  WAITING_FOR_INFORMATION: "bg-warning-soft text-warning",
+  IN_PROGRESS: "bg-primary-soft text-primary-strong",
+  COMPLETED: "bg-success-soft text-success",
+  CANCELLED: "bg-danger-soft text-danger",
+};
+
+// A purchased service's status; null means no onboarding details yet.
+export function ServiceStatusChip({
+  status,
+  text,
+}: {
+  status: ServiceStatus | null;
+  text: AccountText;
+}) {
+  const key = status ?? "none";
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap ${SERVICE_STATUS_TONES[key]}`}
+    >
+      {text.serviceStatus[key]}
     </span>
   );
 }

@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { OrderNumber } from "@/components/account/AccountParts";
+import { OnboardingAnswers } from "@/components/onboarding/OnboardingAnswers";
 import { OnboardingForm } from "@/components/onboarding/OnboardingForm";
 import { localizedName } from "@/lib/catalog";
 import { isCheckoutSessionId } from "@/lib/checkout";
 import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
-import {
-  canEditOnboarding,
-  ONBOARDING_FIELDS,
-  readRequirements,
-} from "@/lib/onboarding";
+import { canEditOnboarding, readRequirements } from "@/lib/onboarding";
 import { findOnboardingItem } from "@/lib/services";
 import { getCurrentUser } from "@/lib/session";
 
@@ -80,19 +77,7 @@ export default async function OnboardingPage({
               <p className="rounded-control bg-surface px-4 py-3 text-sm">
                 {text.locked}
               </p>
-              <dl className="grid gap-4">
-                {ONBOARDING_FIELDS.map((field) => (
-                  <div key={field} className="grid gap-1">
-                    <dt className="text-sm font-medium">{text.fields[field]}</dt>
-                    <dd
-                      dir="auto"
-                      className="whitespace-pre-line wrap-break-word text-muted"
-                    >
-                      {saved?.[field] ?? text.notProvided}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
+              <OnboardingAnswers answers={saved} text={text} />
             </>
           )}
         </section>

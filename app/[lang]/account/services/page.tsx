@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   ACCOUNT_PANEL,
   EmptyState,
   OrderNumber,
   PageHead,
-  StatusChip,
+  ServiceStatusChip,
+  TEXT_LINK,
 } from "@/components/account/AccountParts";
 import { OnboardingStatus } from "@/components/onboarding/OnboardingStatus";
 import { listAccountServices } from "@/lib/account";
@@ -20,8 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: account.services.title, robots: { index: false, follow: false } };
 }
 
-// Purchased service items with their onboarding state. Service progress
-// arrives with feature 11.
+// Purchased service items with their service status and onboarding state.
+// Each name opens the service's progress page.
 export default async function AccountServicesPage() {
   const locale = await getLocale();
   const user = await getCurrentUser();
@@ -51,8 +53,17 @@ export default async function AccountServicesPage() {
                   className="flex flex-wrap items-center justify-between gap-4 rounded-card border border-border p-4"
                 >
                   <div className="grid min-w-0 flex-1 gap-1">
-                    <strong className="font-semibold wrap-break-word" dir="auto">
-                      {name}
+                    <strong className="font-semibold wrap-break-word">
+                      <Link
+                        href={localizedPath(
+                          locale,
+                          `/account/services/${encodeURIComponent(service.itemId)}`,
+                        )}
+                        dir="auto"
+                        className={TEXT_LINK}
+                      >
+                        {name}
+                      </Link>
                     </strong>
                     <span className="text-sm text-muted">
                       {text.purchased.replace(
@@ -72,7 +83,7 @@ export default async function AccountServicesPage() {
                       text={onboarding}
                     />
                   </div>
-                  <StatusChip status={service.orderStatus} text={text} />
+                  <ServiceStatusChip status={service.serviceStatus} text={text} />
                 </li>
               );
             })}

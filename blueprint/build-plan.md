@@ -20,7 +20,7 @@
   - [x] 8b. **Account Settings** - Signed-in customers edit their name and email, change their password (current password required), and sign out their other sessions. Forgot-password reset waits for email (19).
 - [x] 9. **Customer Account Dashboard** - Build the customer dashboard with profile information, orders, purchased products, downloads, and services.
 - [x] 10. **Service Purchase & Onboarding** - Create post-purchase onboarding forms for services such as Ads Management and Account Management.
-- [ ] 11. **Customer Service Tracking** - Allow customers to view purchased services, submitted requirements, service status, and updates.
+- [x] 11. **Customer Service Tracking** - Allow customers to view purchased services, submitted requirements, service status, and updates.
 - [ ] 12. **Admin Dashboard** - Build the protected admin dashboard with revenue, orders, customers, products, services, and recent activity.
 - [ ] 13. **Admin Product Management** - Allow admins to create, edit, publish, unpublish, and delete digital products with pricing, images, descriptions, and downloadable files.
 - [ ] 14. **Admin Service Management** - Allow admins to create and manage services, packages, pricing, duration, requirements, and availability.

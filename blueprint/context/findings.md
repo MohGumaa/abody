@@ -103,3 +103,11 @@
 **Suggested fix:** In `parseOnboardingForm`, normalize `\r\n` to `\n` before trimming and counting (for example `value.replace(/\r\n/g, "\n").trim()`). Add a test where a value of exactly the limit, made of `\r\n`-separated lines, parses as `ok`. This also stores a single line-break form. Requirement lost: None. It is a small rule change, so the spec's "Limits count JavaScript string length" line should say the count is taken after line-break normalization.
 **Resolution:**
 
+
+### F-17 [P3] open - The WAITING_FOR_INFORMATION message does not link to the onboarding form itself
+
+**File:** app/[lang]/account/services/[itemId]/page.tsx:88
+**Found:** 2026-10-07 by /audit independent (scope: current; lens: quality)
+**Why it matters:** The spec's In scope list says that for `WAITING_FOR_INFORMATION` "the message asks the customer to update their details and links to the onboarding form." The page renders the status message as plain text in the Progress section (`<p>{text.messages[...]}</p>`). The only link to `/onboarding/<itemId>` is the "Update your details" link in the separate "Your details" section head (line 104, shown because `canEditOnboarding` includes that status). So the customer can still reach the form from the same page and nothing is broken, but the message the spec ties to the link has none. A screen-reader or mobile user who reads "Please update your details" in the Progress panel has to find the link in the next section. The `none` ("Send your details...") message has the same layout.
+**Suggested fix:** When `editable` is true, render the onboarding link right after the status message in the Progress section (reusing `onboardingHref` and the existing `onboarding.add` / `onboarding.edit` labels), or record in the spec that the details-section link meets this requirement. Requirement lost: None.
+**Resolution:**

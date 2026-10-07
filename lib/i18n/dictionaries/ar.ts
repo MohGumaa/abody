@@ -337,6 +337,43 @@ export const ar: Dictionary = {
       intro: "الخدمات التي اشتريتها من فريق Abody.",
       empty: "لا توجد خدمات بعد.",
     },
+    service: {
+      title: "متابعة الخدمة",
+      back: "العودة إلى خدماتك",
+      progress: "مراحل الخدمة",
+      details: "بياناتك",
+      lastUpdated: "آخر تحديث في {date}",
+      noDetails: "لم ترسل بياناتك بعد.",
+      steps: {
+        purchased: "تم الشراء",
+        details: "استلام البيانات",
+        started: "بدء العمل",
+        completed: "اكتمال الخدمة",
+        cancelled: "إلغاء الخدمة",
+      },
+      stepState: {
+        done: "تمّت",
+        current: "المرحلة الحالية",
+        upcoming: "قادمة",
+      },
+      messages: {
+        none: "أرسل بياناتك ليتمكن فريق Abody من البدء.",
+        NEW: "استلمنا بياناتك، وسيبدأ فريق Abody العمل قريباً.",
+        WAITING_FOR_INFORMATION:
+          "يحتاج فريق Abody إلى مزيد من المعلومات. يُرجى تحديث بياناتك.",
+        IN_PROGRESS: "يعمل فريق Abody على خدمتك الآن.",
+        COMPLETED: "اكتملت خدمتك.",
+        CANCELLED: "أُلغيت هذه الخدمة. تواصل مع Abody إذا كان لديك أي سؤال.",
+      },
+    },
+    serviceStatus: {
+      none: "بانتظار بياناتك",
+      NEW: "تم استلام البيانات",
+      WAITING_FOR_INFORMATION: "بانتظار معلومات إضافية",
+      IN_PROGRESS: "قيد التنفيذ",
+      COMPLETED: "مكتملة",
+      CANCELLED: "ملغاة",
+    },
     status: {
       PENDING: "قيد الانتظار",
       PAID: "مدفوع",

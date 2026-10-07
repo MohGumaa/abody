@@ -350,6 +350,44 @@ export const en = {
       intro: "Services you bought from the Abody team.",
       empty: "No services yet.",
     },
+    service: {
+      title: "Service progress",
+      back: "Back to your services",
+      progress: "Progress",
+      details: "Your details",
+      lastUpdated: "Last updated {date}",
+      noDetails: "You have not sent your details yet.",
+      steps: {
+        purchased: "Purchased",
+        details: "Details received",
+        started: "Work started",
+        completed: "Completed",
+        cancelled: "Cancelled",
+      },
+      stepState: {
+        done: "Done",
+        current: "Current step",
+        upcoming: "Upcoming",
+      },
+      messages: {
+        none: "Send your details so the Abody team can start.",
+        NEW: "We received your details. The Abody team will start soon.",
+        WAITING_FOR_INFORMATION:
+          "The Abody team needs more information. Please update your details.",
+        IN_PROGRESS: "The Abody team is working on your service.",
+        COMPLETED: "Your service is complete.",
+        CANCELLED:
+          "This service was cancelled. Contact Abody if you have any questions.",
+      },
+    },
+    serviceStatus: {
+      none: "Details needed",
+      NEW: "Details received",
+      WAITING_FOR_INFORMATION: "Waiting for information",
+      IN_PROGRESS: "In progress",
+      COMPLETED: "Completed",
+      CANCELLED: "Cancelled",
+    },
     status: {
       PENDING: "Pending",
       PAID: "Paid",

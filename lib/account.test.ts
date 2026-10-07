@@ -2,12 +2,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { order, orderItem } = vi.hoisted(() => ({
   order: { count: vi.fn(), findMany: vi.fn() },
-  orderItem: { count: vi.fn(), findMany: vi.fn() },
+  orderItem: { count: vi.fn(), findMany: vi.fn(), findFirst: vi.fn() },
 }));
 
 vi.mock("@/lib/db", () => ({ db: { order, orderItem } }));
 
 import {
+  findAccountService,
   getAccountCounts,
   initials,
   listAccountDownloads,
@@ -32,6 +33,7 @@ beforeEach(() => {
   order.findMany.mockReset();
   orderItem.count.mockReset();
   orderItem.findMany.mockReset();
+  orderItem.findFirst.mockReset();
 });
 
 describe("getAccountCounts", () => {
@@ -188,6 +190,74 @@ describe("listAccountServices", () => {
     expect(selectedKeys(args.select)).not.toContain("stripeCheckoutSessionId");
     expect(selectedKeys(args.select)).not.toContain("requirements");
   });
+});
+
+describe("findAccountService", () => {
+  const createdAt = new Date("2026-09-20T00:00:00Z");
+
+  it("returns the user's paid service item with its record", async () => {
+    const record = {
+      status: "IN_PROGRESS",
+      requirements: { businessName: "Layla Cafe" },
+      createdAt,
+      startDate: createdAt,
+      completedDate: null,
+      updatedAt: createdAt,
+    };
+    orderItem.findFirst.mockResolvedValue({
+      id: "i2",
+      product: { name: "Ads Management", nameAr: "إدارة الإعلانات" },
+      order: { number: 1004, createdAt },
+      service: record,
+    });
+
+    await expect(findAccountService("u1", "i2")).resolves.toEqual({
+      itemId: "i2",
+      name: "Ads Management",
+      nameAr: "إدارة الإعلانات",
+      orderNumber: 1004,
+      purchasedAt: createdAt,
+      service: record,
+    });
+    const args = orderItem.findFirst.mock.calls[0][0];
+    expect(args.where).toEqual({
+      id: "i2",
+      order: { userId: "u1", status: PAID },
+      product: { type: "SERVICE" },
+    });
+    const keys = selectedKeys(args.select);
+    expect(keys).not.toContain("adminNotes");
+    expect(keys).not.toContain("digitalFile");
+    expect(keys).not.toContain("stripeCheckoutSessionId");
+  });
+
+  it("returns an item with no record yet", async () => {
+    orderItem.findFirst.mockResolvedValue({
+      id: "i3",
+      product: { name: "Account Management", nameAr: null },
+      order: { number: 1003, createdAt },
+      service: null,
+    });
+    const result = await findAccountService("u1", "i3");
+    expect(result?.service).toBeNull();
+  });
+
+  it("returns null when nothing matches", async () => {
+    orderItem.findFirst.mockResolvedValue(null);
+    await expect(findAccountService("u1", "other")).resolves.toBeNull();
+  });
+
+  it.each([
+    { label: "empty", itemId: "" },
+    { label: "over-long", itemId: "x".repeat(65) },
+    { label: "missing", itemId: undefined },
+  ])(
+    "returns null without a query for a $label id",
+    async ({ itemId }) => {
+      await expect(findAccountService("u1", itemId)).resolves.toBeNull();
+      expect(orderItem.findFirst).not.toHaveBeenCalled();
+    },
+  );
 });
 
 describe("initials", () => {
