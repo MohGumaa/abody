@@ -55,3 +55,43 @@ export function productFileExtension(name: string): string | null {
     ? extension
     : null;
 }
+
+// One category in the admin category picker, with the Arabic name to fill in.
+export interface CategoryOption {
+  category: string;
+  categoryAr: string | null;
+}
+
+// The picker's options from product rows ordered newest first: one per exact
+// category name (case matters, as in the store filter), with the newest
+// non-blank Arabic name seen for it, sorted by name.
+export function categoryOptions(
+  rows: readonly { category: string; categoryAr: string | null }[],
+): CategoryOption[] {
+  const byName = new Map<string, string | null>();
+  for (const { category, categoryAr } of rows) {
+    const arabic = categoryAr?.trim() ? categoryAr.trim() : null;
+    if (!byName.has(category)) byName.set(category, arabic);
+    else if (byName.get(category) === null && arabic) byName.set(category, arabic);
+  }
+  return [...byName]
+    .map(([category, categoryAr]) => ({ category, categoryAr }))
+    .sort((a, b) => a.category.localeCompare(b.category, "en"));
+}
+
+export type CategoryPick =
+  | { mode: "none" }
+  | { mode: "existing"; index: number }
+  | { mode: "new"; text: string };
+
+// What the picker shows for a category value: the matching option, nothing
+// chosen yet, or the new-category field (also when no options exist).
+export function initialCategoryPick(
+  options: readonly CategoryOption[],
+  value: string,
+): CategoryPick {
+  const index = options.findIndex((option) => option.category === value);
+  if (index >= 0) return { mode: "existing", index };
+  if (value === "" && options.length > 0) return { mode: "none" };
+  return { mode: "new", text: value };
+}

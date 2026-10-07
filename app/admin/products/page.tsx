@@ -1,8 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { EmptyState } from "@/components/account/AccountParts";
 import { ProductStatusChip } from "@/components/admin/ProductStatusChip";
 import { PlusIcon } from "@/components/icons";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { adminMetadata, listAdminProducts, requireAdmin } from "@/lib/admin";
 import { formatDate } from "@/lib/dates";
 import { formatPriceCents } from "@/lib/money";
@@ -45,62 +52,66 @@ export default async function AdminProductsPage() {
         </h2>
         {products.length === 0 ? (
           <div className="p-5 min-[600px]:p-6">
-            <EmptyState
-              message="No products yet."
-              action={{ href: "/admin/products/new", label: "Create the first product" }}
-            />
+            {/* Not the shared EmptyState: admin links have no hover underline. */}
+            <div className="grid justify-items-start gap-3 rounded-card bg-surface p-5 text-sm">
+              <p className="text-muted">No products yet.</p>
+              <Link
+                href="/admin/products/new"
+                className={`rounded-control font-semibold text-primary-strong hover:text-foreground ${FOCUS}`}
+              >
+                Create the first product
+              </Link>
+            </div>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-190 text-left text-sm">
-              <thead className="bg-surface text-[0.6875rem] tracking-wider text-faint uppercase">
-                <tr>
-                  <th scope="col" className="px-6 py-3 font-semibold">Product</th>
-                  <th scope="col" className="px-6 py-3 font-semibold">Category</th>
-                  <th scope="col" className="px-6 py-3 text-end font-semibold">Price</th>
-                  <th scope="col" className="px-6 py-3 font-semibold">Status</th>
-                  <th scope="col" className="px-6 py-3 font-semibold">File</th>
-                  <th scope="col" className="px-6 py-3 font-semibold">Updated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product.id} className="border-t border-border hover:bg-surface/60">
-                    <td className="px-6 py-4">
-                      {/* React text: admin-entered names never render as HTML. */}
-                      <Link
-                        href={`/admin/products/${product.id}`}
-                        className={`rounded-control font-semibold text-foreground hover:text-primary-strong hover:underline ${FOCUS}`}
-                        dir="auto"
-                      >
-                        {product.name}
-                      </Link>
-                      <span className="block text-xs text-faint">{product.slug}</span>
-                    </td>
-                    <td className="px-6 py-4 text-muted" dir="auto">
-                      {product.category}
-                    </td>
-                    <td className="px-6 py-4 text-end font-semibold tabular-nums">
-                      {formatPriceCents(product.priceCents)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <ProductStatusChip status={product.status} />
-                    </td>
-                    <td className="px-6 py-4">
-                      {product.hasFile ? (
-                        <span className="text-success">Attached</span>
-                      ) : (
-                        <span className="font-medium text-warning">Missing</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-faint">
-                      {formatDate(product.updatedAt, "en")}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <Table className="min-w-190">
+            <TableHeader>
+              <TableRow>
+                <TableHead scope="col">Product</TableHead>
+                <TableHead scope="col">Category</TableHead>
+                <TableHead scope="col" className="text-end">Price</TableHead>
+                <TableHead scope="col">Status</TableHead>
+                <TableHead scope="col">File</TableHead>
+                <TableHead scope="col">Updated</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {products.map((product) => (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    {/* React text: admin-entered names never render as HTML. */}
+                    <Link
+                      href={`/admin/products/${product.id}`}
+                      className={`rounded-control font-semibold text-foreground hover:text-primary-strong ${FOCUS}`}
+                      dir="auto"
+                    >
+                      {product.name}
+                    </Link>
+                    <span className="block text-xs text-faint">{product.slug}</span>
+                  </TableCell>
+                  <TableCell className="text-muted" dir="auto">
+                    {product.category}
+                  </TableCell>
+                  <TableCell className="text-end font-semibold tabular-nums">
+                    {formatPriceCents(product.priceCents)}
+                  </TableCell>
+                  <TableCell>
+                    <ProductStatusChip status={product.status} />
+                  </TableCell>
+                  <TableCell>
+                    {product.hasFile ? (
+                      <span className="text-success">Attached</span>
+                    ) : (
+                      <span className="font-medium text-warning">Missing</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-faint">
+                    {formatDate(product.updatedAt, "en")}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         )}
       </section>
     </>

@@ -74,8 +74,10 @@ them.
   color. Define brand colors as theme tokens rather than repeating raw values.
 - Mobile-first, responsive layouts
 
-> TODO: shadcn/ui is named in the project plan but not installed. Once it is
-> added, use its components where applicable.
+- shadcn/ui components live in `components/ui/` (config in `components.json`,
+  `cn()` in `lib/utils.ts`). They are added with the shadcn CLI and then
+  restyled to the `@theme` tokens in `app/globals.css`; never run `shadcn init`
+  or add its separate CSS variable set. Use them where applicable.
 
 ## Database
 

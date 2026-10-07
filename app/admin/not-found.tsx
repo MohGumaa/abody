@@ -32,7 +32,7 @@ export default async function AdminNotFound() {
         </p>
         <Link
           href="/en"
-          className="mt-4 rounded-full bg-primary-strong px-6 py-3 font-semibold text-white underline-offset-4 outline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-primary-strong"
+          className="mt-4 rounded-full bg-primary-strong px-6 py-3 font-semibold text-white outline-offset-2 hover:shadow-raised focus-visible:outline-2 focus-visible:outline-primary-strong"
         >
           Go to the store
         </Link>

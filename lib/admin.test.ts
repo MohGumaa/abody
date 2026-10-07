@@ -27,6 +27,7 @@ import {
   customerLabel,
   getAdminOverview,
   getAdminProduct,
+  listAdminCategories,
   listAdminProducts,
   requireAdmin,
 } from "@/lib/admin";
@@ -279,5 +280,18 @@ describe("admin products", () => {
     db.product.findFirst.mockClear();
     expect(await getAdminProduct("x".repeat(65))).toBeNull();
     expect(db.product.findFirst).not.toHaveBeenCalled();
+  });
+});
+
+describe("listAdminCategories", () => {
+  it("builds picker options from digital products, newest first", async () => {
+    db.product.findMany.mockResolvedValue([
+      { category: "Guides", categoryAr: "أدلة" },
+      { category: "Guides", categoryAr: null },
+    ]);
+    expect(await listAdminCategories()).toEqual([{ category: "Guides", categoryAr: "أدلة" }]);
+    const query = db.product.findMany.mock.calls[0][0];
+    expect(query.where).toEqual({ type: "DIGITAL_PRODUCT" });
+    expect(query.orderBy[0]).toEqual({ updatedAt: "desc" });
   });
 });

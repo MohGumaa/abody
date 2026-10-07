@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ProductForm } from "@/components/admin/ProductForm";
-import { adminMetadata, requireAdmin } from "@/lib/admin";
+import { adminMetadata, listAdminCategories, requireAdmin } from "@/lib/admin";
 
 export function generateMetadata(): Promise<Metadata> {
   return adminMetadata("New product");
@@ -9,12 +9,13 @@ export function generateMetadata(): Promise<Metadata> {
 
 export default async function NewProductPage() {
   await requireAdmin();
+  const categories = await listAdminCategories();
   return (
     <>
       <div className="grid gap-1">
         <Link
           href="/admin/products"
-          className="justify-self-start rounded-control text-sm font-medium text-primary-strong outline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-primary-strong"
+          className="justify-self-start rounded-control text-sm font-medium text-primary-strong outline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary-strong"
         >
           ← All products
         </Link>
@@ -25,7 +26,7 @@ export default async function NewProductPage() {
         </p>
       </div>
       <div className="max-w-3xl">
-        <ProductForm initial={{}} />
+        <ProductForm initial={{}} categories={categories} />
       </div>
     </>
   );

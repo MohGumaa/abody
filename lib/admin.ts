@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { type CategoryOption, categoryOptions } from "@/lib/admin-product-rules";
 import { db } from "@/lib/db";
 import { PAID_ORDER_STATUSES } from "@/lib/delivery";
 import type {
@@ -263,4 +264,14 @@ export async function getAdminProduct(id: string): Promise<AdminProduct | null> 
     fileName: digitalFile ? digitalFile.slice(digitalFile.lastIndexOf("/") + 1) : null,
     orderCount: _count.orderItems,
   };
+}
+
+// Categories digital products already use, for the admin category picker.
+export async function listAdminCategories(): Promise<CategoryOption[]> {
+  const rows = await db.product.findMany({
+    where: { type: ADMIN_PRODUCT_TYPE },
+    orderBy: [{ updatedAt: "desc" }, { id: "asc" }],
+    select: { category: true, categoryAr: true },
+  });
+  return categoryOptions(rows);
 }

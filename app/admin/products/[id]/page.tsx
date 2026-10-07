@@ -6,7 +6,12 @@ import { ProductFileUpload } from "@/components/admin/ProductFileUpload";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { ProductStatusChip } from "@/components/admin/ProductStatusChip";
 import { ExternalIcon } from "@/components/icons";
-import { adminMetadata, getAdminProduct, requireAdmin } from "@/lib/admin";
+import {
+  adminMetadata,
+  getAdminProduct,
+  listAdminCategories,
+  requireAdmin,
+} from "@/lib/admin";
 import { centsToPriceInput } from "@/lib/admin-products";
 import { getCurrentUser } from "@/lib/session";
 
@@ -22,11 +27,14 @@ export async function generateMetadata({
 const CARD =
   "grid content-start gap-4 rounded-card border border-border bg-panel p-5 shadow-soft min-[600px]:p-6";
 const BACK_LINK =
-  "justify-self-start rounded-control text-sm font-medium text-primary-strong outline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-primary-strong";
+  "justify-self-start rounded-control text-sm font-medium text-primary-strong outline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary-strong";
 
 export default async function EditProductPage({ params }: PageProps<"/admin/products/[id]">) {
   await requireAdmin();
-  const product = await getAdminProduct((await params).id);
+  const [product, categories] = await Promise.all([
+    getAdminProduct((await params).id),
+    listAdminCategories(),
+  ]);
   if (!product) notFound();
 
   const initial = {
@@ -70,7 +78,7 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
       </div>
 
       <div className="grid items-start gap-6 min-[1100px]:grid-cols-[minmax(0,1fr)_22rem]">
-        <ProductForm id={product.id} initial={initial} />
+        <ProductForm id={product.id} initial={initial} categories={categories} />
 
         <div className="grid gap-6">
           <section aria-labelledby="product-file-title" className={CARD}>

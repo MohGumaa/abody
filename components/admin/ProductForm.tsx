@@ -1,12 +1,20 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState, type RefObject } from "react";
 import {
   createProduct,
   updateProduct,
   type ProductActionResult,
 } from "@/actions/admin-products";
 import { INPUT_BASE } from "@/components/auth/AuthForm";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   CATEGORY_MAX,
   DESCRIPTION_MAX,
@@ -16,6 +24,9 @@ import {
   NAME_MAX,
   SHORT_DESCRIPTION_MAX,
   SLUG_MAX,
+  initialCategoryPick,
+  type CategoryOption,
+  type CategoryPick,
   type ProductField,
   type ProductFieldError,
   type ProductFormValues,
@@ -57,6 +68,11 @@ interface FieldSpec {
   dir?: "ltr";
 }
 
+const CATEGORY_HINT = "Groups products in the store filter.";
+// Select item values are never submitted, so they cannot clash with a name.
+const NEW_CATEGORY = "new";
+const optionValue = (index: number) => `option:${index}`;
+
 const LINES_HINT = `One item per line, up to ${INCLUDED_MAX_LINES} lines of ${INCLUDED_LINE_MAX} characters.`;
 
 const ENGLISH: FieldSpec[] = [
@@ -71,7 +87,6 @@ const ENGLISH: FieldSpec[] = [
   },
   { field: "shortDescription", label: "Short description", max: SHORT_DESCRIPTION_MAX, multiline: 2, required: true },
   { field: "description", label: "Description", max: DESCRIPTION_MAX, multiline: 6, required: true },
-  { field: "category", label: "Category", hint: "Groups products in the store filter.", max: CATEGORY_MAX, required: true },
   // The line limits are checked on the server; maxLength would cap the total.
   { field: "included", label: "What's included", hint: LINES_HINT, max: 0, multiline: 4 },
 ];
@@ -99,10 +114,13 @@ function Field({
   spec,
   value,
   error,
+  onValueChange,
 }: {
   spec: FieldSpec;
   value: string;
   error: ProductFieldError | undefined;
+  // Makes the field controlled, for values other fields can fill in.
+  onValueChange?: (value: string) => void;
 }) {
   const id = `product-${spec.field}`;
   const describedBy =
@@ -111,7 +129,9 @@ function Field({
     id,
     name: spec.field,
     // React text: admin-entered values never render as HTML.
-    defaultValue: value,
+    ...(onValueChange
+      ? { value, onChange: (event: { target: { value: string } }) => onValueChange(event.target.value) }
+      : { defaultValue: value }),
     maxLength: spec.max > 0 ? spec.max : undefined,
     required: spec.required,
     "aria-invalid": error ? true : undefined,
@@ -145,14 +165,133 @@ function Field({
   );
 }
 
+// The category: a pick from the categories in use, or a new name typed in.
+// Exactly one input named "category" is rendered, so the Select's own values
+// never reach the server; the server validates the name as before.
+function CategoryField({
+  options,
+  pick,
+  onPick,
+  error,
+  newInputRef,
+  formResetting,
+}: {
+  options: CategoryOption[];
+  pick: CategoryPick;
+  onPick: (pick: CategoryPick) => void;
+  error: ProductFieldError | undefined;
+  newInputRef: RefObject<HTMLInputElement | null>;
+  formResetting: RefObject<boolean>;
+}) {
+  const focusNew = useRef(false);
+  const id = "product-category";
+  const newId = `${id}-new`;
+  const describedBy = [`${id}-hint`, error && `${id}-error`].filter(Boolean).join(" ");
+  const isNew = pick.mode === "new";
+  const hasOptions = options.length > 0;
+
+  const newInput = isNew && (
+    <input
+      ref={newInputRef}
+      id={hasOptions ? newId : id}
+      name="category"
+      type="text"
+      value={pick.text}
+      onChange={(event) => onPick({ mode: "new", text: event.target.value })}
+      maxLength={CATEGORY_MAX}
+      required
+      aria-invalid={error ? true : undefined}
+      aria-describedby={describedBy}
+      className={INPUT}
+    />
+  );
+
+  return (
+    <div className="grid gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium">
+        Category
+      </label>
+      {hasOptions && (
+        <Select
+          value={
+            pick.mode === "existing" ? optionValue(pick.index) : isNew ? NEW_CATEGORY : ""
+          }
+          onValueChange={(value) => {
+            // Radix puts its mount-time value back on every form reset, and
+            // React resets the form after each submit; the form's own state
+            // already follows the submitted values, so ignore that change.
+            if (formResetting.current) return;
+            if (value === NEW_CATEGORY) {
+              focusNew.current = true;
+              onPick({ mode: "new", text: "" });
+              return;
+            }
+            const match = /^option:(\d+)$/.exec(value);
+            const index = match ? Number(match[1]) : -1;
+            if (index >= 0 && index < options.length) onPick({ mode: "existing", index });
+          }}
+        >
+          <SelectTrigger
+            id={id}
+            aria-invalid={error && !isNew ? true : undefined}
+            aria-describedby={describedBy}
+          >
+            <SelectValue placeholder="Choose a category" />
+          </SelectTrigger>
+          <SelectContent
+            onCloseAutoFocus={(event) => {
+              // Picking "New category…" moves focus to the field it reveals.
+              if (!focusNew.current) return;
+              focusNew.current = false;
+              event.preventDefault();
+              setTimeout(() => newInputRef.current?.focus());
+            }}
+          >
+            {options.map((option, index) => (
+              <SelectItem key={option.category} value={optionValue(index)}>
+                {option.category}
+              </SelectItem>
+            ))}
+            <SelectSeparator />
+            <SelectItem value={NEW_CATEGORY}>New category…</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+      {pick.mode === "existing" && (
+        <input type="hidden" name="category" value={options[pick.index].category} />
+      )}
+      {isNew && hasOptions ? (
+        <div className="mt-2 grid gap-1.5">
+          <label htmlFor={newId} className="text-sm font-medium">
+            New category
+          </label>
+          {newInput}
+        </div>
+      ) : (
+        newInput
+      )}
+      <p id={`${id}-hint`} className="text-xs text-muted">
+        {CATEGORY_HINT}
+      </p>
+      {error && (
+        <p id={`${id}-error`} className="text-sm text-danger">
+          {FIELD_ERRORS[error]}
+        </p>
+      )}
+    </div>
+  );
+}
+
 // Creates a product (no id) or edits one. Status and the file have their own
 // controls on the edit page.
 export function ProductForm({
   id,
   initial,
+  categories,
 }: {
   id?: string;
   initial: ProductFormValues;
+  categories: CategoryOption[];
 }) {
   const [state, action, pending] = useActionState<ProductActionResult, FormData>(
     id ? updateProduct : createProduct,
@@ -164,6 +303,38 @@ export function ProductForm({
   // React resets the form after each submit, so a failed one refills it.
   const values = failed?.values ?? initial;
 
+  // The category picker and the Arabic category are controlled, so picking a
+  // category can fill in its Arabic name. They follow the last submitted
+  // values, else the saved ones, and reset only when those change (not while
+  // a submit is pending, nor on a refresh that changed nothing).
+  const source = (state?.success === false ? state.values : undefined) ?? initial;
+  const sourceKey = JSON.stringify([source.category ?? "", source.categoryAr ?? ""]);
+  const [syncedKey, setSyncedKey] = useState(sourceKey);
+  const [pick, setPick] = useState(() => initialCategoryPick(categories, source.category ?? ""));
+  const [categoryAr, setCategoryAr] = useState(source.categoryAr ?? "");
+  const newCategoryRef = useRef<HTMLInputElement>(null);
+  const formResetting = useRef(false);
+  if (syncedKey !== sourceKey) {
+    setSyncedKey(sourceKey);
+    setPick(initialCategoryPick(categories, source.category ?? ""));
+    setCategoryAr(source.categoryAr ?? "");
+  }
+
+  // The Arabic name the picker last filled in. Switching category replaces or
+  // clears it, but never a value the admin typed.
+  const filledAr = useRef<string | null>(null);
+  function choose(next: CategoryPick) {
+    setPick(next);
+    const arabic = next.mode === "existing" ? categories[next.index].categoryAr : null;
+    if (arabic) {
+      setCategoryAr(arabic);
+      filledAr.current = arabic;
+    } else if (filledAr.current !== null && categoryAr === filledAr.current) {
+      setCategoryAr("");
+      filledAr.current = null;
+    }
+  }
+
   useEffect(() => {
     if (state?.success === false) alertRef.current?.focus();
   }, [state]);
@@ -173,14 +344,26 @@ export function ProductForm({
       <Field
         key={spec.field}
         spec={spec}
-        value={values[spec.field] ?? ""}
+        value={spec.field === "categoryAr" ? categoryAr : (values[spec.field] ?? "")}
         error={failed?.fieldErrors?.[spec.field]}
+        onValueChange={spec.field === "categoryAr" ? setCategoryAr : undefined}
       />
     ));
   }
 
   return (
-    <form action={action} noValidate className="grid gap-6">
+    <form
+      action={action}
+      noValidate
+      // Capture runs before the Select's own reset listener on the form.
+      onResetCapture={() => {
+        formResetting.current = true;
+        setTimeout(() => {
+          formResetting.current = false;
+        });
+      }}
+      className="grid gap-6"
+    >
       {id && <input type="hidden" name="id" value={id} />}
       <div
         ref={alertRef}
@@ -199,7 +382,16 @@ export function ProductForm({
         <h2 id="product-english" className="text-lg font-semibold">
           Details
         </h2>
-        {fields(ENGLISH)}
+        {fields(ENGLISH.filter((spec) => spec.field !== "included"))}
+        <CategoryField
+          options={categories}
+          pick={pick}
+          onPick={choose}
+          error={failed?.fieldErrors?.category}
+          newInputRef={newCategoryRef}
+          formResetting={formResetting}
+        />
+        {fields(ENGLISH.filter((spec) => spec.field === "included"))}
       </section>
 
       <section aria-labelledby="product-pricing" className={CARD}>
