@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  BoxIcon,
   DashboardIcon,
   ExternalIcon,
   GlobeIcon,
@@ -15,6 +16,7 @@ import { RAIL_CENTER, RAIL_HIDE } from "@/lib/sidebar";
 // responds to, including the 404 anyone but an admin gets, so it holds no
 // admin wording.
 const ICONS = {
+  box: BoxIcon,
   dashboard: DashboardIcon,
   globe: GlobeIcon,
   grid: GridIcon,

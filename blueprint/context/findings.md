@@ -126,3 +126,19 @@
 **Why it matters:** `removeProductUploads(productId)` runs `rm -r` on `storage/products/<id>` after a product is deleted. `actions/admin-products.test.ts` mocks the whole module, so no test proves the path it removes is exactly `products/<id>/` and never the storage root, another product's folder, or `seed/`. The upload route test exercises `removeOwnUpload` against a real temp root, but not this function. The current code is correct (the path goes through `storagePath`, and the action only calls it after `deleteMany` matched a real digital product), so this is a coverage gap on a destructive helper, not a live bug.
 **Suggested fix:** Add a small test for `lib/product-files.ts` using the same `vi.mock("@/lib/downloads")` temp-root pattern as the route test: create `products/p1/<token>/a.pdf`, `products/p2/<token>/b.pdf`, and `seed/c.pdf`, call `removeProductUploads("p1")`, and assert only `products/p1` is gone. Requirement lost: None.
 **Resolution:**
+
+### F-20 [P3] open - The admin order list copies the dashboard's recent-order query and row mapping
+
+**File:** lib/admin-orders.ts:61
+**Found:** 2026-10-07 by /audit independent (scope: current; lens: quality)
+**Why it matters:** `listAdminOrders` repeats the dashboard's recent-orders `findMany` (`lib/admin.ts:131-144`) field for field: the same `orderBy`, the same `select` (including `customerEmail` and `user.name`), and the same row mapping with `customerLabel` and the `itemCount` reduce (`lib/admin.ts:155-163`). `AdminOrderRow` (`lib/admin-orders.ts:44`) is also a copy of `AdminRecentOrder` (`lib/admin.ts:59`). The two order tables must show the same customer and item count for the same order, so a later change to one (for example, labelling a deleted account differently, or counting service items separately) can silently diverge from the other. The spec kept `lib/admin.ts` unchanged on purpose, so this is a follow-up cleanup, not a defect.
+**Suggested fix:** In a later change that may touch `lib/admin.ts`, export one shared select and row mapper (and one row type) from `lib/admin.ts`, and have `listAdminOrders` use them with its own `skip`/`take`. Requirement lost: None.
+**Resolution:**
+
+### F-21 [P3] open - The order detail page loads the same order twice per request
+
+**File:** app/admin/orders/[id]/page.tsx:32
+**Found:** 2026-10-07 by /audit independent (scope: current; lens: performance)
+**Why it matters:** `generateMetadata` (line 32) and the page (line 53) each call `getAdminOrder(id)`, which is a plain async function rather than a React `cache()` wrapper, so every admin render of `/admin/orders/[id]` runs the same `findUnique` with its items and products join twice. This repeats the pattern already recorded for the product and service edit pages in F-18, as the spec directed ("as the product edit page does"). Admin-only traffic, so the cost is small; it is wasted work, not a defect.
+**Suggested fix:** Wrap `getAdminOrder` in React `cache()` (as `getCurrentUser` is in `lib/session.ts`) so metadata and page share one query. This can be done together with F-18. Requirement lost: None.
+**Resolution:**

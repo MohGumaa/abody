@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import type { ComponentType } from "react";
 import {
   EmptyState,
@@ -145,11 +146,19 @@ export default async function AdminDashboardPage() {
         aria-labelledby="recent-orders"
         className="min-w-0 overflow-hidden rounded-card border border-border bg-panel shadow-soft"
       >
-        <div className="grid gap-0.5 border-b border-border px-5 py-5 min-[600px]:px-6">
-          <h2 id="recent-orders" className="text-lg font-semibold">
-            Recent orders
-          </h2>
-          <p className="text-xs text-faint">The latest orders of any status</p>
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-border px-5 py-5 min-[600px]:px-6">
+          <div className="grid gap-0.5">
+            <h2 id="recent-orders" className="text-lg font-semibold">
+              Recent orders
+            </h2>
+            <p className="text-xs text-faint">The latest orders of any status</p>
+          </div>
+          <Link
+            href="/admin/orders"
+            className="rounded-control text-sm font-semibold text-primary-strong outline-offset-2 hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary-strong"
+          >
+            View all orders
+          </Link>
         </div>
         {overview.recentOrders.length === 0 ? (
           <div className="p-5 min-[600px]:p-6">
@@ -172,7 +181,12 @@ export default async function AdminDashboardPage() {
                 {overview.recentOrders.map((order, index) => (
                   <tr key={order.id} className="border-t border-border hover:bg-surface/60">
                     <td className="px-6 py-4 text-xs">
-                      <OrderNumber number={order.number} />
+                      <Link
+                        href={`/admin/orders/${order.id}`}
+                        className="rounded-control text-foreground outline-offset-2 hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary-strong"
+                      >
+                        <OrderNumber number={order.number} />
+                      </Link>
                     </td>
                     <td className="px-6 py-4">
                       <span className="flex items-center gap-3">
