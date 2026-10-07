@@ -104,10 +104,10 @@
 **Resolution:**
 
 
-### F-17 [P3] open - The WAITING_FOR_INFORMATION message does not link to the onboarding form itself
+### F-17 [P3] fixed - The WAITING_FOR_INFORMATION message does not link to the onboarding form itself
 
 **File:** app/[lang]/account/services/[itemId]/page.tsx:88
 **Found:** 2026-10-07 by /audit independent (scope: current; lens: quality)
 **Why it matters:** The spec's In scope list says that for `WAITING_FOR_INFORMATION` "the message asks the customer to update their details and links to the onboarding form." The page renders the status message as plain text in the Progress section (`<p>{text.messages[...]}</p>`). The only link to `/onboarding/<itemId>` is the "Update your details" link in the separate "Your details" section head (line 104, shown because `canEditOnboarding` includes that status). So the customer can still reach the form from the same page and nothing is broken, but the message the spec ties to the link has none. A screen-reader or mobile user who reads "Please update your details" in the Progress panel has to find the link in the next section. The `none` ("Send your details...") message has the same layout.
 **Suggested fix:** When `editable` is true, render the onboarding link right after the status message in the Progress section (reusing `onboardingHref` and the existing `onboarding.add` / `onboarding.edit` labels), or record in the spec that the details-section link meets this requirement. Requirement lost: None.
-**Resolution:**
+**Resolution:** Fixed 2026-10-07 by fix "Clean up service tracking status display". When `onboardingState(status)` is `needed` (no record or `WAITING_FOR_INFORMATION`), the detail page renders the add or update link directly under the status message in the Progress section. Verified live in `/en` and `/ar`. Awaiting `/audit` re-review to close.

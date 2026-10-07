@@ -16,7 +16,11 @@ import { localizedName } from "@/lib/catalog";
 import { formatDate } from "@/lib/dates";
 import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
-import { canEditOnboarding, readRequirements } from "@/lib/onboarding";
+import {
+  canEditOnboarding,
+  onboardingState,
+  readRequirements,
+} from "@/lib/onboarding";
 import { serviceProgress } from "@/lib/service-progress";
 import { getCurrentUser } from "@/lib/session";
 
@@ -49,12 +53,14 @@ export default async function AccountServicePage({
   }
   const progress = serviceProgress(item);
   const editable = canEditOnboarding(progress.status);
+  // No details yet, or the team asked for more: the customer has to act.
+  const actionNeeded = onboardingState(progress.status) === "needed";
   const { account, onboarding } = await getDictionary();
   const text = account.service;
-  const onboardingHref = localizedPath(
-    locale,
-    `/onboarding/${encodeURIComponent(item.itemId)}`,
-  );
+  const onboardingLink = {
+    href: localizedPath(locale, `/onboarding/${encodeURIComponent(item.itemId)}`),
+    label: item.service ? onboarding.edit : onboarding.add,
+  };
 
   return (
     <>
@@ -86,6 +92,14 @@ export default async function AccountServicePage({
         <SectionHead id="service-progress" title={text.progress} />
         <div className="grid gap-2">
           <p>{text.messages[progress.status ?? "none"]}</p>
+          {actionNeeded && (
+            <Link
+              href={onboardingLink.href}
+              className={`justify-self-start ${TEXT_LINK}`}
+            >
+              {onboardingLink.label}
+            </Link>
+          )}
           <p className="text-sm text-muted">
             {text.lastUpdated.replace(
               "{date}",
@@ -100,14 +114,7 @@ export default async function AccountServicePage({
         <SectionHead
           id="service-details"
           title={text.details}
-          link={
-            editable
-              ? {
-                  href: onboardingHref,
-                  label: item.service ? onboarding.edit : onboarding.add,
-                }
-              : undefined
-          }
+          link={editable ? onboardingLink : undefined}
         />
         {saved ? (
           <OnboardingAnswers answers={saved} text={onboarding} />

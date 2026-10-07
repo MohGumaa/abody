@@ -81,6 +81,7 @@ export default async function AccountServicesPage() {
                       )}
                       name={name}
                       text={onboarding}
+                      showState={false}
                     />
                   </div>
                   <ServiceStatusChip status={service.serviceStatus} text={text} />
