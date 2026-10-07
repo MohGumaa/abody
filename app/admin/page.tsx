@@ -88,14 +88,21 @@ export default async function AdminDashboardPage() {
         </div>
         <dl className="grid gap-3 min-[600px]:grid-cols-2 min-[1100px]:grid-cols-3">
           {stats.map(({ label, value, detail, Icon }) => (
+            // A dl group may hold only dt and dd, so the decorative icon sits
+            // inside the term and is positioned at the card's start edge.
             <div
               key={label}
-              className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 rounded-card bg-surface p-4"
+              className="relative grid content-center rounded-card bg-surface p-4 ps-18"
             >
-              <span className="row-span-3 grid h-11 w-11 place-items-center rounded-card bg-primary-soft text-primary-strong">
-                <Icon className="h-5 w-5" />
-              </span>
-              <dt className="text-sm text-muted">{label}</dt>
+              <dt className="text-sm text-muted">
+                <span
+                  aria-hidden="true"
+                  className="absolute start-4 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-card bg-primary-soft text-primary-strong"
+                >
+                  <Icon className="h-5 w-5" />
+                </span>
+                {label}
+              </dt>
               <dd className="text-xl font-semibold">{value}</dd>
               <dd className="text-xs text-faint">{detail}</dd>
             </div>

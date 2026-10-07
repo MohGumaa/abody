@@ -120,10 +120,10 @@
 **Suggested fix:** Rename the component and its exported type to a neutral name (for example `SideNav` / `SideNavSection` in `components/admin/SideNav.tsx`, or a neutral folder), rebuild, and confirm `grep -rlF Admin .next/static` finds nothing. Alternatively, record in the spec that a component name in static client code is acceptable (user decision). Requirement lost: None.
 **Resolution:**
 
-### F-21 [P3] open - Dashboard stat groups put a span inside the dl's div group, which the HTML content model does not allow
+### F-21 [P3] fixed - Dashboard stat groups put a span inside the dl's div group, which the HTML content model does not allow
 
 **File:** app/admin/page.tsx:95
 **Found:** 2026-10-07 by /audit independent (scope: current; lens: quality)
 **Why it matters:** Each stat card is a `<div>` inside `<dl>` that holds the icon `<span>` followed by `<dt>` and two `<dd>`s. In HTML, a `div` inside a `dl` may contain only `dt` and `dd` elements (plus script-supporting elements). The span is not `aria-hidden` (only the SVG inside it is), so the markup is invalid, and checkers such as axe's `definition-list`/`dlitem` rules can flag it. Screen readers usually still read the term and value, so the practical impact is small. Other `dl`s in the project (`components/cart/CartSummary.tsx:38`) keep their groups to `dt`/`dd` only.
 **Suggested fix:** Move the icon into the `<dt>` (for example `<dt><span ...><Icon /></span>Revenue</dt>`, adjusting the grid), or put the decorative icon box on a wrapper outside the `dt`/`dd` group. Marking the span `aria-hidden="true"` alone hides it from assistive tech but leaves the markup invalid. Requirement lost: None.
-**Resolution:**
+**Resolution:** Fixed 2026-10-07 by fix "Valid markup for dashboard stat cards": the icon box moved inside each `<dt>` with `aria-hidden="true"`, positioned absolutely at the card's start edge. Browser check on `/admin`: `dl > div > :not(dt):not(dd)` matched 0 elements across 6 groups, terms read as the bare labels, layout unchanged at 390px and 1366px. Awaiting `/audit` closure.
