@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Tajawal } from "next/font/google";
 import { cookies } from "next/headers";
+import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "@/actions/auth";
 import { SideNav, type SideNavSection } from "@/components/admin/SideNav";
@@ -98,15 +99,25 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
                   href="/admin"
                   className={`flex h-11 shrink-0 items-center gap-3 rounded-control px-2 ${RAIL_CENTER} ${FOCUS}`}
                 >
-                  <span
-                    aria-hidden="true"
-                    className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-linear-135 from-primary to-primary-strong font-bold text-white"
-                  >
-                    A
-                  </span>
-                  <span className={`grid leading-tight whitespace-nowrap ${RAIL_HIDE}`}>
-                    <strong className="text-sm">Abody</strong>
-                    <span className="text-xs text-faint">Admin console</span>
+                  {/* The rail shows only the logo mark; display toggles, so the
+                      link has exactly one image name in either state. */}
+                  <Image
+                    src="/Logo-0.jpg"
+                    alt="Abody"
+                    width={164}
+                    height={32}
+                    priority
+                    className="h-7 w-auto min-[960px]:group-data-collapsed/shell:hidden"
+                  />
+                  <Image
+                    src="/android-chrome-192x192.png"
+                    alt="Abody"
+                    width={36}
+                    height={36}
+                    className="hidden h-9 w-9 min-[960px]:group-data-collapsed/shell:block"
+                  />
+                  <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary-strong min-[960px]:group-data-collapsed/shell:hidden">
+                    Admin
                   </span>
                 </Link>
                 <SideNav label="Admin navigation" sections={NAV_SECTIONS} />
