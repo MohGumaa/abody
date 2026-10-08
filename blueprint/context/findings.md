@@ -182,3 +182,19 @@
 **Why it matters:** The spec says `unexpected` "is logged without customer data" and "Log errors without onboarding answers or notes." The catch block logs `error.message`. The project already established that this is unsafe for Prisma: `actions/onboarding.ts:36-40` and `:81-83` log only the error name and code because "a Prisma message can repeat the query's data", and `actions/onboarding.test.ts:188-194` tests that rule with a message that embeds the answers. Here the failing call is `db.service.updateMany` with `data.adminNotes`, so a Prisma validation-style error that echoes its arguments would put the internal notes in the server log. The action test only uses `new Error("connection lost")`, so it cannot catch this. Reachability is limited: inputs are validated before the write, so no ordinary input is known to trigger an argument-echoing error, and only admins can reach the action. This is a drift from the spec's logging rule and the existing safe helper, not a demonstrated leak.
 **Suggested fix:** Log the error name and code only, as `actions/onboarding.ts` does (move its `errorLabel` to a shared lib module or copy the three-line rule), and change the action test to throw an error whose message contains the notes text and assert the log does not contain it. Requirement lost: None.
 **Resolution:**
+
+### F-27 [P3] open - The customer detail page runs all four customer queries twice per request, and the metadata pass only needs the name
+
+**File:** app/admin/customers/[id]/page.tsx:28
+**Found:** 2026-10-08 by /audit independent (scope: current; lens: performance)
+**Why it matters:** `generateMetadata` (line 28) and the page (line 76) each call `getAdminCustomer`, which is not wrapped in React `cache()`. Each call runs the user lookup plus three unpaged lists (every order with its items, every paid download item, every paid service item), so an admin render does eight queries where four would do, and the metadata pass discards everything except `profile.name` and `profile.email`. This follows the pattern the spec named (`app/admin/orders/[id]/page.tsx`, already recorded as F-21), but the cost here grows with the customer's full order history because the detail lists are deliberately unpaged. Admin-only traffic, so the impact is small; it is wasted work, not a defect.
+**Suggested fix:** Wrap `getAdminCustomer` in React `cache()` so metadata and page share one set of queries (the same fix proposed for F-18 and F-21). Requirement lost: None.
+**Resolution:**
+
+### F-28 [P3] open - The download, service, and order-item orderings in getAdminCustomer have no assertion
+
+**File:** lib/admin-customers.test.ts:598
+**Found:** 2026-10-08 by /audit independent (scope: current; lens: tests)
+**Why it matters:** The spec's Data / contracts fix the orderings: downloads and services newest first by `order.createdAt desc, order.number desc, id asc`, and each order's items `id asc`. The test asserts the `where` and selects of both `orderItem.findMany` calls and the order list `orderBy`, but never the `orderBy` of the download or service queries (`NEWEST_ITEM_FIRST`, `lib/admin-customers.ts:17`) or the nested `items.orderBy`. Removing or reversing any of them would leave `pnpm test` green. The shipped code matches the spec today; this is a coverage gap only.
+**Suggested fix:** In the "reads the customer's orders, downloads, and services" test, add `expect(downloadQuery.orderBy).toEqual([{ order: { createdAt: "desc" } }, { order: { number: "desc" } }, { id: "asc" }])`, the same for `serviceQuery.orderBy`, and `expect(orderQuery.select.items.orderBy).toEqual({ id: "asc" })`. Requirement lost: None.
+**Resolution:**

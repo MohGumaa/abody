@@ -161,7 +161,17 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
             <dl className="grid gap-4">
               {/* React text: names and emails never render as HTML. */}
               <Detail label="Name">
-                <span dir="auto">{order.user ? order.user.name || "No name" : "Guest"}</span>
+                {order.user?.role === "CUSTOMER" ? (
+                  <Link
+                    href={`/admin/customers/${order.user.id}`}
+                    className={`rounded-control font-semibold text-primary-strong hover:text-foreground ${FOCUS}`}
+                    dir="auto"
+                  >
+                    {order.user.name || "No name"}
+                  </Link>
+                ) : (
+                  <span dir="auto">{order.user ? order.user.name || "No name" : "Guest"}</span>
+                )}
               </Detail>
               <Detail label="Email">
                 <span dir="auto">{email ?? "Not recorded"}</span>

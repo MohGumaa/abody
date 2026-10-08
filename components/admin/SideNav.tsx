@@ -10,6 +10,7 @@ import {
   GlobeIcon,
   GridIcon,
   MegaphoneIcon,
+  UsersIcon,
 } from "@/components/icons";
 import { RAIL_CENTER, RAIL_HIDE } from "@/lib/sidebar";
 
@@ -23,6 +24,7 @@ const ICONS = {
   globe: GlobeIcon,
   grid: GridIcon,
   megaphone: MegaphoneIcon,
+  users: UsersIcon,
 };
 
 export interface SideNavSection {

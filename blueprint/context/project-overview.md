@@ -264,9 +264,10 @@ URL redirects to the visitor's language. `/admin` and `/api` are never prefixed.
   `.../settings` - customer dashboard (shipped)
 - `/<lang>/onboarding/[itemId]` - service onboarding form (shipped)
 - `/admin`, `/admin/products[/new|/[id]]`, `/admin/services[/new|/[id]]`,
-  `/admin/orders[?page=N]`, `/admin/orders/[id]` (shipped); `/admin/customers`,
-  `/admin/settings` (planned). Service work (16) still needs an admin route;
-  `/admin/services` now holds the service catalog.
+  `/admin/orders[?page=N]`, `/admin/orders/[id]`,
+  `/admin/service-orders[?page=N]`, `/admin/service-orders/[itemId]`,
+  `/admin/customers[?page=N]`, `/admin/customers/[id]` (shipped);
+  `/admin/settings` (planned). `/admin/services` holds the service catalog.
 - `/api/products`, `/api/products/[slug]` - catalog API, optional `?lang=en|ar`
 - `/api/downloads/[itemId]` - protected download for a paid order item
 - `PUT /api/admin/products/[id]/file` - admin file upload (PDF or ZIP, 25 MB)

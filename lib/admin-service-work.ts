@@ -3,7 +3,7 @@ import { ORDERS_PAGE_SIZE, parsePage } from "@/lib/admin-orders";
 import { db } from "@/lib/db";
 import { PAID_ORDER_STATUSES } from "@/lib/delivery";
 import type { Prisma } from "@/lib/generated/prisma/client";
-import type { ServiceStatus } from "@/lib/generated/prisma/enums";
+import type { Role, ServiceStatus } from "@/lib/generated/prisma/enums";
 
 // Admin service orders (feature 16): the work queue for services bought in a
 // paid order. Server code only; callers check requireAdmin() first. Keyed by
@@ -81,7 +81,7 @@ export interface ServiceOrder {
     number: number;
     createdAt: Date;
     customerEmail: string | null;
-    user: { name: string; email: string } | null;
+    user: { id: string; name: string; email: string; role: Role } | null;
   };
   service: {
     id: string;
@@ -108,7 +108,7 @@ export async function getServiceOrder(itemId: string): Promise<ServiceOrder | nu
           number: true,
           createdAt: true,
           customerEmail: true,
-          user: { select: { name: true, email: true } },
+          user: { select: { id: true, name: true, email: true, role: true } },
         },
       },
       service: {

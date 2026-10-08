@@ -1,6 +1,6 @@
 import { customerLabel, isProductId } from "@/lib/admin";
 import { db } from "@/lib/db";
-import type { OrderStatus, ProductType } from "@/lib/generated/prisma/enums";
+import type { OrderStatus, ProductType, Role } from "@/lib/generated/prisma/enums";
 
 // Admin order list, detail, and fulfilment rules (feature 15a). Server code
 // only; callers check requireAdmin() first.
@@ -100,7 +100,7 @@ export interface AdminOrder {
   currency: string;
   createdAt: Date;
   customerEmail: string | null;
-  user: { name: string; email: string } | null;
+  user: { id: string; name: string; email: string; role: Role } | null;
   stripePaymentIntentId: string | null;
   stripeCheckoutSessionId: string;
   items: {
@@ -123,7 +123,7 @@ export async function getAdminOrder(id: string): Promise<AdminOrder | null> {
       currency: true,
       createdAt: true,
       customerEmail: true,
-      user: { select: { name: true, email: true } },
+      user: { select: { id: true, name: true, email: true, role: true } },
       stripePaymentIntentId: true,
       stripeCheckoutSessionId: true,
       items: {

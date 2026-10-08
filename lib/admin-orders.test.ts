@@ -114,6 +114,7 @@ describe("getAdminOrder", () => {
     expect(query.where).toEqual({ id: "o1" });
     expect(query.select.items.orderBy).toEqual({ id: "asc" });
     expect(query.select.stripePaymentIntentId).toBe(true);
+    expect(Object.keys(query.select.user.select)).toEqual(["id", "name", "email", "role"]);
   });
 
   it("returns null for an unknown id", async () => {

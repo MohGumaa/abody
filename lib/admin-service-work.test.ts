@@ -104,7 +104,7 @@ describe("getServiceOrder", () => {
     expect(query.where).toEqual({ id: "item1", ...paidServiceItem });
     expect(Object.keys(query.select.order.select)).not.toContain("stripeCheckoutSessionId");
     expect(Object.keys(query.select.product.select)).not.toContain("digitalFile");
-    expect(Object.keys(query.select.order.select.user.select)).toEqual(["name", "email"]);
+    expect(Object.keys(query.select.order.select.user.select)).toEqual(["id", "name", "email", "role"]);
   });
 
   it("returns null when no paid service item matches", async () => {
