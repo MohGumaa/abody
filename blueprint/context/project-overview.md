@@ -34,7 +34,7 @@ through the store login and are promoted from a shell with
 
 ## Features
 
-In `build-plan.md` order. Shipped: 1-4, 26, 22, 5-14, 15a. Next: 15b. The headline
+In `build-plan.md` order. Shipped: 1-4, 26, 22, 5-15. Next: 16. The headline
 flow (discover, cart, pay, receive, manage) is complete; the remaining items
 are admin tools, storage, email, content, analytics, hardening, and launch.
 
@@ -72,12 +72,12 @@ are admin tools, storage, email, content, analytics, hardening, and launch.
 14. **Admin Service Management** (done) - create, edit, publish, unpublish,
     and delete service offerings: price, duration, requirements, Arabic
     content. One service is one package; tiers are separate services.
-15. **Admin Order Management** - orders, purchased items, payment and order
-    status, refunds.
+15. **Admin Order Management** (done) - orders, purchased items, payment and
+    order status, refunds.
     - 15a. **Order List and Fulfilment** (done) - paged order list and detail
       (customer, items, amounts, payment and order status, Stripe references);
       admins move a paid order between Paid, Processing, and Completed only.
-    - 15b. **Refunds** - full refund from the admin via the Stripe Refunds API;
+    - 15b. **Refunds** (done) - full refund from the admin via the Stripe Refunds API;
       the verified `charge.refunded` webhook (also for dashboard refunds) marks
       the order Refunded, ending download access.
 16. **Admin Service Management** - purchased service work: requirements, notes,
