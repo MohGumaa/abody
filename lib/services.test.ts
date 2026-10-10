@@ -112,7 +112,7 @@ describe("findOnboardingItem", () => {
 describe("saveOnboarding", () => {
   it("creates a NEW record on the first save", async () => {
     service.create.mockResolvedValue({});
-    await expect(saveOnboarding("i1", answers)).resolves.toBe("saved");
+    await expect(saveOnboarding("i1", answers)).resolves.toBe("created");
     expect(service.create).toHaveBeenCalledWith({
       data: { orderItemId: "i1", status: "NEW", requirements: answers },
     });
@@ -122,7 +122,7 @@ describe("saveOnboarding", () => {
   it("updates an existing record only while it is editable", async () => {
     service.create.mockRejectedValue(uniqueViolation());
     service.updateMany.mockResolvedValue({ count: 1 });
-    await expect(saveOnboarding("i1", answers)).resolves.toBe("saved");
+    await expect(saveOnboarding("i1", answers)).resolves.toBe("updated");
     expect(service.updateMany).toHaveBeenCalledWith({
       where: {
         orderItemId: "i1",

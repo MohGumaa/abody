@@ -80,13 +80,13 @@ function isUniqueViolation(error: unknown): boolean {
 export async function saveOnboarding(
   itemId: string,
   requirements: OnboardingRequirements,
-): Promise<"saved" | "locked"> {
+): Promise<"created" | "updated" | "locked"> {
   const data = requirements as unknown as Prisma.InputJsonObject;
   try {
     await db.service.create({
       data: { orderItemId: itemId, status: "NEW", requirements: data },
     });
-    return "saved";
+    return "created";
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;
   }
@@ -94,7 +94,7 @@ export async function saveOnboarding(
     where: { orderItemId: itemId, status: { in: [...EDITABLE_SERVICE_STATUSES] } },
     data: { requirements: data },
   });
-  return count > 0 ? "saved" : "locked";
+  return count > 0 ? "updated" : "locked";
 }
 
 export interface OrderService {

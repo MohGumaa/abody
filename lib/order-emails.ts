@@ -9,7 +9,7 @@ import { formatOrderNumber } from "@/lib/orders";
 // next/*, or fetch imports: callers pass names already localized and links
 // already absolute, and Vitest loads this module directly.
 
-const DICTIONARIES: Record<Locale, Dictionary> = { en, ar };
+export const DICTIONARIES: Record<Locale, Dictionary> = { en, ar };
 
 const FONT = "Tajawal, Arial, Helvetica, sans-serif";
 
@@ -49,15 +49,15 @@ function lineTotal(line: EmailOrderLine): string {
 }
 
 // Numbers and prices keep left-to-right order inside Arabic text.
-function ltr(value: string): string {
+export function ltr(value: string): string {
   return `<span dir="ltr">${escapeHtml(value)}</span>`;
 }
 
-function button(href: string, label: string): string {
+export function button(href: string, label: string): string {
   return `<a href="${escapeHtml(href)}" style="display:inline-block;padding:12px 24px;border-radius:8px;background:#1d4ed8;color:#ffffff;font-weight:bold;text-decoration:none">${escapeHtml(label)}</a>`;
 }
 
-function page(locale: Locale, title: string, body: string): string {
+export function page(locale: Locale, title: string, body: string): string {
   return `<!doctype html>
 <html lang="${locale}" dir="${localeDirection(locale)}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title></head>

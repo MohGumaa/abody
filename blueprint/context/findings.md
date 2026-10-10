@@ -222,3 +222,11 @@
 **Why it matters:** The spec's exactly-once rule covers two concurrent `checkout.session.completed` deliveries for a paid session. Both find no order. One creates it as `PAID` and returns its id. The other gets `P2002`, reads the order back as `PAID`, and must return `null`. The code is correct today (`canTransition("PAID", "PAID")` is false at `lib/order-sync.ts:107`). The tests cover a lost `updateMany` (`count: 0`) and a lost create followed by a won `PENDING` update, but nothing covers this create-versus-create case. A future change to `canTransition` or to the fall-through after `createOrder` could send the paid emails twice while `pnpm test` stays green.
 **Suggested fix:** Add a test in which `order.create` rejects with `P2002`, `order.findUniqueOrThrow` resolves `{ id: "o1", status: "PAID" }`, and `syncCheckoutSession("checkout.session.completed", session())` resolves to `null` without calling `order.updateMany`. Requirement lost: None.
 **Resolution:**
+
+### F-33 [P3] open - The status email reads the service's status at send time, not the status the save wrote
+
+**File:** lib/service-notifications.ts:43
+**Found:** 2026-10-10 by /audit independent (scope: current; lens: quality)
+**Why it matters:** `saveServiceWork` schedules `sendServiceStatusEmail(id, now)` for one specific change, but the sender re-reads `status` from the database when the `after()` callback runs. If a second admin save changes the status again before the first callback reads the row (for example, a quick correction `IN_PROGRESS` -> `NEW`), both emails go out with distinct idempotency keys and both describe the later status, so the customer gets two identical updates and never sees the first. The window is short, because the callback runs right after the response, and the second email is still accurate, so the effect is cosmetic. No test covers it.
+**Suggested fix:** Pass the new `status` from `saveServiceWork` (`after(() => sendServiceStatusEmail(id, status, now))`) and build the email from that argument instead of the re-read row. Drop `status` from the `select`. Requirement lost: None.
+**Resolution:**

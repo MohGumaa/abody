@@ -520,6 +520,14 @@ export const en = {
     viewOrder: "View your order",
     footer: "You received this email because you placed an order at Abody.",
   },
+  serviceEmail: {
+    subject: "Update on your Abody service: {name}",
+    heading: "Your service has an update",
+    intro: "Here is the latest on {name} from order {number}.",
+    status: "New status",
+    viewOrder: "View your order",
+    footer: "You received this email because you bought a service at Abody.",
+  },
   notFound: {
     title: "Page not found",
     body: "The page you are looking for does not exist or has moved.",

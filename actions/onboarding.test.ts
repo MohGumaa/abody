@@ -1,15 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { orderItem, service, getCurrentUser, revalidatePath } = vi.hoisted(() => ({
-  orderItem: { findFirst: vi.fn() },
-  service: { create: vi.fn(), updateMany: vi.fn() },
-  getCurrentUser: vi.fn(),
-  revalidatePath: vi.fn(),
-}));
+const { orderItem, service, getCurrentUser, revalidatePath, after, sendServiceRequirementsEmail } =
+  vi.hoisted(() => ({
+    orderItem: { findFirst: vi.fn() },
+    service: { create: vi.fn(), updateMany: vi.fn() },
+    getCurrentUser: vi.fn(),
+    revalidatePath: vi.fn(),
+    after: vi.fn(),
+    sendServiceRequirementsEmail: vi.fn(),
+  }));
 
 vi.mock("@/lib/db", () => ({ db: { orderItem, service } }));
 vi.mock("@/lib/session", () => ({ getCurrentUser }));
 vi.mock("next/cache", () => ({ revalidatePath }));
+vi.mock("next/server", () => ({ after }));
+vi.mock("@/lib/service-notifications", () => ({ sendServiceRequirementsEmail }));
 
 import { Prisma } from "@/lib/generated/prisma/client";
 import { submitOnboarding } from "./onboarding";
@@ -45,6 +50,8 @@ beforeEach(() => {
   service.updateMany.mockReset().mockResolvedValue({ count: 1 });
   getCurrentUser.mockReset().mockResolvedValue(me);
   revalidatePath.mockClear();
+  after.mockReset();
+  sendServiceRequirementsEmail.mockReset().mockResolvedValue(undefined);
   consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -193,5 +200,59 @@ describe("submitOnboarding", () => {
     const logged = JSON.stringify(consoleError.mock.calls);
     expect(logged).not.toContain("act_123");
     expect(logged).not.toContain("Layla Cafe");
+  });
+});
+
+describe("submitOnboarding requirements email", () => {
+  // Runs the callbacks after() scheduled, as Next does after the response.
+  async function runScheduled() {
+    for (const [callback] of after.mock.calls) await callback();
+  }
+
+  const uniqueViolation = () =>
+    new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+      code: "P2002",
+      clientVersion: "test",
+    });
+
+  it("schedules the admin email for new details after the response", async () => {
+    await submitOnboarding(null, form({ itemId: "i1", ...answers }));
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(sendServiceRequirementsEmail).not.toHaveBeenCalled();
+    await runScheduled();
+    expect(sendServiceRequirementsEmail).toHaveBeenCalledWith("i1", "created");
+  });
+
+  it("schedules the admin email for updated details", async () => {
+    service.create.mockRejectedValue(uniqueViolation());
+    await submitOnboarding(null, form({ itemId: "i1", ...answers }));
+    await runScheduled();
+    expect(sendServiceRequirementsEmail).toHaveBeenCalledWith("i1", "updated");
+  });
+
+  it.each([
+    ["a locked save", () => {
+      service.create.mockRejectedValue(uniqueViolation());
+      service.updateMany.mockResolvedValue({ count: 0 });
+    }],
+    ["a started record", () => {
+      orderItem.findFirst.mockResolvedValue({
+        ...item,
+        service: { status: "IN_PROGRESS", requirements: {} },
+      });
+    }],
+    ["an item outside the owner's orders", () => orderItem.findFirst.mockResolvedValue(null)],
+    ["a database error", () => service.create.mockRejectedValue(new Error("connection lost"))],
+  ])("schedules nothing for %s", async (_label, arrange) => {
+    arrange();
+    await submitOnboarding(null, form({ itemId: "i1", ...answers }));
+    expect(after).not.toHaveBeenCalled();
+  });
+
+  it("schedules nothing for invalid answers or a signed-out visitor", async () => {
+    await submitOnboarding(null, form({ itemId: "i1", ...answers, businessName: " " }));
+    getCurrentUser.mockResolvedValue(null);
+    await submitOnboarding(null, form({ itemId: "i1", ...answers }));
+    expect(after).not.toHaveBeenCalled();
   });
 });

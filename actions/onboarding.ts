@@ -1,12 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import {
   canEditOnboarding,
   parseOnboardingForm,
   type OnboardingField,
   type OnboardingFieldErrors,
 } from "@/lib/onboarding";
+import { sendServiceRequirementsEmail } from "@/lib/service-notifications";
 import { findOnboardingItem, saveOnboarding } from "@/lib/services";
 import { getCurrentUser } from "@/lib/session";
 
@@ -71,9 +73,10 @@ export async function submitOnboarding(
           };
     }
 
-    if ((await saveOnboarding(item.itemId, parsed.data)) === "locked") {
-      return { success: false, error: "locked" };
-    }
+    const saved = await saveOnboarding(item.itemId, parsed.data);
+    if (saved === "locked") return { success: false, error: "locked" };
+    // Tell the Abody team after the response; never delays or fails the submit.
+    after(() => sendServiceRequirementsEmail(item.itemId, saved));
     revalidatePath("/[lang]/onboarding/[itemId]", "page");
     revalidatePath("/[lang]/account", "layout");
     return { success: true };

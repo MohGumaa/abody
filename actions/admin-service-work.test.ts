@@ -1,11 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { db, requireAdmin, revalidatePath } = vi.hoisted(() => ({
+const { db, requireAdmin, revalidatePath, after, sendServiceStatusEmail } = vi.hoisted(() => ({
   db: {
     service: { findFirst: vi.fn(), updateMany: vi.fn(), count: vi.fn() },
   },
   requireAdmin: vi.fn(),
   revalidatePath: vi.fn(),
+  after: vi.fn(),
+  sendServiceStatusEmail: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ db }));
@@ -14,6 +16,8 @@ vi.mock("@/lib/admin", async (importOriginal) => ({
   requireAdmin,
 }));
 vi.mock("next/cache", () => ({ revalidatePath }));
+vi.mock("next/server", () => ({ after }));
+vi.mock("@/lib/service-notifications", () => ({ sendServiceStatusEmail }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn(), notFound: vi.fn() }));
 
 import { ADMIN_NOTES_MAX_LENGTH } from "@/lib/service-work-rules";
@@ -35,6 +39,8 @@ beforeEach(() => {
   vi.useRealTimers();
   requireAdmin.mockReset().mockResolvedValue({ id: "admin", role: "ADMIN" });
   revalidatePath.mockReset();
+  after.mockReset();
+  sendServiceStatusEmail.mockReset().mockResolvedValue(undefined);
   db.service.findFirst
     .mockReset()
     .mockResolvedValue({ status: "NEW", startDate: null, completedDate: null });
@@ -124,5 +130,56 @@ describe("saveServiceWork", () => {
     expect(log).toHaveBeenCalledWith("saveServiceWork failed", "connection lost");
     expect(JSON.stringify(log.mock.calls)).not.toContain("Kickoff");
     log.mockRestore();
+  });
+});
+
+describe("saveServiceWork status email", () => {
+  async function runScheduled() {
+    for (const [callback] of after.mock.calls) await callback();
+  }
+
+  it("schedules the customer email for a real status change, stamped like the write", async () => {
+    vi.useFakeTimers({ now: new Date("2026-10-08T12:00:00Z"), toFake: ["Date"] });
+    expect(await saveServiceWork(null, form(valid))).toEqual({ success: true });
+    expect(after).toHaveBeenCalledTimes(1);
+    expect(sendServiceStatusEmail).not.toHaveBeenCalled();
+    await runScheduled();
+    expect(sendServiceStatusEmail).toHaveBeenCalledWith(
+      "svc1",
+      new Date("2026-10-08T12:00:00Z"),
+    );
+    expect(db.service.updateMany.mock.calls[0][0].data.startDate).toEqual(
+      new Date("2026-10-08T12:00:00Z"),
+    );
+  });
+
+  it("schedules nothing for a notes-only save", async () => {
+    expect(await saveServiceWork(null, form({ ...valid, status: "NEW" }))).toEqual({
+      success: true,
+    });
+    expect(after).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a lost race", () => {
+      db.service.updateMany.mockResolvedValue({ count: 0 });
+      db.service.count.mockResolvedValue(1);
+    }],
+    ["a record that is gone", () => db.service.findFirst.mockResolvedValue(null)],
+    ["an order no longer paid at write time", () =>
+      db.service.updateMany.mockResolvedValue({ count: 0 })],
+    ["an unexpected error", () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      db.service.updateMany.mockRejectedValue(new Error("connection lost"));
+    }],
+  ])("schedules nothing for %s", async (_label, arrange) => {
+    arrange();
+    await saveServiceWork(null, form(valid));
+    expect(after).not.toHaveBeenCalled();
+  });
+
+  it("schedules nothing for invalid input", async () => {
+    await saveServiceWork(null, form({ ...valid, status: "PAID" }));
+    expect(after).not.toHaveBeenCalled();
   });
 });

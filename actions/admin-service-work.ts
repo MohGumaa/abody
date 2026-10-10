@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { isProductId, requireAdmin } from "@/lib/admin";
 import { PAID_SERVICE_ITEM } from "@/lib/admin-service-work";
 import { db } from "@/lib/db";
+import { sendServiceStatusEmail } from "@/lib/service-notifications";
 import {
   isServiceStatus,
   parseAdminNotes,
@@ -51,10 +53,11 @@ export async function saveServiceWork(
 
     // One write conditioned on the status that was read, so the dates always
     // match the change and a concurrent save is never overwritten.
+    const now = new Date();
     const { count } = await db.service.updateMany({
       where: { ...where, status: current.status },
       data: {
-        ...statusChangeData(current.status, status, current, new Date()),
+        ...statusChangeData(current.status, status, current, now),
         adminNotes: notes.notes,
       },
     });
@@ -65,6 +68,11 @@ export async function saveServiceWork(
     // The admin pages and the customer's account service pages.
     revalidatePath("/admin", "layout");
     revalidatePath("/[lang]", "layout");
+    // A real status change tells the customer after the response; a notes-only
+    // save sends nothing.
+    if (current.status !== status) {
+      after(() => sendServiceStatusEmail(id, now));
+    }
     return { success: true };
   } catch (error) {
     // The message only: never the customer's answers or the notes.
