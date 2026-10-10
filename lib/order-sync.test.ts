@@ -56,6 +56,8 @@ function lineItems(has_more = false, productId: string | null = "p1") {
 
 beforeEach(() => {
   for (const fn of Object.values(order)) fn.mockReset();
+  order.create.mockResolvedValue({ id: "o_new" });
+  order.updateMany.mockResolvedValue({ count: 1 });
   user.findUnique.mockReset().mockResolvedValue(null);
   listLineItems.mockReset();
 });
@@ -71,15 +73,17 @@ describe("syncCheckoutSession", () => {
   it("creates a paid order with its items", async () => {
     order.findUnique.mockResolvedValue(null);
     listLineItems.mockResolvedValue(lineItems());
-    order.create.mockResolvedValue({});
 
-    await syncCheckoutSession("checkout.session.completed", session());
+    expect(await syncCheckoutSession("checkout.session.completed", session())).toBe(
+      "o_new",
+    );
 
     expect(listLineItems).toHaveBeenCalledWith("cs_test_1", {
       limit: 100,
       expand: ["data.price.product"],
     });
     expect(order.create).toHaveBeenCalledWith({
+      select: { id: true },
       data: {
         status: "PAID",
         userId: null,
@@ -157,7 +161,7 @@ describe("syncCheckoutSession", () => {
   it("does nothing for a repeat delivery to a paid order", async () => {
     order.findUnique.mockResolvedValue({ id: "o1", status: "PAID" });
 
-    await syncCheckoutSession("checkout.session.completed", session());
+    expect(await syncCheckoutSession("checkout.session.completed", session())).toBeNull();
 
     expect(listLineItems).not.toHaveBeenCalled();
     expect(order.create).not.toHaveBeenCalled();
@@ -178,10 +182,9 @@ describe("syncCheckoutSession", () => {
   it("moves a pending order to paid behind a PENDING guard", async () => {
     order.findUnique.mockResolvedValue({ id: "o1", status: "PENDING" });
 
-    await syncCheckoutSession(
-      "checkout.session.async_payment_succeeded",
-      session(),
-    );
+    expect(
+      await syncCheckoutSession("checkout.session.async_payment_succeeded", session()),
+    ).toBe("o1");
 
     expect(order.updateMany).toHaveBeenCalledWith({
       where: { id: "o1", status: "PENDING" },
@@ -200,15 +203,61 @@ describe("syncCheckoutSession", () => {
     );
     order.findUniqueOrThrow.mockResolvedValue({ id: "o1", status: "PENDING" });
 
-    await syncCheckoutSession(
-      "checkout.session.async_payment_failed",
-      session({ payment_status: "unpaid", payment_intent: null }),
-    );
+    expect(
+      await syncCheckoutSession(
+        "checkout.session.async_payment_failed",
+        session({ payment_status: "unpaid", payment_intent: null }),
+      ),
+    ).toBeNull();
 
     expect(order.updateMany).toHaveBeenCalledWith({
       where: { id: "o1", status: "PENDING" },
       data: { status: "CANCELLED", stripePaymentIntentId: undefined },
     });
+  });
+
+  it("returns no id for an order created pending", async () => {
+    order.findUnique.mockResolvedValue(null);
+    listLineItems.mockResolvedValue(lineItems());
+
+    expect(
+      await syncCheckoutSession(
+        "checkout.session.completed",
+        session({ payment_status: "unpaid" }),
+      ),
+    ).toBeNull();
+    expect(order.create.mock.calls[0][0].data.status).toBe("PENDING");
+  });
+
+  it("returns no id when a racing delivery already moved the order", async () => {
+    order.findUnique.mockResolvedValue({ id: "o1", status: "PENDING" });
+    order.updateMany.mockResolvedValue({ count: 0 });
+
+    expect(
+      await syncCheckoutSession("checkout.session.async_payment_succeeded", session()),
+    ).toBeNull();
+  });
+
+  it("returns the id when a concurrent create won and this call moved it to paid", async () => {
+    order.findUnique.mockResolvedValue(null);
+    listLineItems.mockResolvedValue(lineItems());
+    order.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError("Unique constraint failed", {
+        code: "P2002",
+        clientVersion: "7.10.0",
+      }),
+    );
+    order.findUniqueOrThrow.mockResolvedValue({ id: "o1", status: "PENDING" });
+
+    expect(
+      await syncCheckoutSession("checkout.session.async_payment_succeeded", session()),
+    ).toBe("o1");
+  });
+
+  it("returns no id for a non-payment event", async () => {
+    expect(
+      await syncCheckoutSession("checkout.session.completed", session({ mode: "subscription" })),
+    ).toBeNull();
   });
 
   it("rethrows other database errors", async () => {

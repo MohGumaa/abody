@@ -1,13 +1,16 @@
 import Stripe from "stripe";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { syncCheckoutSession, syncChargeRefund, revalidatePath } = vi.hoisted(() => ({
-  syncCheckoutSession: vi.fn(),
-  syncChargeRefund: vi.fn(),
-  revalidatePath: vi.fn(),
-}));
+const { syncCheckoutSession, syncChargeRefund, revalidatePath, sendOrderPaidEmails } =
+  vi.hoisted(() => ({
+    syncCheckoutSession: vi.fn(),
+    syncChargeRefund: vi.fn(),
+    revalidatePath: vi.fn(),
+    sendOrderPaidEmails: vi.fn(),
+  }));
 
 vi.mock("@/lib/order-sync", () => ({ syncCheckoutSession, syncChargeRefund }));
+vi.mock("@/lib/order-notifications", () => ({ sendOrderPaidEmails }));
 vi.mock("next/cache", () => ({ revalidatePath }));
 
 import { POST } from "./route";
@@ -45,7 +48,8 @@ function signed(body: string, secret = SECRET) {
 beforeEach(() => {
   vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_route");
   vi.stubEnv("STRIPE_WEBHOOK_SECRET", SECRET);
-  syncCheckoutSession.mockReset();
+  syncCheckoutSession.mockReset().mockResolvedValue(null);
+  sendOrderPaidEmails.mockReset().mockResolvedValue(undefined);
   syncChargeRefund.mockReset().mockResolvedValue(0);
   revalidatePath.mockClear();
   vi.spyOn(console, "error").mockImplementation(() => {});
@@ -110,6 +114,41 @@ describe("POST /api/stripe/webhook", () => {
       "checkout.session.completed",
       session,
     );
+  });
+
+  it("sends the paid-order emails when this delivery paid the order", async () => {
+    const session = { id: "cs_test_1", mode: "payment", metadata: { locale: "ar" } };
+    syncCheckoutSession.mockResolvedValue("o1");
+
+    const response = await POST(signed(eventBody("checkout.session.completed", session)));
+
+    expect(response.status).toBe(200);
+    expect(sendOrderPaidEmails).toHaveBeenCalledWith("o1", session);
+  });
+
+  it("sends no email when the sync paid no order", async () => {
+    await POST(signed(eventBody("checkout.session.completed")));
+    await POST(signed(eventBody("checkout.session.async_payment_failed")));
+
+    expect(sendOrderPaidEmails).not.toHaveBeenCalled();
+  });
+
+  it("still answers 200 when the emails fail", async () => {
+    syncCheckoutSession.mockResolvedValue("o1");
+    sendOrderPaidEmails.mockRejectedValue(new Error("unexpected"));
+
+    const response = await POST(signed(eventBody("checkout.session.completed")));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ received: true });
+  });
+
+  it("sends no email when syncing fails", async () => {
+    syncCheckoutSession.mockRejectedValue(new Error("db down"));
+
+    await POST(signed(eventBody("checkout.session.completed")));
+
+    expect(sendOrderPaidEmails).not.toHaveBeenCalled();
   });
 
   it("syncs the async payment events", async () => {

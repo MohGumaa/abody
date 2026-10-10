@@ -503,6 +503,23 @@ export const en = {
     add: "Add your details",
     edit: "Update your details",
   },
+  // Customer order confirmation email (feature 19a). {number} is "#1001".
+  orderEmail: {
+    subject: "Your Abody order {number} is confirmed",
+    heading: "Thank you for your order",
+    intro: "We received your payment. Here is a summary of order {number}.",
+    paymentReceived: "Payment received",
+    quantity: "Qty",
+    total: "Total paid",
+    downloadsTitle: "Your files are ready",
+    downloadsBody:
+      "Download your files from your order page. Keep this email to find them again later.",
+    servicesTitle: "Next step: tell us about your business",
+    servicesBody:
+      "Open your order page and send us your business details so we can start your service.",
+    viewOrder: "View your order",
+    footer: "You received this email because you placed an order at Abody.",
+  },
   notFound: {
     title: "Page not found",
     body: "The page you are looking for does not exist or has moved.",

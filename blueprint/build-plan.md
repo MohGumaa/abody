@@ -31,6 +31,8 @@
 - [x] 17. **Customer Management** - Allow admins to view customers, profiles, orders, purchases, downloads, and active services.
 - [x] 18. **Secure File Storage** - Implement private storage for digital products with protected, authenticated download URLs.
 - [ ] 19. **Email Notifications** - Send transactional emails for orders, payments, digital downloads, service purchases, and service status updates.
+  - [x] 19a. **Order Emails** - Send transactional email through Resend: the customer's bilingual order and payment confirmation when an order is paid (with a link to the order page for downloads, and service next steps), and an admin new-order email (including new service purchases) to one configured address, both triggered by the verified Stripe webhook.
+  - [ ] 19b. **Service Emails** - Email the customer when an admin changes their service status, and email the admin address when a customer submits service requirements.
 - [ ] 20. **Discount & Coupon System** - Allow admins to create, edit, activate, deactivate, and apply discount codes to eligible products or services.
 - [ ] 21. **Website Content Management** - Allow admins to manage featured products, homepage sections, promotional content, and basic website settings.
 - [ ] 23. **Analytics & Sales Reporting** - Track product views, cart activity, purchases, revenue, customers, and basic ecommerce performance.

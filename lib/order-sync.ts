@@ -41,10 +41,11 @@ async function orderUserId(reference: string | null): Promise<string | null> {
   return user?.id ?? null;
 }
 
+// The new order's id, or null when a concurrent delivery created it first.
 async function createOrder(
   session: Stripe.Checkout.Session,
   status: OrderStatus,
-): Promise<boolean> {
+): Promise<string | null> {
   const lineItems = await getStripe().checkout.sessions.listLineItems(
     session.id,
     { limit: LINE_ITEM_LIMIT, expand: ["data.price.product"] },
@@ -58,7 +59,8 @@ async function createOrder(
   const items = orderItemsFromLineItems(lineItems.data);
   const userId = await orderUserId(session.client_reference_id);
   try {
-    await db.order.create({
+    const order = await db.order.create({
+      select: { id: true },
       data: {
         status,
         userId,
@@ -70,26 +72,31 @@ async function createOrder(
         items: { create: items },
       },
     });
-    return true;
+    return order.id;
   } catch (error) {
     // A concurrent delivery of the same session created it first.
-    if (isUniqueViolation(error)) return false;
+    if (isUniqueViolation(error)) return null;
     throw error;
   }
 }
 
+// Returns the order id only when this call made the order PAID, by creating it
+// paid or by winning the PENDING update, so the paid emails go out once.
 export async function syncCheckoutSession(
   eventType: string,
   session: Stripe.Checkout.Session,
-): Promise<void> {
+): Promise<string | null> {
   const status = targetStatus(eventType, session);
-  if (!status) return;
+  if (!status) return null;
 
   const existing = await db.order.findUnique({
     where: { stripeCheckoutSessionId: session.id },
     select: { id: true, status: true },
   });
-  if (!existing && (await createOrder(session, status))) return;
+  if (!existing) {
+    const createdId = await createOrder(session, status);
+    if (createdId) return status === "PAID" ? createdId : null;
+  }
 
   const order =
     existing ??
@@ -97,9 +104,9 @@ export async function syncCheckoutSession(
       where: { stripeCheckoutSessionId: session.id },
       select: { id: true, status: true },
     }));
-  if (!canTransition(order.status, status)) return;
+  if (!canTransition(order.status, status)) return null;
   // The PENDING guard lets only one of two racing deliveries move the order.
-  await db.order.updateMany({
+  const { count } = await db.order.updateMany({
     where: { id: order.id, status: "PENDING" },
     // Keep a stored payment intent when this event carries none.
     data: {
@@ -107,6 +114,7 @@ export async function syncCheckoutSession(
       stripePaymentIntentId: paymentIntentId(session) ?? undefined,
     },
   });
+  return count === 1 && status === "PAID" ? order.id : null;
 }
 
 // A fully refunded charge marks its paid orders Refunded, which ends their

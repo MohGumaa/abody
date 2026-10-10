@@ -206,3 +206,19 @@
 **Why it matters:** `lib/object-storage.test.ts` covers `bucketConfig`, signing, unsafe keys for `signedDownloadUrl`, and unsafe prefixes for `deletePrefix`. Nothing exercises the logic inside the other functions: `objectExists` mapping a `NotFound`/404 to `false` and rethrowing anything else (this decides whether a missing object is reported as missing or as a storage failure), `deletePrefix` following `NextContinuationToken` across pages and throwing when `DeleteObjects` returns `Errors`, or `putObjectFromFile` and `objectExists` rejecting an unsafe key (Step 1 says "every function rejects an unsafe key"). Callers mock the whole module, so a regression here (for example, a loop that stops after the first page and leaves a deleted product's objects behind) keeps `pnpm test` green. The code reads correctly today; this is a coverage gap, not a live bug.
 **Suggested fix:** Add tests that stub `S3Client.prototype.send` with `vi.spyOn` (no network): a two-page listing proving both pages are deleted with the second `ContinuationToken`; a `DeleteObjects` result with `Errors` rejecting; `HeadObject` throwing a `NotFound` error (false) and a 403 error (rethrown); and `putObjectFromFile`/`objectExists` rejecting `"../x.pdf"` before any `send`. Requirement lost: None.
 **Resolution:**
+
+### F-31 [P3] open - The webhook waits on two Resend calls that have no timeout before it answers Stripe
+
+**File:** app/api/stripe/webhook/route.ts:69
+**Found:** 2026-10-10 by /audit independent (scope: current; lens: performance)
+**Why it matters:** After the order write, the route awaits `sendOrderPaidEmails`, which sends the customer and then the admin email in sequence. `sendEmail` (`lib/email.ts:48`) calls `fetch` without an `AbortSignal`, so a slow or hanging Resend API holds the Stripe response open for as long as the connection lasts. If that passes Stripe's webhook timeout, Stripe records the delivery as failed and retries it. The order is already `PAID`, so the retry sends nothing and changes nothing, and no email is duplicated. But the spec says email problems never fail the webhook, and a host that kills the function at its own timeout would also drop the email that was still pending. Without a Resend outage the risk does not show up, so the actual latency effect has not been measured.
+**Suggested fix:** Give the Resend `fetch` a bounded `signal: AbortSignal.timeout(...)` (a few seconds) so a hung call becomes a logged send failure. Or answer Stripe first and send the emails in `after()` from `next/server` (see `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/after.md`), which keeps the "after the order write" ordering. Requirement lost: None.
+**Resolution:**
+
+### F-32 [P3] open - No test covers losing the create race to a delivery that created the order as PAID
+
+**File:** lib/order-sync.test.ts:241
+**Found:** 2026-10-10 by /audit independent (scope: current; lens: tests)
+**Why it matters:** The spec's exactly-once rule covers two concurrent `checkout.session.completed` deliveries for a paid session. Both find no order. One creates it as `PAID` and returns its id. The other gets `P2002`, reads the order back as `PAID`, and must return `null`. The code is correct today (`canTransition("PAID", "PAID")` is false at `lib/order-sync.ts:107`). The tests cover a lost `updateMany` (`count: 0`) and a lost create followed by a won `PENDING` update, but nothing covers this create-versus-create case. A future change to `canTransition` or to the fall-through after `createOrder` could send the paid emails twice while `pnpm test` stays green.
+**Suggested fix:** Add a test in which `order.create` rejects with `P2002`, `order.findUniqueOrThrow` resolves `{ id: "o1", status: "PAID" }`, and `syncCheckoutSession("checkout.session.completed", session())` resolves to `null` without calling `order.updateMany`. Requirement lost: None.
+**Resolution:**
