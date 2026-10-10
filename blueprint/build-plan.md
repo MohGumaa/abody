@@ -29,7 +29,7 @@
   - [x] 15b. **Refunds** - Full refund of a paid order from the admin through the Stripe Refunds API, and the verified `charge.refunded` webhook marking orders Refunded (including refunds made in the Stripe dashboard), which ends download access.
 - [x] 16. **Admin Service Management** - Allow admins to manage service orders, customer requirements, notes, progress, and completion status.
 - [x] 17. **Customer Management** - Allow admins to view customers, profiles, orders, purchases, downloads, and active services.
-- [ ] 18. **Secure File Storage** - Implement private storage for digital products with protected, authenticated download URLs.
+- [x] 18. **Secure File Storage** - Implement private storage for digital products with protected, authenticated download URLs.
 - [ ] 19. **Email Notifications** - Send transactional emails for orders, payments, digital downloads, service purchases, and service status updates.
 - [ ] 20. **Discount & Coupon System** - Allow admins to create, edit, activate, deactivate, and apply discount codes to eligible products or services.
 - [ ] 21. **Website Content Management** - Allow admins to manage featured products, homepage sections, promotional content, and basic website settings.

@@ -1,12 +1,20 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { findDownload, openStoredFile } = vi.hoisted(() => ({
-  findDownload: vi.fn(),
-  openStoredFile: vi.fn(),
-}));
+const { findDownload, openStoredFile, signedStoredFileUrl, bucketConfig } =
+  vi.hoisted(() => ({
+    findDownload: vi.fn(),
+    openStoredFile: vi.fn(),
+    signedStoredFileUrl: vi.fn(),
+    bucketConfig: vi.fn(),
+  }));
 
-vi.mock("@/lib/downloads", () => ({ findDownload, openStoredFile }));
+vi.mock("@/lib/downloads", () => ({
+  findDownload,
+  openStoredFile,
+  signedStoredFileUrl,
+}));
+vi.mock("@/lib/object-storage", () => ({ bucketConfig }));
 
 import { GET } from "./route";
 
@@ -43,6 +51,8 @@ async function expectNotFound(response: Response) {
 beforeEach(() => {
   findDownload.mockReset();
   openStoredFile.mockReset();
+  signedStoredFileUrl.mockReset();
+  bucketConfig.mockReset().mockReturnValue(null);
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -102,6 +112,77 @@ describe("GET /api/downloads/[itemId]", () => {
 
   it("returns 500 when the lookup throws", async () => {
     findDownload.mockRejectedValue(new Error("db down"));
+
+    const response = await call("item_1");
+
+    expect(response.status).toBe(500);
+    expect((await response.json()).error.code).toBe("internal_error");
+  });
+});
+
+describe("GET /api/downloads/[itemId] with a bucket", () => {
+  const SIGNED =
+    "https://account123.r2.cloudflarestorage.com/abody-files/seed/facebook-ads-guide.pdf?X-Amz-Signature=abc";
+
+  beforeEach(() => {
+    bucketConfig.mockReturnValue({ bucket: "abody-files" });
+  });
+
+  it("redirects a granted item to its signed link", async () => {
+    findDownload.mockResolvedValue("seed/facebook-ads-guide.pdf");
+    signedStoredFileUrl.mockResolvedValue(SIGNED);
+
+    const response = await call("item_1");
+
+    expect(response.status).toBe(302);
+    expect(signedStoredFileUrl).toHaveBeenCalledWith("seed/facebook-ads-guide.pdf");
+    expect(openStoredFile).not.toHaveBeenCalled();
+    expect(Object.fromEntries(response.headers)).toMatchObject({
+      location: SIGNED,
+      "cache-control": "private, no-store",
+      "referrer-policy": "no-referrer",
+    });
+  });
+
+  it("returns the same 404 without touching storage when access is denied", async () => {
+    findDownload.mockResolvedValue(null);
+
+    await expectNotFound(await call("item_1"));
+    await expectNotFound(await call("item_1", "not-a-session"));
+    expect(signedStoredFileUrl).not.toHaveBeenCalled();
+  });
+
+  it("returns 500 without logging secrets when the object is missing", async () => {
+    findDownload.mockResolvedValue("seed/gone.pdf");
+    signedStoredFileUrl.mockResolvedValue(null);
+
+    const response = await call("item_1");
+
+    expect(response.status).toBe(500);
+    expect((await response.json()).error.code).toBe("internal_error");
+    const logged = vi.mocked(console.error).mock.calls.flat().join(" ");
+    expect(logged).toContain("item_1");
+    expect(logged).not.toContain(SESSION_ID);
+    expect(logged).not.toContain("seed/gone.pdf");
+  });
+
+  it("returns 500 when storage is misconfigured", async () => {
+    findDownload.mockResolvedValue("seed/facebook-ads-guide.pdf");
+    bucketConfig.mockImplementation(() => {
+      throw new Error("Object storage is partly configured; missing S3_REGION");
+    });
+
+    const response = await call("item_1");
+
+    expect(response.status).toBe(500);
+    expect(signedStoredFileUrl).not.toHaveBeenCalled();
+    const logged = vi.mocked(console.error).mock.calls.flat().join(" ");
+    expect(logged).not.toContain(SESSION_ID);
+  });
+
+  it("returns 500 when signing fails", async () => {
+    findDownload.mockResolvedValue("seed/facebook-ads-guide.pdf");
+    signedStoredFileUrl.mockRejectedValue(new Error("network down"));
 
     const response = await call("item_1");
 

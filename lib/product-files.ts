@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { createWriteStream } from "node:fs";
 import { mkdir, open, rename, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -11,12 +12,13 @@ import {
   productUploadPrefix,
   uploadFileName,
 } from "@/lib/admin-products";
-import { storagePath } from "@/lib/delivery";
+import { isSafeStorageKey, storagePath } from "@/lib/delivery";
 import { STORAGE_ROOT } from "@/lib/downloads";
+import { bucketConfig, deletePrefix, putObjectFromFile } from "@/lib/object-storage";
 
-// Server code only: admin writes and removals of private product files under
-// storage/. Paths always resolve through storagePath(), so no key can reach
-// outside the storage root.
+// Server code only: admin writes and removals of private product files, in the
+// bucket when one is configured, otherwise under storage/. Local paths always
+// resolve through storagePath(), so no key can reach outside the storage root.
 
 // The first bytes every file of each allowed type starts with.
 const SIGNATURES: Record<string, Buffer> = {
@@ -56,8 +58,9 @@ async function startsWith(filePath: string, signature: Buffer): Promise<boolean>
 }
 
 // Streams an upload to a temporary file, checks its size and type, then moves
-// it to a new key of its own. The file is never held in memory. Callers check
-// the extension first. On any failure nothing is left behind.
+// it to a new key of its own: into the bucket when one is configured, otherwise
+// under storage/. The file is never held in memory. Callers check the extension
+// first. On any failure nothing is left behind.
 export async function saveProductUpload(
   productId: string,
   body: ReadableStream<Uint8Array>,
@@ -68,12 +71,12 @@ export async function saveProductUpload(
   const signature = SIGNATURES[path.posix.extname(fileName)];
   const token = randomBytes(8).toString("hex");
   const key = productFileKey(productId, token, fileName);
-  const tempPath = storagePath(
-    STORAGE_ROOT,
-    `${productUploadPrefix(productId)}upload-${token}.tmp`,
-  );
-  const finalPath = storagePath(STORAGE_ROOT, key);
-  if (!signature || !tempPath || !finalPath) {
+  const useBucket = bucketConfig() !== null;
+  const tempPath = useBucket
+    ? path.join(tmpdir(), `abody-upload-${token}.tmp`)
+    : storagePath(STORAGE_ROOT, `${productUploadPrefix(productId)}upload-${token}.tmp`);
+  const finalPath = useBucket ? null : storagePath(STORAGE_ROOT, key);
+  if (!signature || !tempPath || !isSafeStorageKey(key) || (!useBucket && !finalPath)) {
     return { ok: false, error: "invalid_file_type" };
   }
 
@@ -93,8 +96,13 @@ export async function saveProductUpload(
       await rm(tempPath, { force: true });
       return { ok: false, error: "invalid_file_type" };
     }
-    await mkdir(path.dirname(finalPath), { recursive: true });
-    await rename(tempPath, finalPath);
+    if (finalPath) {
+      await mkdir(path.dirname(finalPath), { recursive: true });
+      await rename(tempPath, finalPath);
+    } else {
+      await putObjectFromFile(key, tempPath, counter.bytes);
+      await rm(tempPath, { force: true });
+    }
     return { ok: true, key, fileName };
   } catch (error) {
     await rm(tempPath, { force: true });
@@ -110,12 +118,22 @@ export async function removeOwnUpload(
   key: string | null,
 ): Promise<void> {
   if (key === null || !isOwnUploadKey(productId, key)) return;
-  const dir = storagePath(STORAGE_ROOT, path.posix.dirname(key));
+  const folder = path.posix.dirname(key);
+  if (bucketConfig()) {
+    await deletePrefix(`${folder}/`);
+    return;
+  }
+  const dir = storagePath(STORAGE_ROOT, folder);
   if (dir) await rm(dir, { recursive: true, force: true });
 }
 
 // Every file the admin uploaded for one product. Seed files live elsewhere.
 export async function removeProductUploads(productId: string): Promise<void> {
-  const dir = storagePath(STORAGE_ROOT, productUploadPrefix(productId).slice(0, -1));
+  const prefix = productUploadPrefix(productId);
+  if (bucketConfig()) {
+    await deletePrefix(prefix);
+    return;
+  }
+  const dir = storagePath(STORAGE_ROOT, prefix.slice(0, -1));
   if (dir) await rm(dir, { recursive: true, force: true });
 }

@@ -4,10 +4,11 @@ import path from "node:path";
 import { Readable } from "node:stream";
 import { db } from "@/lib/db";
 import { canDownload, storagePath } from "@/lib/delivery";
+import { objectExists, signedDownloadUrl } from "@/lib/object-storage";
 
-// Server code only. Private product files live in storage/ at the project root,
-// outside public/, so only the download route can read them. Feature 18 moves
-// them to object storage.
+// Server code only. Private product files live in a private bucket when one is
+// configured (feature 18), otherwise in storage/ at the project root, outside
+// public/. Only the download route hands them out.
 export const STORAGE_ROOT = path.join(process.cwd(), "storage");
 
 // Order items that deliver a file.
@@ -80,6 +81,13 @@ function isMissingFile(error: unknown): boolean {
     "code" in error &&
     (error.code === "ENOENT" || error.code === "ENOTDIR")
   );
+}
+
+// Bucket mode: a short-lived link to a granted key, or null when the object is
+// missing. Any other error propagates.
+export async function signedStoredFileUrl(key: string): Promise<string | null> {
+  if (!(await objectExists(key))) return null;
+  return signedDownloadUrl(key);
 }
 
 // An unsafe key or a missing file is null; any other error propagates.

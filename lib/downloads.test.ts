@@ -2,13 +2,18 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { order, orderItem, stat } = vi.hoisted(() => ({
-  order: { findUnique: vi.fn() },
-  orderItem: { findFirst: vi.fn() },
-  stat: vi.fn(),
-}));
+const { order, orderItem, stat, objectExists, signedDownloadUrl } = vi.hoisted(
+  () => ({
+    order: { findUnique: vi.fn() },
+    orderItem: { findFirst: vi.fn() },
+    stat: vi.fn(),
+    objectExists: vi.fn(),
+    signedDownloadUrl: vi.fn(),
+  }),
+);
 
 vi.mock("@/lib/db", () => ({ db: { order, orderItem } }));
+vi.mock("@/lib/object-storage", () => ({ objectExists, signedDownloadUrl }));
 
 // Real fs, except stat can be made to fail in one test.
 vi.mock("node:fs/promises", async (importOriginal) => ({
@@ -20,6 +25,7 @@ import {
   findDownload,
   listOrderDownloads,
   openStoredFile,
+  signedStoredFileUrl,
   STORAGE_ROOT,
 } from "@/lib/downloads";
 
@@ -181,5 +187,30 @@ describe("openStoredFile", () => {
     await expect(openStoredFile("seed/facebook-ads-guide.pdf")).rejects.toBe(
       denied,
     );
+  });
+});
+
+describe("signedStoredFileUrl", () => {
+  beforeEach(() => {
+    objectExists.mockReset();
+    signedDownloadUrl.mockReset().mockResolvedValue("https://bucket.example/signed");
+  });
+
+  it("signs an object that exists", async () => {
+    objectExists.mockResolvedValue(true);
+    expect(await signedStoredFileUrl("seed/a.pdf")).toBe("https://bucket.example/signed");
+    expect(signedDownloadUrl).toHaveBeenCalledWith("seed/a.pdf");
+  });
+
+  it("is null without signing when the object is missing", async () => {
+    objectExists.mockResolvedValue(false);
+    expect(await signedStoredFileUrl("seed/gone.pdf")).toBeNull();
+    expect(signedDownloadUrl).not.toHaveBeenCalled();
+  });
+
+  it("propagates other storage errors", async () => {
+    const failure = new Error("AccessDenied");
+    objectExists.mockRejectedValue(failure);
+    await expect(signedStoredFileUrl("seed/a.pdf")).rejects.toBe(failure);
   });
 });

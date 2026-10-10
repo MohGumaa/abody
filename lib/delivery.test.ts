@@ -4,6 +4,7 @@ import {
   canDownload,
   contentDisposition,
   contentTypeFor,
+  isSafeStorageKey,
   storagePath,
 } from "@/lib/delivery";
 
@@ -57,6 +58,12 @@ describe("storagePath", () => {
     ["quote", 'seed/a".pdf'],
   ])("rejects a %s key", (_, key) => {
     expect(storagePath(ROOT, key)).toBeNull();
+    expect(isSafeStorageKey(key)).toBe(false);
+  });
+
+  it("shares its key rule with isSafeStorageKey", () => {
+    expect(isSafeStorageKey("seed/a.pdf")).toBe(true);
+    expect(isSafeStorageKey("products/p1/abc/a.zip")).toBe(true);
   });
 
   it("accepts a key of exactly 255 characters", () => {

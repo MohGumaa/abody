@@ -119,14 +119,6 @@
 **Suggested fix:** Wrap `getAdminProduct` in React `cache()` (as `getCurrentUser` already is) so metadata and page share one query, and drop `_count`/`orderCount` from the select, the `AdminProduct` type, and the test unless a planned UI needs it. Requirement lost: None.
 **Resolution:** Re-examined 2026-10-07 by /audit independent (target 5048817, fresh subagent): still present. This delta changes `getAdminProduct` to take a type (now `lib/admin.ts:240`) but it is still not wrapped in `cache()` and still selects `_count.orderItems` (line 268) for an `orderCount` that only `lib/admin.test.ts` reads. The new `app/admin/services/[id]/page.tsx` repeats the pattern (`generateMetadata` and the page each call it), so the double query now occurs on both edit pages. Severity stays P3. Status stays `open`.
 
-### F-19 [P3] open - The recursive delete of a product's upload folder has no direct test
-
-**File:** lib/product-files.ts:118
-**Found:** 2026-10-07 by /audit independent (scope: current; lens: tests)
-**Why it matters:** `removeProductUploads(productId)` runs `rm -r` on `storage/products/<id>` after a product is deleted. `actions/admin-products.test.ts` mocks the whole module, so no test proves the path it removes is exactly `products/<id>/` and never the storage root, another product's folder, or `seed/`. The upload route test exercises `removeOwnUpload` against a real temp root, but not this function. The current code is correct (the path goes through `storagePath`, and the action only calls it after `deleteMany` matched a real digital product), so this is a coverage gap on a destructive helper, not a live bug.
-**Suggested fix:** Add a small test for `lib/product-files.ts` using the same `vi.mock("@/lib/downloads")` temp-root pattern as the route test: create `products/p1/<token>/a.pdf`, `products/p2/<token>/b.pdf`, and `seed/c.pdf`, call `removeProductUploads("p1")`, and assert only `products/p1` is gone. Requirement lost: None.
-**Resolution:**
-
 ### F-20 [P3] open - The admin order list copies the dashboard's recent-order query and row mapping
 
 **File:** lib/admin-orders.ts:61
@@ -197,4 +189,20 @@
 **Found:** 2026-10-08 by /audit independent (scope: current; lens: tests)
 **Why it matters:** The spec's Data / contracts fix the orderings: downloads and services newest first by `order.createdAt desc, order.number desc, id asc`, and each order's items `id asc`. The test asserts the `where` and selects of both `orderItem.findMany` calls and the order list `orderBy`, but never the `orderBy` of the download or service queries (`NEWEST_ITEM_FIRST`, `lib/admin-customers.ts:17`) or the nested `items.orderBy`. Removing or reversing any of them would leave `pnpm test` green. The shipped code matches the spec today; this is a coverage gap only.
 **Suggested fix:** In the "reads the customer's orders, downloads, and services" test, add `expect(downloadQuery.orderBy).toEqual([{ order: { createdAt: "desc" } }, { order: { number: "desc" } }, { id: "asc" }])`, the same for `serviceQuery.orderBy`, and `expect(orderQuery.select.items.orderBy).toEqual({ id: "asc" })`. Requirement lost: None.
+**Resolution:**
+
+### F-29 [P3] open - The upload route test does not pin local storage mode, so ambient S3_* variables send it to a real bucket
+
+**File:** app/api/admin/products/[id]/file/route.test.ts:11
+**Found:** 2026-10-10 by /audit independent (scope: current; lens: tests)
+**Why it matters:** The upload route test imports the real `lib/product-files.ts`, which now calls the real `bucketConfig()` from `lib/object-storage.ts`. The test mocks the session, db, and `STORAGE_ROOT`, but neither mocks `@/lib/object-storage` nor stubs the `S3_*` variables. Vitest does not load `.env`, so `pnpm test` is local-mode today, but in a shell or CI job that exports the bucket variables (for example a deploy pipeline that runs tests with production env), these "local-mode" tests would switch to bucket mode: they would construct a real S3 client, try to `PutObject` test files under `products/<id>/...` in the real bucket, and fail or leave objects behind. The spec says "no test touches the network". The other affected tests (`lib/product-files.test.ts`, `lib/downloads.test.ts`, the download route test, `lib/object-storage.test.ts`) already mock the module or stub every variable.
+**Suggested fix:** In the upload route test, add `vi.mock("@/lib/object-storage", () => ({ bucketConfig: () => null, deletePrefix: vi.fn(), putObjectFromFile: vi.fn() }))`, or `vi.stubEnv` each `S3_*` variable to `""` in `beforeEach`. Requirement lost: None.
+**Resolution:**
+
+### F-30 [P3] open - objectExists, putObjectFromFile, and deletePrefix's paging and error handling have no direct test
+
+**File:** lib/object-storage.ts:108
+**Found:** 2026-10-10 by /audit independent (scope: current; lens: tests)
+**Why it matters:** `lib/object-storage.test.ts` covers `bucketConfig`, signing, unsafe keys for `signedDownloadUrl`, and unsafe prefixes for `deletePrefix`. Nothing exercises the logic inside the other functions: `objectExists` mapping a `NotFound`/404 to `false` and rethrowing anything else (this decides whether a missing object is reported as missing or as a storage failure), `deletePrefix` following `NextContinuationToken` across pages and throwing when `DeleteObjects` returns `Errors`, or `putObjectFromFile` and `objectExists` rejecting an unsafe key (Step 1 says "every function rejects an unsafe key"). Callers mock the whole module, so a regression here (for example, a loop that stops after the first page and leaves a deleted product's objects behind) keeps `pnpm test` green. The code reads correctly today; this is a coverage gap, not a live bug.
+**Suggested fix:** Add tests that stub `S3Client.prototype.send` with `vi.spyOn` (no network): a two-page listing proving both pages are deleted with the second `ContinuationToken`; a `DeleteObjects` result with `Errors` rejecting; `HeadObject` throwing a `NotFound` error (false) and a 403 error (rethrown); and `putObjectFromFile`/`objectExists` rejecting `"../x.pdf"` before any `send`. Requirement lost: None.
 **Resolution:**

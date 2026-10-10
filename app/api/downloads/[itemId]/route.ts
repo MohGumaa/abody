@@ -2,7 +2,8 @@ import type { NextRequest } from "next/server";
 import { apiError } from "@/lib/api-error";
 import { isCheckoutSessionId } from "@/lib/checkout";
 import { contentDisposition, contentTypeFor } from "@/lib/delivery";
-import { findDownload, openStoredFile } from "@/lib/downloads";
+import { findDownload, openStoredFile, signedStoredFileUrl } from "@/lib/downloads";
+import { bucketConfig } from "@/lib/object-storage";
 
 const ITEM_ID_MAX_LENGTH = 64;
 
@@ -29,6 +30,23 @@ export async function GET(
   try {
     const key = await findDownload(sessionId, itemId);
     if (!key) return notFound();
+
+    if (bucketConfig()) {
+      const url = await signedStoredFileUrl(key);
+      if (!url) {
+        // Never log the session id, the key, or a signed link.
+        console.error(`GET /api/downloads: order item ${itemId} stored object missing`);
+        return apiError(500, "internal_error", "Something went wrong.");
+      }
+      return new Response(null, {
+        status: 302,
+        headers: {
+          Location: url,
+          "Cache-Control": "private, no-store",
+          "Referrer-Policy": "no-referrer",
+        },
+      });
+    }
 
     const file = await openStoredFile(key);
     if (!file) {

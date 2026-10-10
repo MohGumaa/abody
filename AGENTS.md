@@ -319,6 +319,14 @@ change; do not create an npm or yarn lockfile.
 - Prisma client: `pnpm exec prisma generate` (runs automatically after
   `pnpm install`; output in `lib/generated/prisma` is not committed)
 - Migration status: `pnpm exec prisma migrate status`
+- Copy product files to the bucket: `pnpm storage:upload` (copies
+  `storage/seed/` and `storage/products/` under the same keys, skips existing
+  objects, never deletes; needs the `S3_*` variables in `.env.example`)
+
+Product files live in a private S3-compatible bucket (Cloudflare R2 or AWS S3)
+when `S3_BUCKET`, `S3_REGION`, `S3_ACCESS_KEY_ID`, and `S3_SECRET_ACCESS_KEY`
+(plus `S3_ENDPOINT` for R2) are set, and in the local `storage/` folder when
+none are set. Setting only some of them is an error.
 
 Unit tests are a gate for logic-bearing steps. There is no standalone typecheck
 script and no `Verify` command yet, so the automated checks are `pnpm test`,

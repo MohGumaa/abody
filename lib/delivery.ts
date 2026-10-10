@@ -29,13 +29,19 @@ export function canDownload(status: OrderStatus): boolean {
   return DOWNLOADABLE_STATUSES.has(status);
 }
 
-// Storage keys are relative paths under the storage root, such as
-// "seed/facebook-ads-guide.pdf". Returns null for any key that could escape it.
+// Storage keys are relative paths, such as "seed/facebook-ads-guide.pdf". The
+// same rule guards the local storage root and the bucket.
+export function isSafeStorageKey(key: string): boolean {
+  return (
+    key.length > 0 &&
+    key.length <= KEY_MAX_LENGTH &&
+    key.split("/").every((segment) => KEY_SEGMENT_PATTERN.test(segment))
+  );
+}
+
+// Returns null for any key that could escape the storage root.
 export function storagePath(root: string, key: string): string | null {
-  if (key.length === 0 || key.length > KEY_MAX_LENGTH) return null;
-  if (!key.split("/").every((segment) => KEY_SEGMENT_PATTERN.test(segment))) {
-    return null;
-  }
+  if (!isSafeStorageKey(key)) return null;
   const base = path.resolve(root);
   const resolved = path.resolve(base, key);
   return resolved.startsWith(base + path.sep) ? resolved : null;
