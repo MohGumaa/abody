@@ -1,16 +1,22 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { buildCartView, CART_COOKIE, CART_COOKIE_MAX_AGE, parseCart } from "@/lib/cart";
 import { checkCartCoupon } from "@/lib/cart-coupon";
 import { listPublishedProductsByIds } from "@/lib/catalog";
 import { COUPON_COOKIE, type CouponFailure } from "@/lib/coupons";
 import { DEFAULT_LOCALE } from "@/lib/i18n/config";
+import { clientKey, reserveRateLimit } from "@/lib/rate-limit";
 
 // The cart page's discount code (feature 20). The cookie holds only the code;
 // the cart page and checkout check it again every time, so it grants nothing.
 
-export type CouponApplyError = "invalid_input" | "empty_cart" | CouponFailure | "unexpected";
+export type CouponApplyError =
+  | "invalid_input"
+  | "empty_cart"
+  | CouponFailure
+  | "rate_limited"
+  | "unexpected";
 
 export type CouponActionResult =
   | { success: true }
@@ -25,6 +31,10 @@ export async function applyCoupon(
   if (typeof raw !== "string") return { success: false, error: "invalid_input" };
 
   try {
+    // Every attempt counts, so codes cannot be guessed quickly.
+    if (!(await reserveRateLimit("coupon", clientKey(await headers())))) {
+      return { success: false, error: "rate_limited" };
+    }
     const store = await cookies();
     const entries = parseCart(store.get(CART_COOKIE)?.value);
     // Only ids, types, and prices are used here, so the language does not matter.

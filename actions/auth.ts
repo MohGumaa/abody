@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import {
   clearLoginFailures,
@@ -16,6 +17,7 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/password";
+import { clientKey, reserveRateLimit } from "@/lib/rate-limit";
 import { createSession, deleteCurrentSession } from "@/lib/session";
 
 export type AuthActionError =
@@ -59,6 +61,10 @@ export async function register(
   const { name, email, password, next } = parsed.data;
 
   try {
+    // Counted before the costly hash; invalid forms above do not count.
+    if (!(await reserveRateLimit("register", clientKey(await headers())))) {
+      return { success: false, error: "rate_limited", values: { name, email } };
+    }
     const user = await db.user.create({
       data: { name, email, passwordHash: await hashPassword(password) },
       select: { id: true },

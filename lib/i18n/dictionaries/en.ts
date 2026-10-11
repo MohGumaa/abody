@@ -227,6 +227,7 @@ export const en = {
         not_eligible: "This code doesn't apply to the items in your cart.",
         below_minimum: "This code can't be used on an order this small.",
         empty_cart: "Add something to your cart before using a code.",
+        rate_limited: "Too many tries. Wait a few minutes and try again.",
         unexpected: "Something went wrong. Please try again.",
       },
     },

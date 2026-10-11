@@ -247,10 +247,10 @@
 **Suggested fix:** Parse before the `try` (or keep `parsed` in scope) and return `values: parsed.values` with the `unexpected` error too, plus one action-test assertion. Requirement lost: None.
 **Resolution:**
 
-### F-38 [P3] open - The analytics beacon buffers the whole request body before enforcing the 1 KB limit when Content-Length is absent
+### F-39 [P3] open - Production with RATE_LIMIT_IP_HEADER unset (or a header the host does not send) silently puts every visitor in one shared bucket
 
-**File:** app/api/analytics/route.ts:20
-**Found:** 2026-10-11 by /audit independent (scope: current; lens: security, performance)
-**Why it matters:** The unauthenticated `POST /api/analytics` only rejects early when a `Content-Length` header is declared over 1024. A chunked request with no `Content-Length` goes straight to `await request.text()`, which reads the entire body into memory before the `text.length > BODY_MAX_BYTES` check, so the spec's "1 KB max" bound does not limit how much the server reads. `text.length` also counts UTF-16 code units rather than bytes, so a multibyte body can exceed 1 KB of bytes and still pass. Real impact is limited: hosting platforms cap request bodies, any accepted path is still capped at 200 characters by `parseTrackedPath`, and the spec leaves rate limiting and bot filtering to feature 24. Not exercised against a running server in this pass.
-**Suggested fix:** Read `request.body` with a reader and stop with `invalid_path` once the received byte count passes 1024 (then decode with `TextDecoder`), or defer to feature 24's hardening and note it there. Requirement lost: None.
+**File:** lib/rate-limit.ts:22
+**Found:** 2026-10-11 by /audit independent (scope: current; lens: security)
+**Why it matters:** `clientKey` returns `"unknown"` when the setting is unset or the named header is missing, as the spec intends for development. Nothing distinguishes that case in production, so a deploy that forgets the variable, or names a header the host never sets, caps registration at 5 per hour and discount code tries at 10 per 15 minutes for the whole site, and any single anonymous visitor can exhaust them and lock everyone else out; the beacon would drop page views above 120 per minute site-wide. The same applies when `x-forwarded-for` passes through more than one proxy hop (for example a CDN in front of the host), because the rightmost entry is then the CDN's address. The spec deliberately defers the production header choice to `/release`, so this is a deployment-readiness risk rather than a defect in the feature.
+**Suggested fix:** Make `/release` (or the deployment checklist) require `RATE_LIMIT_IP_HEADER` and confirm the chosen header is set by the host, cannot be supplied by clients, and identifies the visitor rather than an intermediate proxy. Optionally log one warning when it is unset with `NODE_ENV === "production"`. Requirement lost: None.
 **Resolution:**

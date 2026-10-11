@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { user, createSession, deleteCurrentSession, redirect } = vi.hoisted(
+const { user, createSession, deleteCurrentSession, redirect, reserveRateLimit } = vi.hoisted(
   () => ({
     user: { create: vi.fn(), findUnique: vi.fn() },
     createSession: vi.fn(),
@@ -9,12 +9,15 @@ const { user, createSession, deleteCurrentSession, redirect } = vi.hoisted(
     redirect: vi.fn((url: string) => {
       throw new Error(`REDIRECT ${url}`);
     }),
+    reserveRateLimit: vi.fn(),
   }),
 );
 
 vi.mock("@/lib/db", () => ({ db: { user } }));
 vi.mock("@/lib/session", () => ({ createSession, deleteCurrentSession }));
 vi.mock("next/navigation", () => ({ redirect }));
+vi.mock("next/headers", () => ({ headers: async () => new Headers() }));
+vi.mock("@/lib/rate-limit", () => ({ clientKey: () => "ip", reserveRateLimit }));
 
 import { clearLoginFailures, LOGIN_MAX_ATTEMPTS } from "@/lib/auth";
 import { Prisma } from "@/lib/generated/prisma/client";
@@ -52,6 +55,7 @@ beforeEach(async () => {
   createSession.mockReset().mockResolvedValue(undefined);
   deleteCurrentSession.mockReset().mockResolvedValue(undefined);
   redirect.mockClear();
+  reserveRateLimit.mockReset().mockResolvedValue(true);
   clearLoginFailures("layla@example.com");
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -101,6 +105,7 @@ describe("register", () => {
       values: { name: "Layla", email: "layla@example.com" },
     });
     expect(user.create).not.toHaveBeenCalled();
+    expect(reserveRateLimit).not.toHaveBeenCalled();
   });
 
   it("rejects a tampered language", async () => {
@@ -116,6 +121,34 @@ describe("register", () => {
       success: false,
       error: "unexpected",
     });
+  });
+
+  it("counts a valid registration against the visitor's limit", async () => {
+    await expect(register(null, form(registerFields))).rejects.toThrow("REDIRECT");
+
+    expect(reserveRateLimit).toHaveBeenCalledWith("register", "ip");
+  });
+
+  it("stops at the limit without creating an account", async () => {
+    reserveRateLimit.mockResolvedValue(false);
+
+    expect(await register(null, form(registerFields))).toEqual({
+      success: false,
+      error: "rate_limited",
+      values: { name: "Layla", email: "layla@example.com" },
+    });
+    expect(user.create).not.toHaveBeenCalled();
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("reports a limiter failure as unexpected", async () => {
+    reserveRateLimit.mockRejectedValue(new Error("db down"));
+
+    expect(await register(null, form(registerFields))).toMatchObject({
+      success: false,
+      error: "unexpected",
+    });
+    expect(user.create).not.toHaveBeenCalled();
   });
 });
 

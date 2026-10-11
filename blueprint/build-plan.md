@@ -42,6 +42,6 @@
 - [x] 23. **Analytics & Sales Reporting** - Track product views, cart activity, purchases, revenue, customers, and basic ecommerce performance.
 - [ ] 24. **Security & Access Control** - Protect customer and admin routes, APIs, database operations, digital files, and Stripe webhook endpoints.
   - [x] 24a. **Access Control Sweep** - Automated tests proving every admin page, action, and route refuses anyone but an admin and every customer-owned page, action, and route refuses signed-out visitors and other customers, plus the server-only guard on session code and the image path check (findings F-12 and F-04).
-  - [ ] 24b. **Rate Limiting** - Database-backed rate limits on public writes: registration, discount code entry, and the analytics beacon (with a byte-accurate body limit, finding F-38). The existing sign-in limiter stays.
+  - [x] 24b. **Rate Limiting** - Database-backed rate limits on public writes: registration, discount code entry, and the analytics beacon (with a byte-accurate body limit, finding F-38). The existing sign-in limiter stays.
   - [ ] 24c. **Security Headers** - HSTS in production, `X-Content-Type-Options: nosniff`, frame blocking, `Referrer-Policy`, and `Permissions-Policy` on every response. No Content Security Policy for now.
 - [ ] 25. **Production Testing & Launch** - Test the complete customer and admin workflows, Stripe payments, webhooks, downloads, emails, permissions, mobile layouts, and production deployment.

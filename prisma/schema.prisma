@@ -242,3 +242,14 @@ model AnalyticsEvent {
   @@index([type, createdAt])
   @@index([productId])
 }
+
+// Fixed-window counters for anonymous public writes (feature 24b). The key is
+// a hash; no IP address or other visitor value is stored.
+model RateLimit {
+  // SHA-256 hex of "<action>:<client>".
+  key     String   @id
+  count   Int
+  resetAt DateTime
+
+  @@index([resetAt])
+}

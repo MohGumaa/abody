@@ -1,12 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { store, listPublishedProductsByIds, findUnique } = vi.hoisted(() => ({
+const { store, listPublishedProductsByIds, findUnique, reserveRateLimit } = vi.hoisted(() => ({
   store: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
   listPublishedProductsByIds: vi.fn(),
   findUnique: vi.fn(),
+  reserveRateLimit: vi.fn(),
 }));
 
-vi.mock("next/headers", () => ({ cookies: async () => store }));
+vi.mock("next/headers", () => ({
+  cookies: async () => store,
+  headers: async () => new Headers(),
+}));
+vi.mock("@/lib/rate-limit", () => ({ clientKey: () => "ip", reserveRateLimit }));
 vi.mock("@/lib/catalog", () => ({ listPublishedProductsByIds }));
 vi.mock("@/lib/db", () => ({ db: { coupon: { findUnique } } }));
 
@@ -40,6 +45,7 @@ beforeEach(() => {
   store.delete.mockReset();
   listPublishedProductsByIds.mockReset().mockResolvedValue([digital, service]);
   findUnique.mockReset().mockResolvedValue(coupon);
+  reserveRateLimit.mockReset().mockResolvedValue(true);
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -124,6 +130,31 @@ describe("applyCoupon", () => {
     });
     expect(console.error).toHaveBeenCalled();
     expect(store.set).not.toHaveBeenCalled();
+  });
+
+  it("counts every attempt against the visitor's limit", async () => {
+    store.get.mockReturnValue(undefined);
+
+    await applyCoupon(null, form({ code: "SAVE10" }));
+
+    expect(reserveRateLimit).toHaveBeenCalledWith("coupon", "ip");
+  });
+
+  it("stops at the limit without looking up the code", async () => {
+    reserveRateLimit.mockResolvedValue(false);
+
+    expect(await applyCoupon(null, form({ code: "SAVE10" }))).toEqual({
+      success: false,
+      error: "rate_limited",
+    });
+    expect(findUnique).not.toHaveBeenCalled();
+    expect(store.set).not.toHaveBeenCalled();
+  });
+
+  it("does not count a request without a code field", async () => {
+    await applyCoupon(null, form({}));
+
+    expect(reserveRateLimit).not.toHaveBeenCalled();
   });
 });
 
