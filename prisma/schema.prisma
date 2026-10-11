@@ -49,6 +49,7 @@ model Product {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
   orderItems         OrderItem[]
+  analyticsEvents    AnalyticsEvent[]
 }
 
 enum OrderStatus {
@@ -217,4 +218,27 @@ model SiteContent {
   // trimmed and lowercase.
   contactEmail        String?
   updatedAt           DateTime @updatedAt
+}
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  ADD_TO_CART
+  CHECKOUT_STARTED
+}
+
+// Store activity counts (feature 23). Never holds a visitor, user, session,
+// IP, or cookie value.
+model AnalyticsEvent {
+  id        String             @id @default(cuid())
+  type      AnalyticsEventType
+  // PAGE_VIEW only: the pathname as visited, with its language ("/ar/products/x").
+  path      String?
+  // Detail-page views and ADD_TO_CART. A deleted product leaves the event as a
+  // plain count.
+  productId String?
+  product   Product?           @relation(fields: [productId], references: [id], onDelete: SetNull)
+  createdAt DateTime           @default(now())
+
+  @@index([type, createdAt])
+  @@index([productId])
 }

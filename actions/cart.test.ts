@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { store, listPublishedProductsByIds } = vi.hoisted(() => ({
+const { store, listPublishedProductsByIds, createEvent } = vi.hoisted(() => ({
   store: { get: vi.fn(), set: vi.fn(), delete: vi.fn() },
   listPublishedProductsByIds: vi.fn(),
+  createEvent: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({ cookies: async () => store }));
 vi.mock("@/lib/catalog", () => ({ listPublishedProductsByIds }));
+// The real recorder runs, so these tests also prove a failed write is safe.
+vi.mock("@/lib/db", () => ({ db: { analyticsEvent: { create: createEvent } } }));
 
 import { addToCart, removeFromCart, updateCartQuantity } from "./cart";
 
@@ -34,6 +37,7 @@ beforeEach(() => {
   store.set.mockReset();
   store.delete.mockReset();
   listPublishedProductsByIds.mockReset().mockResolvedValue([digital, service]);
+  createEvent.mockReset().mockResolvedValue({});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -236,5 +240,63 @@ describe("removeFromCart", () => {
       success: false,
       error: "invalid_input",
     });
+  });
+});
+
+describe("add to cart analytics", () => {
+  it("records one event for the added product", async () => {
+    await addToCart(null, form({ productId: "p1" }));
+
+    expect(createEvent).toHaveBeenCalledTimes(1);
+    expect(createEvent).toHaveBeenCalledWith({
+      data: { type: "ADD_TO_CART", productId: "p1" },
+    });
+  });
+
+  it("records nothing when the cart did not change", async () => {
+    setCookie([["s1", 1]]);
+    await addToCart(null, form({ productId: "s1" }));
+
+    setCookie([["p1", 99]]);
+    expect(await addToCart(null, form({ productId: "p1" }))).toEqual({
+      success: true,
+      data: { outcome: "max_quantity", count: 99 },
+    });
+
+    expect(createEvent).not.toHaveBeenCalled();
+  });
+
+  it("records nothing for a rejected add", async () => {
+    await addToCart(null, form({ productId: "bad id" }));
+
+    listPublishedProductsByIds.mockResolvedValue([]);
+    await addToCart(null, form({ productId: "gone" }));
+
+    const ids = Array.from({ length: 50 }, (_, i) => `id${i}`);
+    setCookie(ids.map((id) => [id, 1]));
+    listPublishedProductsByIds.mockResolvedValue([
+      digital,
+      ...ids.map((id) => ({ id, type: "DIGITAL_PRODUCT" })),
+    ]);
+    await addToCart(null, form({ productId: "p1" }));
+
+    expect(createEvent).not.toHaveBeenCalled();
+  });
+
+  it("records nothing for quantity changes and removals", async () => {
+    setCookie([["p1", 1]]);
+    await updateCartQuantity(null, form({ productId: "p1", quantity: "3" }));
+    await removeFromCart(null, form({ productId: "p1" }));
+
+    expect(createEvent).not.toHaveBeenCalled();
+  });
+
+  it("still adds the item when the event write fails", async () => {
+    createEvent.mockRejectedValue(new Error("db down"));
+
+    const result = await addToCart(null, form({ productId: "p1" }));
+
+    expect(result).toEqual({ success: true, data: { outcome: "added", count: 1 } });
+    expect(savedCart()).toEqual([["p1", 1]]);
   });
 });

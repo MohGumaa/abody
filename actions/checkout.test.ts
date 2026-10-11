@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { store, listPublishedProductsByIds, findUnique, createSession, redirect } = vi.hoisted(
-  () => ({
+const { store, listPublishedProductsByIds, findUnique, createSession, redirect, createEvent } =
+  vi.hoisted(() => ({
     store: { get: vi.fn() },
     listPublishedProductsByIds: vi.fn(),
     findUnique: vi.fn(),
@@ -9,13 +9,16 @@ const { store, listPublishedProductsByIds, findUnique, createSession, redirect }
     redirect: vi.fn((url: string) => {
       throw new Error(`redirect:${url}`);
     }),
-  }),
-);
+    // The real recorder runs, so these tests also prove a failed write is safe.
+    createEvent: vi.fn(),
+  }));
 
 vi.mock("next/headers", () => ({ cookies: async () => store }));
 vi.mock("next/navigation", () => ({ redirect }));
 vi.mock("@/lib/catalog", () => ({ listPublishedProductsByIds }));
-vi.mock("@/lib/db", () => ({ db: { coupon: { findUnique } } }));
+vi.mock("@/lib/db", () => ({
+  db: { coupon: { findUnique }, analyticsEvent: { create: createEvent } },
+}));
 vi.mock("@/lib/session", () => ({ getCurrentUser: async () => null }));
 vi.mock("@/lib/stripe", () => ({
   getStripe: () => ({ checkout: { sessions: { create: createSession } } }),
@@ -56,6 +59,7 @@ beforeEach(() => {
   listPublishedProductsByIds.mockReset().mockResolvedValue([digital]);
   findUnique.mockReset().mockResolvedValue(coupon);
   createSession.mockReset().mockResolvedValue({ url: "https://checkout.stripe.test/s" });
+  createEvent.mockReset().mockResolvedValue({});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -98,5 +102,58 @@ describe("startCheckout with a discount code", () => {
       error: "coupon_invalid",
     });
     expect(createSession).not.toHaveBeenCalled();
+  });
+});
+
+describe("checkout started analytics", () => {
+  it("records one event once Stripe returns a session", async () => {
+    await expect(startCheckout(null, form())).rejects.toThrow("redirect:");
+
+    expect(createEvent).toHaveBeenCalledTimes(1);
+    expect(createEvent).toHaveBeenCalledWith({
+      data: { type: "CHECKOUT_STARTED", productId: null },
+    });
+  });
+
+  it("still redirects when the event write fails", async () => {
+    createEvent.mockRejectedValue(new Error("db down"));
+
+    await expect(startCheckout(null, form())).rejects.toThrow(
+      "redirect:https://checkout.stripe.test/s",
+    );
+  });
+
+  it("records nothing when checkout does not start", async () => {
+    const badLang = new FormData();
+    badLang.set("lang", "fr");
+    expect(await startCheckout(null, badLang)).toEqual({
+      success: false,
+      error: "invalid_input",
+    });
+
+    cookiesWith("not a code");
+    await startCheckout(null, form());
+
+    cookiesWith();
+    listPublishedProductsByIds.mockResolvedValue([]);
+    expect(await startCheckout(null, form())).toEqual({
+      success: false,
+      error: "empty_cart",
+    });
+
+    listPublishedProductsByIds.mockResolvedValue([digital]);
+    createSession.mockRejectedValue(new Error("stripe down"));
+    expect(await startCheckout(null, form())).toEqual({
+      success: false,
+      error: "unexpected",
+    });
+
+    createSession.mockResolvedValue({ url: null });
+    expect(await startCheckout(null, form())).toEqual({
+      success: false,
+      error: "unexpected",
+    });
+
+    expect(createEvent).not.toHaveBeenCalled();
   });
 });

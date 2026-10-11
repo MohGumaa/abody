@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { recordEvent } from "@/lib/analytics";
 import {
   addCartItem,
   CART_COOKIE,
@@ -101,6 +102,8 @@ export async function addToCart(
     const result = addCartItem(entries, product);
     if (result.outcome === "cart_full") return failure("cart_full");
     saveCart(store, result.entries);
+    // Only a real change counts; recordEvent never throws.
+    if (result.outcome === "added") await recordEvent("ADD_TO_CART", product.id);
     return success(result.outcome, result.entries);
   } catch (error) {
     console.error("addToCart failed", error);

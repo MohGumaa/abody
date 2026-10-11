@@ -7,6 +7,7 @@ export type ApiErrorCode =
   | "invalid_file_type"
   | "empty_file"
   | "file_too_large"
+  | "invalid_path"
   | "internal_error";
 
 export function apiError(

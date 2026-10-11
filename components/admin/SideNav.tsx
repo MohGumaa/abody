@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BoxIcon,
+  ChartIcon,
   ClockIcon,
   DashboardIcon,
   ExternalIcon,
@@ -22,6 +23,7 @@ import { RAIL_CENTER, RAIL_HIDE } from "@/lib/sidebar";
 // admin wording.
 const ICONS = {
   box: BoxIcon,
+  chart: ChartIcon,
   clock: ClockIcon,
   dashboard: DashboardIcon,
   globe: GlobeIcon,

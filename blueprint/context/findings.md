@@ -262,3 +262,11 @@
 **Why it matters:** The `unexpected` result carries no `values`, so `SiteContentForm` (`values = failed?.values ?? initial`, line 114) falls back to the last saved row after React resets the form. A transient database error on save therefore wipes up to 24 typed fields and switches with only "Something went wrong. Try again." The pattern matches `actions/admin-coupons.ts`, but this form is much larger, and the spec's "keeps what was typed" promise is only stated for invalid input, so this is a usability gap rather than a contract breach.
 **Suggested fix:** Parse before the `try` (or keep `parsed` in scope) and return `values: parsed.values` with the `unexpected` error too, plus one action-test assertion. Requirement lost: None.
 **Resolution:**
+
+### F-38 [P3] open - The analytics beacon buffers the whole request body before enforcing the 1 KB limit when Content-Length is absent
+
+**File:** app/api/analytics/route.ts:20
+**Found:** 2026-10-11 by /audit independent (scope: current; lens: security, performance)
+**Why it matters:** The unauthenticated `POST /api/analytics` only rejects early when a `Content-Length` header is declared over 1024. A chunked request with no `Content-Length` goes straight to `await request.text()`, which reads the entire body into memory before the `text.length > BODY_MAX_BYTES` check, so the spec's "1 KB max" bound does not limit how much the server reads. `text.length` also counts UTF-16 code units rather than bytes, so a multibyte body can exceed 1 KB of bytes and still pass. Real impact is limited: hosting platforms cap request bodies, any accepted path is still capped at 200 characters by `parseTrackedPath`, and the spec leaves rate limiting and bot filtering to feature 24. Not exercised against a running server in this pass.
+**Suggested fix:** Read `request.body` with a reader and stop with `invalid_path` once the received byte count passes 1024 (then decode with `TextDecoder`), or defer to feature 24's hardening and note it there. Requirement lost: None.
+**Resolution:**

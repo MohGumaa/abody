@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { recordEvent } from "@/lib/analytics";
 import { buildCartView, CART_COOKIE, parseCart } from "@/lib/cart";
 import { checkCartCoupon } from "@/lib/cart-coupon";
 import { listPublishedProductsByIds } from "@/lib/catalog";
@@ -78,6 +79,8 @@ export async function startCheckout(
     console.error("startCheckout failed: the session has no url");
     return { success: false, error: "unexpected" };
   }
+  // recordEvent never throws, so a lost count cannot block the redirect.
+  await recordEvent("CHECKOUT_STARTED");
   // Outside the try block, so the redirect is not caught as an error.
   redirect(url);
 }

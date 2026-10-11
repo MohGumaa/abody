@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Tajawal } from "next/font/google";
+import { PageViewTracker } from "@/components/analytics/PageViewTracker";
 import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
@@ -64,6 +65,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
         <SiteHeader />
         {children}
         <SiteFooter />
+        <PageViewTracker />
       </body>
     </html>
   );
