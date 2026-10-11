@@ -162,6 +162,18 @@ For example:
 - Budget.
 - Additional notes.
 
+#### Information Pages
+
+The customer website includes these pages, each in English and Arabic:
+
+- About.
+- Contact.
+- Terms and Conditions.
+- Privacy Policy.
+- Return Policy.
+
+About and Contact appear in the header navigation. All five pages are linked from the footer.
+
 ## 4. Shopping Cart & Checkout
 
 Customers should be able to:
@@ -573,6 +585,12 @@ Main pages
 /checkout
 /success
 
+/about
+/contact
+/terms
+/privacy
+/returns
+
 /login
 /account
 /account/orders
@@ -839,6 +857,8 @@ Service management.
 Order management.
 
 Customer management.
+
+About, Contact, Terms and Conditions, Privacy Policy, and Return Policy pages.
 
 Responsive/mobile design.
 

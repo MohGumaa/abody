@@ -1,6 +1,6 @@
 # Abody Digital Ecommerce Platform - Project Overview
 
-<!-- blueprint:source-hash 1dc6c76ce535ae341dfd5cfb8be7b5ffc60f196673403e42cc503f85ec3bea3a -->
+<!-- blueprint:source-hash a821fccb2dfaecbea3a0ac11a2defae1513c8d02cb522804777864ff34fc36d1 -->
 
 > A bilingual (English and Arabic) storefront where customers buy Abody's
 > downloadable digital products and digital services with Stripe, plus an admin
@@ -34,9 +34,10 @@ through the store login and are promoted from a shell with
 
 ## Features
 
-In `build-plan.md` order. Shipped: 1-4, 26, 22, 5-20. Next: 21. The headline
-flow (discover, cart, pay, receive, manage), the admin tools, and coupons are
-complete; the remaining items are content, analytics, hardening, and launch.
+In `build-plan.md` order. Shipped: 1-4, 26, 22, 5-20, 21a. Next: 21b. The
+headline flow (discover, cart, pay, receive, manage), the admin tools, coupons,
+and featured picks are complete; the remaining items are content, analytics,
+hardening, and launch.
 
 1. **Product & Service Catalog** (done) - database models and catalog API.
 2. **Product & Service Details** (done) - detail pages with pricing,
@@ -98,6 +99,17 @@ complete; the remaining items are content, analytics, hardening, and launch.
     one per order, applied on the cart and charged through Stripe Checkout.
 21. **Website Content Management** - featured products, homepage sections,
     promotional content, basic site settings.
+    - 21a. **Featured Picks** (done) - optional featured position on products
+      and services orders the home hero card, Featured products row, and
+      Services row; newest items fill in when nothing is picked.
+    - 21b. **Homepage Sections and Promotion** - bilingual hero and
+      call-to-action text, show or hide home sections, one site-wide
+      announcement bar (bilingual text, optional link, on/off).
+    - 21c. **Site Settings** - `/admin/settings` for the public contact email
+      shown in the footer.
+27. **Information Pages** - About, Contact, Terms and Conditions, Privacy
+    Policy, and Return Policy in English and Arabic; About and Contact in the
+    header, all five in the footer.
 23. **Analytics & Sales Reporting** - page and product views, add to cart,
     checkout started, purchases, popular products, revenue.
 24. **Security & Access Control** - protect routes, APIs, database operations,
@@ -132,6 +144,8 @@ One model for both product types; `type` decides delivery.
 - `nameAr`, `categoryAr`, `shortDescriptionAr`, `descriptionAr`, `includedAr`,
   `requirementsAr` - optional Arabic content; a missing value falls back to
   English
+- `featuredRank` (int 1-99, optional, not unique) - home page order from 21a,
+  lowest first; ties show the newer item first; null means not featured
 - `status` (enum: `PUBLISHED`, `UNPUBLISHED`); a published digital product must
   have a `digitalFile`
 - `createdAt`, `updatedAt`; has many `OrderItem`
@@ -211,7 +225,8 @@ order, and a use counts only when the verified webhook marks the order paid.
 No local payments table. Stripe is the source of truth; the app stores only the
 references on `Order`.
 
-> TODO: no data shapes yet for managed website content (21), analytics events
+> TODO: no data shapes yet for homepage content, the announcement bar, and site
+> settings (21b, 21c), analytics events
 > (23), `User.stripeCustomerId`, or a signed-in customer's preferred language
 > (today a `lang` cookie).
 
@@ -290,6 +305,8 @@ URL redirects to the visitor's language. `/admin` and `/api` are never prefixed.
 - `/<lang>/account`, `.../orders`, `.../downloads`, `.../services[/itemId]`,
   `.../settings` - customer dashboard (shipped)
 - `/<lang>/onboarding/[itemId]` - service onboarding form (shipped)
+- `/<lang>/about`, `/contact`, `/terms`, `/privacy`, `/returns` - information
+  pages (planned, 27)
 - `/admin`, `/admin/products[/new|/[id]]`, `/admin/services[/new|/[id]]`,
   `/admin/orders[?page=N]`, `/admin/orders/[id]`,
   `/admin/service-orders[?page=N]`, `/admin/service-orders/[itemId]`,
@@ -324,8 +341,10 @@ Resolve these in the plans, then re-run `/overview`.
    plan 8a chose built-in email and password with database sessions.
 3. **Guest checkout.** Build plan 8a keeps guest checkout and does not attach
    guest orders by email; the project plan never mentions guest checkout.
-4. **About and Contact pages.** In the navigation, but no build-plan item or
-   mockup.
+4. **Information page content.** Item 27 does not say whether the page text is
+   written in code or edited by admins (which would need a content table and
+   overlap 21b/21c), nor whether Contact has a form or only shows contact
+   details. The legal text itself must come from Abody.
 5. **Coupons conflict.** Build-plan item 20 is a coupon system; the project plan
    lists advanced coupons as not v1 and coupons as a future feature. The
    feature 20 spec settles it (simple percentage codes in v1, approved
