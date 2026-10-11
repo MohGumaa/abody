@@ -189,7 +189,27 @@ export const ar: Dictionary = {
     checkoutErrors: {
       empty_cart:
         "العناصر في سلتك لم تعد متاحة. حدّث الصفحة لعرض سلتك.",
+      coupon_invalid: "رمز الخصم لم يعد صالحاً. أزله للمتابعة.",
       unexpected: "تعذّر بدء الدفع. يرجى المحاولة مرة أخرى.",
+    },
+    coupon: {
+      label: "رمز الخصم",
+      apply: "تطبيق",
+      applying: "جارٍ التطبيق…",
+      remove: "إزالة",
+      removing: "جارٍ الإزالة…",
+      discount: "الخصم",
+      appliedNote: (percent: number) => `خصم ${percent}% على العناصر المشمولة`,
+      notApplied: "لم يُطبَّق الرمز",
+      errors: {
+        invalid: "هذا الرمز غير صالح.",
+        expired: "انتهت صلاحية هذا الرمز.",
+        used_up: "وصل هذا الرمز إلى الحد الأقصى للاستخدام.",
+        not_eligible: "هذا الرمز لا ينطبق على العناصر في سلتك.",
+        below_minimum: "لا يمكن استخدام هذا الرمز على طلب بهذا المبلغ الصغير.",
+        empty_cart: "أضف عنصراً إلى سلتك قبل استخدام الرمز.",
+        unexpected: "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+      },
     },
     errors: {
       invalid_input: "أدخل كمية من 1 إلى 99.",
@@ -326,6 +346,7 @@ export const ar: Dictionary = {
       empty: "لا توجد طلبات بعد.",
       quantity: "الكمية {count}",
       each: "{price} للقطعة",
+      discount: "الخصم",
     },
     downloads: {
       title: "تنزيلاتك",

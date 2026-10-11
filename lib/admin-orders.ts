@@ -97,6 +97,9 @@ export interface AdminOrder {
   number: number;
   status: OrderStatus;
   totalCents: number;
+  // 0 without a discount code.
+  discountCents: number;
+  coupon: { id: string; code: string } | null;
   currency: string;
   createdAt: Date;
   customerEmail: string | null;
@@ -120,6 +123,8 @@ export async function getAdminOrder(id: string): Promise<AdminOrder | null> {
       number: true,
       status: true,
       totalCents: true,
+      discountCents: true,
+      coupon: { select: { id: true, code: true } },
       currency: true,
       createdAt: true,
       customerEmail: true,

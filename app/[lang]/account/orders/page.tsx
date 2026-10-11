@@ -80,6 +80,25 @@ export default async function AccountOrdersPage() {
                     </li>
                   ))}
                 </ul>
+                {order.discountCents > 0 && (
+                  <p className="flex justify-between gap-4 border-t border-border py-4 text-sm text-success">
+                    <span>
+                      {text.orders.discount}
+                      {order.couponCode && (
+                        <>
+                          {" ("}
+                          <span dir="ltr" className="font-mono">
+                            {order.couponCode}
+                          </span>
+                          {")"}
+                        </>
+                      )}
+                    </span>
+                    <span dir="ltr" className="font-semibold">
+                      −{formatPriceCents(order.discountCents)}
+                    </span>
+                  </p>
+                )}
                 <p className="flex justify-between gap-4 border-t border-border pt-4">
                   <span className="font-semibold">{text.columns.total}</span>
                   <strong dir="ltr" className="font-semibold">

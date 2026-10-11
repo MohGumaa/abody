@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { CartLineItem } from "@/components/cart/CartLineItem";
 import { CartSummary } from "@/components/cart/CartSummary";
+import { CouponForm, type SavedCoupon } from "@/components/cart/CouponForm";
 import { CartIcon, ChevronIcon } from "@/components/icons";
 import {
   buildCartView,
@@ -11,7 +12,9 @@ import {
   parseCart,
 } from "@/lib/cart";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { checkCartCoupon } from "@/lib/cart-coupon";
 import { listCartSuggestions, listPublishedProductsByIds } from "@/lib/catalog";
+import { COUPON_COOKIE } from "@/lib/coupons";
 import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatItemCount } from "@/lib/i18n/plural";
@@ -34,13 +37,24 @@ export default async function CartPage({
     header: headerText,
     product: productText,
   } = await getDictionary();
-  const entries = parseCart((await cookies()).get(CART_COOKIE)?.value);
+  const cookieStore = await cookies();
+  const entries = parseCart(cookieStore.get(CART_COOKIE)?.value);
   const products = await listPublishedProductsByIds(
     entries.map((entry) => entry.productId),
     locale,
   );
   const view = buildCartView(entries, products);
   const isEmpty = view.lines.length === 0;
+  // The saved code is checked against this exact cart on every render.
+  const savedCode = cookieStore.get(COUPON_COOKIE)?.value;
+  const cartCoupon =
+    savedCode && !isEmpty ? await checkCartCoupon(savedCode, view) : null;
+  const applied = cartCoupon?.evaluation.ok ? cartCoupon.evaluation : null;
+  const savedCoupon: SavedCoupon = cartCoupon
+    ? cartCoupon.evaluation.ok
+      ? { code: cartCoupon.code, ok: true }
+      : { code: cartCoupon.code, ok: false, reason: cartCoupon.evaluation.reason }
+    : null;
   // Suggestions only sit beside a cart that has something in it.
   const suggestions = isEmpty
     ? []
@@ -153,10 +167,28 @@ export default async function CartPage({
           {!isEmpty && (
             <CartSummary
               subtotalCents={view.subtotalCents}
-              totalCents={view.totalCents}
+              totalCents={applied ? applied.totalCents : view.totalCents}
+              discount={
+                applied ? { code: applied.code, cents: applied.discountCents } : null
+              }
               itemCountLabel={itemCountLabel}
               locale={locale}
-              text={{ ...text, errors: text.checkoutErrors }}
+              coupon={
+                <CouponForm
+                  saved={savedCoupon}
+                  text={{
+                    ...text.coupon,
+                    appliedNote: applied
+                      ? text.coupon.appliedNote(applied.percentOff)
+                      : null,
+                  }}
+                />
+              }
+              text={{
+                ...text,
+                discount: text.coupon.discount,
+                errors: text.checkoutErrors,
+              }}
             />
           )}
         </div>

@@ -4,8 +4,10 @@ vi.mock("@/lib/db", () => ({ db: {} }));
 
 import type { CartView } from "@/lib/cart";
 import type { PublicProduct } from "@/lib/catalog";
+import type { AppliedCoupon } from "@/lib/coupons";
 import {
   checkoutCustomer,
+  checkoutDiscountMetadata,
   checkoutLineItems,
   checkoutReturnUrls,
   checkoutState,
@@ -93,6 +95,56 @@ describe("checkoutLineItems", () => {
         },
       },
     ]);
+  });
+});
+
+describe("checkoutLineItems with a discount code", () => {
+  const view: CartView = {
+    lines: [
+      { product: product({}), quantity: 2, lineTotalCents: 9800 },
+      {
+        product: product({ id: "s1", name: "Ads", priceCents: 29900, type: ProductType.SERVICE }),
+        quantity: 1,
+        lineTotalCents: 29900,
+      },
+    ],
+    subtotalCents: 39700,
+    totalCents: 39700,
+    itemCount: 3,
+    removedCount: 0,
+  };
+  const discount: AppliedCoupon = {
+    ok: true,
+    couponId: "c1",
+    code: "SERVICES10",
+    percentOff: 10,
+    discountCents: 2990,
+    totalCents: 36710,
+    lines: [
+      { productId: "p1", discountedUnitCents: 4900 },
+      { productId: "s1", discountedUnitCents: 26910 },
+    ],
+  };
+
+  it("charges each line's discounted unit price", () => {
+    expect(
+      checkoutLineItems(view, discount).map((line) => [
+        line.price_data.product_data.metadata.productId,
+        line.price_data.unit_amount,
+        line.quantity,
+      ]),
+    ).toEqual([
+      ["p1", 4900, 2],
+      ["s1", 26910, 1],
+    ]);
+  });
+
+  it("sends the coupon to the webhook in metadata", () => {
+    expect(checkoutDiscountMetadata(discount)).toEqual({
+      couponId: "c1",
+      discountCents: "2990",
+    });
+    expect(checkoutDiscountMetadata(null)).toEqual({});
   });
 });
 

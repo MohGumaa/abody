@@ -57,6 +57,33 @@ export function orderItemsFromLineItems(
   });
 }
 
+export interface OrderDiscount {
+  couponId: string;
+  discountCents: number;
+}
+
+const COUPON_ID_MAX_LENGTH = 64;
+const DISCOUNT_PATTERN = /^[1-9]\d{0,8}$/;
+
+// Checkout writes both keys (feature 20) or neither, and the webhook signature
+// was checked, so anything else is a bug: throwing makes Stripe retry.
+export function orderDiscountFromMetadata(
+  metadata: Stripe.Metadata | null,
+): OrderDiscount | null {
+  const couponId = metadata?.couponId;
+  const discountCents = metadata?.discountCents;
+  if (couponId === undefined && discountCents === undefined) return null;
+  if (
+    !couponId ||
+    couponId.length > COUPON_ID_MAX_LENGTH ||
+    !discountCents ||
+    !DISCOUNT_PATTERN.test(discountCents)
+  ) {
+    throw new Error("Checkout session has malformed discount metadata");
+  }
+  return { couponId, discountCents: Number(discountCents) };
+}
+
 export function formatOrderNumber(number: number): string {
   return `#${number}`;
 }

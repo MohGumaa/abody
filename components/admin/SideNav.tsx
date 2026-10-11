@@ -10,6 +10,7 @@ import {
   GlobeIcon,
   GridIcon,
   MegaphoneIcon,
+  TagIcon,
   UsersIcon,
 } from "@/components/icons";
 import { RAIL_CENTER, RAIL_HIDE } from "@/lib/sidebar";
@@ -24,6 +25,7 @@ const ICONS = {
   globe: GlobeIcon,
   grid: GridIcon,
   megaphone: MegaphoneIcon,
+  tag: TagIcon,
   users: UsersIcon,
 };
 

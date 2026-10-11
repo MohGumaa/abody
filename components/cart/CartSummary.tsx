@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   CheckoutButton,
   type CheckoutButtonText,
@@ -9,13 +10,18 @@ import { formatPriceCents } from "@/lib/money";
 interface CartSummaryProps {
   subtotalCents: number;
   totalCents: number;
+  // Only when a discount code applies.
+  discount: { code: string; cents: number } | null;
   // Already pluralized, for example "3 items".
   itemCountLabel: string;
   locale: Locale;
+  // The discount code field, above the checkout button.
+  coupon: ReactNode;
   text: {
     summary: string;
     subtotal: string;
     total: string;
+    discount: string;
     secureNote: string;
   } & CheckoutButtonText;
 }
@@ -23,8 +29,10 @@ interface CartSummaryProps {
 export function CartSummary({
   subtotalCents,
   totalCents,
+  discount,
   itemCountLabel,
   locale,
+  coupon,
   text,
 }: CartSummaryProps) {
   return (
@@ -42,12 +50,31 @@ export function CartSummary({
           </dt>
           <dd className="font-semibold">{formatPriceCents(subtotalCents)}</dd>
         </div>
+        {discount && (
+          <div className="flex justify-between gap-4 text-success">
+            <dt>
+              {text.discount} (
+              <span dir="ltr" className="font-mono">
+                {discount.code}
+              </span>
+              )
+            </dt>
+            <dd className="font-semibold" dir="ltr">
+              −{formatPriceCents(discount.cents)}
+            </dd>
+          </div>
+        )}
         <div className="flex justify-between gap-4 border-t border-border pt-4 text-lg font-semibold">
           <dt>{text.total}</dt>
           <dd>{formatPriceCents(totalCents)}</dd>
         </div>
       </dl>
-      <CheckoutButton locale={locale} text={text} />
+      {coupon}
+      {/* Only plain strings cross to the client component. */}
+      <CheckoutButton
+        locale={locale}
+        text={{ checkout: text.checkout, redirecting: text.redirecting, errors: text.errors }}
+      />
       <p className="mt-4 flex items-center justify-center gap-2 text-sm text-muted">
         <LockIcon className="h-4 w-4" />
         {text.secureNote}

@@ -71,6 +71,8 @@ describe("listAccountOrders", () => {
         number: 1004,
         status: "PAID",
         totalCents: 4900,
+        discountCents: 0,
+        coupon: null,
         createdAt,
         items: [
           {
@@ -89,6 +91,8 @@ describe("listAccountOrders", () => {
         number: 1004,
         status: "PAID",
         totalCents: 4900,
+        discountCents: 0,
+        couponCode: null,
         createdAt,
         items: [
           { id: "i1", priceCents: 4900, quantity: 1, name: "Guide", nameAr: "دليل" },
@@ -101,6 +105,25 @@ describe("listAccountOrders", () => {
     expect(args.take).toBe(5);
     expect(selectedKeys(args.select)).not.toContain("digitalFile");
     expect(selectedKeys(args.select)).not.toContain("stripeCheckoutSessionId");
+  });
+
+  it("flattens a discount code to its text", async () => {
+    order.findMany.mockResolvedValue([
+      {
+        id: "o2",
+        number: 1005,
+        status: "PAID",
+        totalCents: 4410,
+        discountCents: 490,
+        coupon: { code: "SAVE10" },
+        createdAt: new Date("2026-10-10T00:00:00Z"),
+        items: [],
+      },
+    ]);
+
+    const [listed] = await listAccountOrders("u1");
+    expect(listed).toMatchObject({ discountCents: 490, couponCode: "SAVE10" });
+    expect(listed).not.toHaveProperty("coupon");
   });
 
   it("passes no limit when none is given", async () => {

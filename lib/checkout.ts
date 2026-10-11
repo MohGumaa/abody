@@ -1,4 +1,5 @@
 import type { CartView } from "@/lib/cart";
+import type { AppliedCoupon } from "@/lib/coupons";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -17,19 +18,36 @@ export interface CheckoutLineItem {
   };
 }
 
-// Feature 6 maps paid lines back to products through metadata.productId.
-export function checkoutLineItems(view: CartView): CheckoutLineItem[] {
+// Feature 6 maps paid lines back to products through metadata.productId. With
+// a discount code (feature 20), eligible lines carry their discounted unit
+// price, so the order item still records the unit price paid.
+export function checkoutLineItems(
+  view: CartView,
+  discount?: AppliedCoupon,
+): CheckoutLineItem[] {
+  const discounted = new Map(
+    discount?.lines.map((line) => [line.productId, line.discountedUnitCents]),
+  );
   return view.lines.map((line) => ({
     quantity: line.quantity,
     price_data: {
       currency: "usd",
-      unit_amount: line.product.priceCents,
+      unit_amount: discounted.get(line.product.id) ?? line.product.priceCents,
       product_data: {
         name: line.product.name,
         metadata: { productId: line.product.id },
       },
     },
   }));
+}
+
+// The webhook stores these on the order and counts the use when it is paid.
+export function checkoutDiscountMetadata(
+  discount: AppliedCoupon | null,
+): { couponId: string; discountCents: string } | Record<string, never> {
+  return discount
+    ? { couponId: discount.couponId, discountCents: String(discount.discountCents) }
+    : {};
 }
 
 export function checkoutReturnUrls(locale: Locale) {

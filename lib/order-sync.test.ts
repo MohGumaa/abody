@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { order, user, listLineItems } = vi.hoisted(() => ({
+const { order, user, coupon, transaction, listLineItems } = vi.hoisted(() => ({
   user: { findUnique: vi.fn() },
   order: {
     findUnique: vi.fn(),
@@ -9,10 +9,12 @@ const { order, user, listLineItems } = vi.hoisted(() => ({
     create: vi.fn(),
     updateMany: vi.fn(),
   },
+  coupon: { update: vi.fn() },
+  transaction: vi.fn(),
   listLineItems: vi.fn(),
 }));
 
-vi.mock("@/lib/db", () => ({ db: { order, user } }));
+vi.mock("@/lib/db", () => ({ db: { order, user, coupon, $transaction: transaction } }));
 vi.mock("@/lib/stripe", () => ({
   getStripe: () => ({ checkout: { sessions: { listLineItems } } }),
 }));
@@ -59,6 +61,14 @@ beforeEach(() => {
   order.create.mockResolvedValue({ id: "o_new" });
   order.updateMany.mockResolvedValue({ count: 1 });
   user.findUnique.mockReset().mockResolvedValue(null);
+  coupon.update.mockReset().mockResolvedValue({ id: "c1" });
+  // A callback gets the same mocks as the transaction client; a list of
+  // queries resolves in order, like Prisma's batch transaction.
+  transaction
+    .mockReset()
+    .mockImplementation(async (arg: unknown) =>
+      typeof arg === "function" ? arg({ order, coupon }) : Promise.all(arg as unknown[]),
+    );
   listLineItems.mockReset();
 });
 
@@ -288,6 +298,93 @@ describe("syncCheckoutSession", () => {
       syncCheckoutSession("checkout.session.completed", session()),
     ).rejects.toThrow(/productId/);
     expect(order.create).not.toHaveBeenCalled();
+  });
+
+  describe("discount codes", () => {
+    const DISCOUNT = { couponId: "c1", discountCents: "1470" };
+    const INCREMENT = {
+      where: { id: "c1" },
+      data: { redemptionCount: { increment: 1 } },
+      select: { id: true },
+    };
+
+    it("stores the discount and counts the use for an order created paid", async () => {
+      order.findUnique.mockResolvedValue(null);
+      listLineItems.mockResolvedValue(lineItems());
+
+      expect(
+        await syncCheckoutSession("checkout.session.completed", session({ metadata: DISCOUNT })),
+      ).toBe("o_new");
+
+      expect(order.create.mock.calls[0][0].data).toMatchObject({
+        couponId: "c1",
+        discountCents: 1470,
+      });
+      expect(transaction).toHaveBeenCalledTimes(1);
+      expect(coupon.update).toHaveBeenCalledWith(INCREMENT);
+    });
+
+    it("does not count the use for an order created pending", async () => {
+      order.findUnique.mockResolvedValue(null);
+      listLineItems.mockResolvedValue(lineItems());
+
+      await syncCheckoutSession(
+        "checkout.session.completed",
+        session({ metadata: DISCOUNT, payment_status: "unpaid" }),
+      );
+
+      expect(order.create.mock.calls[0][0].data).toMatchObject({ couponId: "c1" });
+      expect(coupon.update).not.toHaveBeenCalled();
+    });
+
+    it("counts the use when a pending order becomes paid", async () => {
+      order.findUnique.mockResolvedValue({ id: "o1", status: "PENDING", couponId: "c1" });
+
+      expect(
+        await syncCheckoutSession("checkout.session.async_payment_succeeded", session()),
+      ).toBe("o1");
+      expect(coupon.update).toHaveBeenCalledWith(INCREMENT);
+    });
+
+    it("does not count the use for a cancelled payment", async () => {
+      order.findUnique.mockResolvedValue({ id: "o1", status: "PENDING", couponId: "c1" });
+
+      await syncCheckoutSession(
+        "checkout.session.async_payment_failed",
+        session({ payment_status: "unpaid" }),
+      );
+      expect(order.updateMany).toHaveBeenCalled();
+      expect(coupon.update).not.toHaveBeenCalled();
+    });
+
+    it("does not count the use when a racing delivery moved the order", async () => {
+      order.findUnique.mockResolvedValue({ id: "o1", status: "PENDING", couponId: "c1" });
+      order.updateMany.mockResolvedValue({ count: 0 });
+
+      await syncCheckoutSession("checkout.session.async_payment_succeeded", session());
+      expect(coupon.update).not.toHaveBeenCalled();
+    });
+
+    it("does not count the use again for a repeated event", async () => {
+      order.findUnique.mockResolvedValue({ id: "o1", status: "PAID", couponId: "c1" });
+
+      await syncCheckoutSession("checkout.session.completed", session({ metadata: DISCOUNT }));
+      expect(transaction).not.toHaveBeenCalled();
+      expect(coupon.update).not.toHaveBeenCalled();
+    });
+
+    it("rejects malformed discount metadata before writing", async () => {
+      order.findUnique.mockResolvedValue(null);
+      listLineItems.mockResolvedValue(lineItems());
+
+      await expect(
+        syncCheckoutSession(
+          "checkout.session.completed",
+          session({ metadata: { couponId: "c1" } }),
+        ),
+      ).rejects.toThrow(/discount metadata/);
+      expect(order.create).not.toHaveBeenCalled();
+    });
   });
 
   it("rejects a session without a total", async () => {

@@ -200,7 +200,27 @@ export const en = {
     checkoutErrors: {
       empty_cart:
         "The items in your cart are no longer available. Refresh the page to see your cart.",
+      coupon_invalid: "Your discount code no longer applies. Remove it to continue.",
       unexpected: "Checkout could not start. Please try again.",
+    },
+    coupon: {
+      label: "Discount code",
+      apply: "Apply",
+      applying: "Applying…",
+      remove: "Remove",
+      removing: "Removing…",
+      discount: "Discount",
+      appliedNote: (percent: number) => `${percent}% off eligible items`,
+      notApplied: "Code not applied",
+      errors: {
+        invalid: "This code isn't valid.",
+        expired: "This code has expired.",
+        used_up: "This code has reached its limit.",
+        not_eligible: "This code doesn't apply to the items in your cart.",
+        below_minimum: "This code can't be used on an order this small.",
+        empty_cart: "Add something to your cart before using a code.",
+        unexpected: "Something went wrong. Please try again.",
+      },
     },
     errors: {
       invalid_input: "Enter a quantity from 1 to 99.",
@@ -339,6 +359,8 @@ export const en = {
       empty: "No orders yet.",
       quantity: "Qty {count}",
       each: "{price} each",
+      // Followed by the code, as in "Discount (SPRING-10)".
+      discount: "Discount",
     },
     downloads: {
       title: "Your downloads",

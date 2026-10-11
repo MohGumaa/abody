@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   canTransition,
   formatOrderNumber,
+  orderDiscountFromMetadata,
   orderItemsFromLineItems,
   targetStatus,
 } from "@/lib/orders";
@@ -151,5 +152,33 @@ describe("orderItemsFromLineItems", () => {
 describe("formatOrderNumber", () => {
   it("prefixes the number with #", () => {
     expect(formatOrderNumber(1001)).toBe("#1001");
+  });
+});
+
+describe("orderDiscountFromMetadata", () => {
+  it("is null without coupon keys", () => {
+    expect(orderDiscountFromMetadata(null)).toBeNull();
+    expect(orderDiscountFromMetadata({ locale: "en" })).toBeNull();
+  });
+
+  it("reads the coupon id and discount", () => {
+    expect(
+      orderDiscountFromMetadata({ locale: "ar", couponId: "c1", discountCents: "1470" }),
+    ).toEqual({ couponId: "c1", discountCents: 1470 });
+  });
+
+  it("throws on a partial or malformed discount", () => {
+    const cases: Stripe.Metadata[] = [
+      { couponId: "c1" },
+      { discountCents: "100" },
+      { couponId: "", discountCents: "100" },
+      { couponId: "c1", discountCents: "0" },
+      { couponId: "c1", discountCents: "-5" },
+      { couponId: "c1", discountCents: "12.5" },
+      { couponId: "x".repeat(65), discountCents: "100" },
+    ];
+    for (const metadata of cases) {
+      expect(() => orderDiscountFromMetadata(metadata)).toThrow(/discount metadata/);
+    }
   });
 });

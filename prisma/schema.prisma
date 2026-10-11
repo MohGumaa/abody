@@ -72,11 +72,43 @@ model Order {
   currency                String
   stripeCheckoutSessionId String      @unique
   stripePaymentIntentId   String?
+  // The discount code used at checkout (feature 20), if any.
+  couponId                String?
+  coupon                  Coupon?     @relation(fields: [couponId], references: [id], onDelete: Restrict)
+  // Whole cents taken off the list prices; 0 without a coupon.
+  discountCents           Int         @default(0)
   items                   OrderItem[]
   createdAt               DateTime    @default(now())
   updatedAt               DateTime    @updatedAt
 
   @@index([userId])
+  @@index([couponId])
+}
+
+enum CouponScope {
+  ALL
+  DIGITAL_PRODUCTS
+  SERVICES
+}
+
+// A percentage discount code (feature 20). Never deleted: orders reference it.
+model Coupon {
+  id              String      @id @default(cuid())
+  // Uppercase A-Z, 0-9, and single hyphens; 3-32 characters. Fixed after creation.
+  code            String      @unique
+  // Whole percent, 1-99.
+  percentOff      Int
+  appliesTo       CouponScope
+  active          Boolean     @default(false)
+  // Last valid day, inclusive, in UTC. Null: never expires.
+  expiresOn       DateTime?   @db.Date
+  // Null: unlimited.
+  maxRedemptions  Int?
+  // Paid orders that used this code; refunds do not give a use back.
+  redemptionCount Int         @default(0)
+  orders          Order[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
 }
 
 model OrderItem {

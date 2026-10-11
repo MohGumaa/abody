@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { CART_COOKIE } from "@/lib/cart";
 import { isCheckoutSessionId } from "@/lib/checkout";
+import { COUPON_COOKIE } from "@/lib/coupons";
 import { isLocale, localizedPath } from "@/lib/i18n/config";
 import { getStripe, isMissingResource } from "@/lib/stripe";
 
@@ -31,7 +32,11 @@ export async function GET(
   const success = new URL(localizedPath(lang, "/success"), request.url);
   success.searchParams.set("session_id", sessionId);
   const response = NextResponse.redirect(success, 303);
-  // A cancelled, open, or expired session leaves the cart as it was.
-  if (status === "complete") response.cookies.delete(CART_COOKIE);
+  // A cancelled, open, or expired session leaves the cart and its discount
+  // code as they were.
+  if (status === "complete") {
+    response.cookies.delete(CART_COOKIE);
+    response.cookies.delete(COUPON_COOKIE);
+  }
   return response;
 }

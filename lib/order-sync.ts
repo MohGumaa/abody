@@ -5,6 +5,7 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import type { OrderStatus } from "@/lib/generated/prisma/enums";
 import {
   canTransition,
+  orderDiscountFromMetadata,
   orderItemsFromLineItems,
   targetStatus,
 } from "@/lib/orders";
@@ -41,6 +42,14 @@ async function orderUserId(reference: string | null): Promise<string | null> {
   return user?.id ?? null;
 }
 
+function countCouponUse(couponId: string, client: Prisma.TransactionClient = db) {
+  return client.coupon.update({
+    where: { id: couponId },
+    data: { redemptionCount: { increment: 1 } },
+    select: { id: true },
+  });
+}
+
 // The new order's id, or null when a concurrent delivery created it first.
 async function createOrder(
   session: Stripe.Checkout.Session,
@@ -57,9 +66,10 @@ async function createOrder(
     throw new Error(`Checkout session ${session.id} has no total or currency`);
   }
   const items = orderItemsFromLineItems(lineItems.data);
+  const discount = orderDiscountFromMetadata(session.metadata);
   const userId = await orderUserId(session.client_reference_id);
   try {
-    const order = await db.order.create({
+    const create = db.order.create({
       select: { id: true },
       data: {
         status,
@@ -69,9 +79,16 @@ async function createOrder(
         customerEmail: session.customer_details?.email ?? null,
         stripeCheckoutSessionId: session.id,
         stripePaymentIntentId: paymentIntentId(session),
+        ...(discount ?? {}),
         items: { create: items },
       },
     });
+    // An order created paid counts its code's use in the same transaction.
+    if (discount && status === "PAID") {
+      const [order] = await db.$transaction([create, countCouponUse(discount.couponId)]);
+      return order.id;
+    }
+    const order = await create;
     return order.id;
   } catch (error) {
     // A concurrent delivery of the same session created it first.
@@ -91,7 +108,7 @@ export async function syncCheckoutSession(
 
   const existing = await db.order.findUnique({
     where: { stripeCheckoutSessionId: session.id },
-    select: { id: true, status: true },
+    select: { id: true, status: true, couponId: true },
   });
   if (!existing) {
     const createdId = await createOrder(session, status);
@@ -102,17 +119,24 @@ export async function syncCheckoutSession(
     existing ??
     (await db.order.findUniqueOrThrow({
       where: { stripeCheckoutSessionId: session.id },
-      select: { id: true, status: true },
+      select: { id: true, status: true, couponId: true },
     }));
   if (!canTransition(order.status, status)) return null;
-  // The PENDING guard lets only one of two racing deliveries move the order.
-  const { count } = await db.order.updateMany({
-    where: { id: order.id, status: "PENDING" },
-    // Keep a stored payment intent when this event carries none.
-    data: {
-      status,
-      stripePaymentIntentId: paymentIntentId(session) ?? undefined,
-    },
+  // The PENDING guard lets only one of two racing deliveries move the order,
+  // and only that one counts the code's use, in the same transaction.
+  const count = await db.$transaction(async (tx) => {
+    const moved = await tx.order.updateMany({
+      where: { id: order.id, status: "PENDING" },
+      // Keep a stored payment intent when this event carries none.
+      data: {
+        status,
+        stripePaymentIntentId: paymentIntentId(session) ?? undefined,
+      },
+    });
+    if (moved.count === 1 && status === "PAID" && order.couponId) {
+      await countCouponUse(order.couponId, tx);
+    }
+    return moved.count;
   });
   return count === 1 && status === "PAID" ? order.id : null;
 }

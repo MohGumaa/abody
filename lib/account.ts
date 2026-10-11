@@ -50,6 +50,9 @@ export interface AccountOrder {
   number: number;
   status: OrderStatus;
   totalCents: number;
+  // 0 without a discount code.
+  discountCents: number;
+  couponCode: string | null;
   createdAt: Date;
   items: {
     id: string;
@@ -73,6 +76,8 @@ export async function listAccountOrders(
       number: true,
       status: true,
       totalCents: true,
+      discountCents: true,
+      coupon: { select: { code: true } },
       createdAt: true,
       items: {
         orderBy: { id: "asc" },
@@ -85,8 +90,9 @@ export async function listAccountOrders(
       },
     },
   });
-  return orders.map(({ items, ...order }) => ({
+  return orders.map(({ items, coupon, ...order }) => ({
     ...order,
+    couponCode: coupon?.code ?? null,
     items: items.map(({ product, ...item }) => ({ ...item, ...product })),
   }));
 }

@@ -118,6 +118,39 @@ export default async function AdminOrderPage({ params }: PageProps<"/admin/order
                     </TableRow>
                   );
                 })}
+                {order.discountCents > 0 && (
+                  <>
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-end text-muted">
+                        Subtotal
+                      </TableCell>
+                      <TableCell className="text-end tabular-nums">
+                        {formatPriceCents(order.totalCents + order.discountCents)}
+                      </TableCell>
+                    </TableRow>
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-end text-success">
+                        Discount
+                        {order.coupon && (
+                          <>
+                            {" ("}
+                            <Link
+                              href={`/admin/coupons/${order.coupon.id}`}
+                              className={`rounded-control font-mono font-semibold hover:text-foreground ${FOCUS}`}
+                              dir="ltr"
+                            >
+                              {order.coupon.code}
+                            </Link>
+                            {")"}
+                          </>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-end font-semibold text-success tabular-nums">
+                        −{formatPriceCents(order.discountCents)}
+                      </TableCell>
+                    </TableRow>
+                  </>
+                )}
                 <TableRow>
                   <TableCell colSpan={4} className="text-end font-semibold">
                     Order total

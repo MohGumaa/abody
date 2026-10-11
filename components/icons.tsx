@@ -120,6 +120,15 @@ export function UsersIcon(props: IconProps) {
   );
 }
 
+export function TagIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="M3.5 12.6V4.5a1 1 0 0 1 1-1h8.1a1 1 0 0 1 .7.3l7.2 7.2a1.5 1.5 0 0 1 0 2.1l-7.4 7.4a1.5 1.5 0 0 1-2.1 0L3.8 13.3a1 1 0 0 1-.3-.7z" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+    </Icon>
+  );
+}
+
 export function GlobeIcon(props: IconProps) {
   return (
     <Icon {...props}>
