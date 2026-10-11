@@ -81,7 +81,7 @@ export function CouponForm({ saved, text }: { saved: SavedCoupon; text: CouponFo
         )}
       </div>
       {!saved && (
-        <form action={apply} className="grid gap-1.5">
+        <form action={apply} className="grid grid-cols-1 gap-1.5">
           <label htmlFor={INPUT_ID} className="text-sm font-medium">
             {text.label}
           </label>

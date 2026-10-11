@@ -38,6 +38,14 @@ export function CartLineItem({ line, locale, text }: CartLineItemProps) {
     isService && product.durationDays && product.durationDays > 0
       ? product.durationDays
       : null;
+  // Client components get only plain text: the cart dictionary also holds
+  // functions, which cannot cross to the client.
+  const quantityText: CartQuantityText = {
+    decrease: text.decrease,
+    increase: text.increase,
+    errors: text.errors,
+  };
+  const removeText: RemoveFromCartText = { remove: text.remove, errors: text.errors };
 
   return (
     <li className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4 rounded-card bg-surface p-5 min-[600px]:grid-cols-[auto_minmax(0,1fr)_auto] min-[600px]:gap-6">
@@ -93,13 +101,13 @@ export function CartLineItem({ line, locale, text }: CartLineItemProps) {
               productId={product.id}
               productName={product.name}
               quantity={quantity}
-              text={text}
+              text={quantityText}
             />
           )}
           <RemoveFromCartButton
             productId={product.id}
             productName={product.name}
-            text={text}
+            text={removeText}
           />
         </div>
       </div>
