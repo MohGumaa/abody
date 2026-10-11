@@ -13,6 +13,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/" },
     { path: "/products" },
     { path: "/services" },
+    { path: "/about" },
+    { path: "/contact" },
+    { path: "/terms" },
+    { path: "/privacy" },
+    { path: "/returns" },
     ...items.map((item) => ({
       path: productPath(item),
       lastModified: item.updatedAt,

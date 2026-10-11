@@ -14,6 +14,8 @@ export const en = {
     home: "Home",
     products: "Products",
     services: "Services",
+    about: "About",
+    contact: "Contact",
     trust: {
       download: "Instant download after payment",
       payment: "Encrypted checkout with all major cards",
@@ -30,6 +32,8 @@ export const en = {
     securePayment: "Secure payment",
     acceptedCards: "Accepted payment methods",
     shop: "Shop",
+    company: "Company",
+    legal: "Legal",
     contactLabel: "Email us",
   },
   product: {
@@ -558,6 +562,183 @@ export const en = {
     title: "Page not found",
     body: "The page you are looking for does not exist or has moved.",
     home: "Back to home",
+  },
+  // Information pages (feature 27). Each section has paragraphs, a bullet list,
+  // or both. The legal text is a draft for the owner to review before launch.
+  info: {
+    about: {
+      title: "About Abody",
+      description:
+        "Who we are and what Abody offers: digital products and services in English and Arabic.",
+      intro:
+        "Abody is an online store for downloadable digital products and hands-on services.",
+      sections: [
+        {
+          heading: "What we offer",
+          paragraphs: [
+            "Digital products you can buy and download straight after payment.",
+            "Services such as ads management and account management, carried out by the Abody team once you tell us about your business.",
+          ],
+        },
+        {
+          heading: "How it works",
+          paragraphs: [
+            "You pay securely through Stripe. Your downloads appear on your order page and stay in your account, and you can follow every service you buy from your account.",
+          ],
+        },
+        {
+          heading: "In your language",
+          paragraphs: [
+            "The whole store, from browsing to checkout and your account, works in English and Arabic.",
+          ],
+        },
+      ],
+    },
+    contact: {
+      title: "Contact us",
+      description:
+        "How to reach the Abody team about orders, downloads, and services.",
+      intro:
+        "Have a question about an order, a download, or a service? Email us and the Abody team will get back to you.",
+      emailLabel: "Email",
+      unavailable:
+        "Our contact email is not available yet. Please check back soon.",
+      sections: [
+        {
+          heading: "Before you write",
+          items: [
+            "If your question is about an order, include your order number.",
+            "Write from the email address you ordered with, so we can find your order.",
+            "For a service, you can also follow its status from your account.",
+          ],
+        },
+      ],
+    },
+    terms: {
+      title: "Terms and Conditions",
+      description:
+        "The terms for buying digital products and services from Abody.",
+      intro:
+        "These terms apply when you use the Abody store or buy from it. By placing an order, you agree to them.",
+      sections: [
+        {
+          heading: "Orders and payment",
+          paragraphs: [
+            "Prices are shown on each product and service page and at checkout. Payment is taken through Stripe Checkout, and your order is confirmed once Stripe confirms the payment.",
+            "Discount codes apply only to the items they are valid for and only while they are active.",
+          ],
+        },
+        {
+          heading: "Digital products",
+          paragraphs: [
+            "After payment, your download is available on your order page and under Downloads in your account. Downloads are available only for paid orders.",
+          ],
+        },
+        {
+          heading: "Services",
+          paragraphs: [
+            "A service starts after you send us the details we need through its onboarding form. You can follow its status from your account.",
+          ],
+        },
+        {
+          heading: "Your account",
+          paragraphs: [
+            "You are responsible for keeping your password safe. You can update your details, change your password, and sign out your other sessions from your account settings.",
+          ],
+        },
+        {
+          heading: "Refunds",
+          paragraphs: [
+            "Refund requests are handled under our Return Policy. A refunded order no longer gives access to its downloads.",
+          ],
+        },
+        {
+          heading: "Changes to these terms",
+          paragraphs: [
+            "We may update these terms. The version on this page applies to orders placed after it is published.",
+          ],
+        },
+      ],
+    },
+    privacy: {
+      title: "Privacy Policy",
+      description:
+        "What information Abody collects, why, and who helps us process it.",
+      intro:
+        "This policy explains what information we collect when you use the Abody store and how we use it.",
+      sections: [
+        {
+          heading: "What we collect",
+          items: [
+            "Your name and email address when you create an account. Passwords are stored only as a secure hash, never as plain text.",
+            "Your email address and the details of each order, including what you bought and its payment status.",
+            "The information you send in a service onboarding form, so we can carry out the service.",
+          ],
+        },
+        {
+          heading: "How we use it",
+          paragraphs: [
+            "To process your orders, deliver your downloads and services, send you emails about your orders, and keep your account secure.",
+          ],
+        },
+        {
+          heading: "Payments",
+          paragraphs: [
+            "Payments are handled by Stripe. Abody never receives or stores your card details.",
+          ],
+        },
+        {
+          heading: "Email",
+          paragraphs: [
+            "Emails about your orders, downloads, and services are sent through our email provider, Resend.",
+          ],
+        },
+        {
+          heading: "Cookies",
+          paragraphs: [
+            "We use only the cookies the store needs to work. They remember:",
+          ],
+          items: [
+            "Your language choice.",
+            "Your cart.",
+            "Your sign-in session, if you have an account.",
+          ],
+        },
+        {
+          heading: "Your choices",
+          paragraphs: [
+            "You can update your name and email address from your account settings. For any other question about your information, email us using the address on our contact page.",
+          ],
+        },
+      ],
+    },
+    returns: {
+      title: "Return Policy",
+      description: "How refund requests for Abody orders are handled.",
+      intro:
+        "Our products are digital and our services are carried out for you, so we review each refund request individually.",
+      sections: [
+        {
+          heading: "Requesting a refund",
+          paragraphs: [
+            "Email us using the address on our contact page. Include your order number and the reason for your request.",
+          ],
+        },
+        {
+          heading: "How requests are decided",
+          paragraphs: [
+            "There is no automatic right to a refund. We review each request and reply by email with our decision.",
+          ],
+        },
+        {
+          heading: "If a refund is approved",
+          items: [
+            "The full order amount is refunded to your original payment method through Stripe.",
+            "The order's downloads are no longer available.",
+          ],
+        },
+      ],
+    },
   },
 };
 

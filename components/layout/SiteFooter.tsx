@@ -14,11 +14,9 @@ interface FooterColumn {
 
 export async function SiteFooter() {
   const locale = await getLocale();
-  const { header, footer } = await getDictionary();
+  const { header, footer, info } = await getDictionary();
   // Admin-set in /admin/settings (feature 21c); no line when none is saved.
   const contactEmail = (await getSiteContent())?.contactEmail;
-  // Company and Account columns join as their pages ship; a column with no
-  // links is not shown.
   const columns: FooterColumn[] = [
     {
       heading: footer.shop,
@@ -27,8 +25,22 @@ export async function SiteFooter() {
         { href: localizedPath(locale, "/services"), label: header.services },
       ],
     },
+    {
+      heading: footer.company,
+      links: [
+        { href: localizedPath(locale, "/about"), label: header.about },
+        { href: localizedPath(locale, "/contact"), label: header.contact },
+      ],
+    },
+    {
+      heading: footer.legal,
+      links: [
+        { href: localizedPath(locale, "/terms"), label: info.terms.title },
+        { href: localizedPath(locale, "/privacy"), label: info.privacy.title },
+        { href: localizedPath(locale, "/returns"), label: info.returns.title },
+      ],
+    },
   ];
-  const shownColumns = columns.filter((column) => column.links.length > 0);
 
   return (
     <footer className="mt-auto border-t border-border bg-panel pt-12 pb-8 font-sans">
@@ -65,7 +77,7 @@ export async function SiteFooter() {
               </p>
             )}
           </div>
-          {shownColumns.map((column) => (
+          {columns.map((column) => (
             <div key={column.heading}>
               <h3 className="mb-4 text-sm font-semibold">{column.heading}</h3>
               <ul className="grid gap-2 text-sm text-muted">

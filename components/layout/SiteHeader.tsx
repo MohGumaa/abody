@@ -33,6 +33,8 @@ export async function SiteHeader() {
     { href: localizedPath(locale, "/"), label: header.home },
     { href: localizedPath(locale, "/products"), label: header.products },
     { href: localizedPath(locale, "/services"), label: header.services },
+    { href: localizedPath(locale, "/about"), label: header.about },
+    { href: localizedPath(locale, "/contact"), label: header.contact },
   ];
   const trustItems = [
     { icon: BoltIcon, text: header.trust.download },
