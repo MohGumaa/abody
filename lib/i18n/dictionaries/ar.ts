@@ -21,6 +21,9 @@ export const ar: Dictionary = {
       tracking: "تابع كل خدماتك من حسابك",
     },
   },
+  announcement: {
+    label: "إعلان",
+  },
   footer: {
     blurb: "منتجات رقمية تحمّلها اليوم وخدمات ينفذها فريق عبودي.",
     rights: (year: number) => `© ${year} عبودي. جميع الحقوق محفوظة.`,

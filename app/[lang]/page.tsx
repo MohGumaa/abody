@@ -17,6 +17,8 @@ import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatItemCount } from "@/lib/i18n/plural";
 import { categoryHref } from "@/lib/listing";
 import { pageMetadata } from "@/lib/seo";
+import { getSiteContent } from "@/lib/site-content";
+import { resolveHomeContent } from "@/lib/site-content-rules";
 
 const PANEL = "rounded-panel bg-panel shadow-soft";
 const PANEL_PADDING = "p-5 min-[600px]:p-6 min-[960px]:p-10";
@@ -100,6 +102,12 @@ export default async function Home() {
   const items = await listHomeProducts(locale);
   const { heroProduct, featured, services, categories } =
     selectHomeSections(items);
+  // Admin-edited text and section switches (feature 21b).
+  const { hero, cta, show } = resolveHomeContent(
+    await getSiteContent(),
+    locale,
+    home,
+  );
 
   return (
     <div className="flex-1 font-sans">
@@ -107,12 +115,12 @@ export default async function Home() {
         <section className="grid items-center gap-16 rounded-panel bg-primary-strong p-8 text-white min-[960px]:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)] min-[960px]:p-16">
           <div className="grid gap-6">
             <p className="text-xs font-semibold tracking-[0.06em] uppercase opacity-85 rtl:tracking-normal">
-              {home.hero.eyebrow}
+              {hero.eyebrow}
             </p>
             <h1 className="text-3xl font-semibold tracking-tight min-[960px]:text-4xl">
-              {home.hero.title}
+              {hero.title}
             </h1>
-            <p className="max-w-[46ch] text-lg opacity-92">{home.hero.lead}</p>
+            <p className="max-w-[46ch] text-lg opacity-92">{hero.lead}</p>
             <div className="mt-2 flex flex-wrap gap-3">
               <Link href={productsPath} className={LIGHT_BUTTON}>
                 {home.hero.browseProducts}
@@ -139,7 +147,7 @@ export default async function Home() {
           ) : null}
         </section>
 
-        {categories.length > 0 ? (
+        {show.showCategories && categories.length > 0 ? (
           <section
             aria-labelledby="categories-heading"
             className={`${PANEL} ${PANEL_PADDING}`}
@@ -190,75 +198,23 @@ export default async function Home() {
           </section>
         ) : null}
 
-        <section
-          aria-labelledby="featured-heading"
-          className={`${PANEL} ${PANEL_PADDING}`}
-        >
-          <SectionHead
-            id="featured-heading"
-            title={home.featured.title}
-            intro={home.featured.intro}
-          />
-          {featured.length === 0 ? (
-            <p className="text-muted">
-              {listing.types.DIGITAL_PRODUCT.empty}
-            </p>
-          ) : (
-            <ul className="grid gap-5 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4">
-              {featured.map((item, index) => (
-                <li key={item.id}>
-                  <ProductCard
-                    product={item}
-                    locale={locale}
-                    index={index}
-                    text={dictionary.product}
-                  />
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section
-          aria-labelledby="services-heading"
-          className={`${PANEL} ${PANEL_PADDING}`}
-        >
-          <SectionHead
-            id="services-heading"
-            title={home.services.title}
-            intro={home.services.intro}
-            link={{ href: servicesPath, label: home.services.viewAll }}
-          />
-          <div className="grid gap-6 min-[960px]:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-            <div className="flex flex-col justify-between gap-6 rounded-panel bg-ink p-8 text-ink-text shadow-soft">
-              <span className="grid size-12 shrink-0 place-items-center rounded-card bg-primary-strong text-white">
-                <UsersIcon className="size-6" />
-              </span>
-              <div>
-                <p className="text-xs font-semibold tracking-[0.06em] text-ink-muted uppercase rtl:tracking-normal">
-                  {home.services.promoEyebrow}
-                </p>
-                <h3 className="mt-2 text-2xl font-semibold">
-                  {home.services.promoTitle}
-                </h3>
-                <p className="mt-2 text-sm text-ink-muted">
-                  {home.services.promoBody}
-                </p>
-              </div>
-              <Link
-                href={servicesPath}
-                className="inline-flex h-11 items-center self-start rounded-card bg-panel px-5 font-semibold text-primary-strong outline-offset-2 hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-white"
-              >
-                {home.services.promoAction}
-              </Link>
-            </div>
-            {services.length === 0 ? (
-              <p className="self-center text-muted">
-                {listing.types.SERVICE.empty}
+        {show.showFeatured ? (
+          <section
+            aria-labelledby="featured-heading"
+            className={`${PANEL} ${PANEL_PADDING}`}
+          >
+            <SectionHead
+              id="featured-heading"
+              title={home.featured.title}
+              intro={home.featured.intro}
+            />
+            {featured.length === 0 ? (
+              <p className="text-muted">
+                {listing.types.DIGITAL_PRODUCT.empty}
               </p>
             ) : (
-              <ul className="grid gap-6 min-[600px]:grid-cols-2">
-                {services.map((item, index) => (
+              <ul className="grid gap-5 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4">
+                {featured.map((item, index) => (
                   <li key={item.id}>
                     <ProductCard
                       product={item}
@@ -270,65 +226,131 @@ export default async function Home() {
                 ))}
               </ul>
             )}
-          </div>
-        </section>
+          </section>
 
-        <section
-          aria-label={home.why}
-          className="grid gap-6 min-[600px]:grid-cols-2 min-[960px]:grid-cols-3"
-        >
-          <ValuePanel
-            icon={<BoltIcon className="size-6" />}
-            title={home.values.instant.title}
-            body={home.values.instant.body}
-          />
-          <ValuePanel
-            icon={<LockIcon className="size-6" />}
-            title={home.values.secure.title}
-            body={home.values.secure.body}
-          />
-          <ValuePanel
-            icon={<UsersIcon className="size-6" />}
-            title={home.values.people.title}
-            body={home.values.people.body}
-          />
-        </section>
+        ) : null}
 
-        <section
-          aria-labelledby="how-heading"
-          className={`${PANEL} ${PANEL_PADDING}`}
-        >
-          <SectionHead id="how-heading" title={home.howItWorks} />
-          <ol className="grid gap-8 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4 min-[960px]:gap-5">
-            {home.steps.map((step, index) => (
-              <li
-                key={step.title}
-                className="relative pt-16 min-[960px]:not-last:after:absolute min-[960px]:not-last:after:start-12 min-[960px]:not-last:after:end-0 min-[960px]:not-last:after:top-[18px] min-[960px]:not-last:after:border-t min-[960px]:not-last:after:border-dashed min-[960px]:not-last:after:border-border"
-              >
-                {/* The ol already numbers the steps for assistive tech. */}
-                <span
-                  aria-hidden="true"
-                  className="absolute start-0 top-0 grid size-9 place-items-center rounded-full bg-primary-strong text-sm font-semibold text-white"
-                >
-                  {index + 1}
+        {show.showServices ? (
+          <section
+            aria-labelledby="services-heading"
+            className={`${PANEL} ${PANEL_PADDING}`}
+          >
+            <SectionHead
+              id="services-heading"
+              title={home.services.title}
+              intro={home.services.intro}
+              link={{ href: servicesPath, label: home.services.viewAll }}
+            />
+            <div className="grid gap-6 min-[960px]:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+              <div className="flex flex-col justify-between gap-6 rounded-panel bg-ink p-8 text-ink-text shadow-soft">
+                <span className="grid size-12 shrink-0 place-items-center rounded-card bg-primary-strong text-white">
+                  <UsersIcon className="size-6" />
                 </span>
-                <h3 className="font-semibold">{step.title}</h3>
-                <p className="mt-2 text-sm text-muted">{step.body}</p>
-              </li>
-            ))}
-          </ol>
-        </section>
+                <div>
+                  <p className="text-xs font-semibold tracking-[0.06em] text-ink-muted uppercase rtl:tracking-normal">
+                    {home.services.promoEyebrow}
+                  </p>
+                  <h3 className="mt-2 text-2xl font-semibold">
+                    {home.services.promoTitle}
+                  </h3>
+                  <p className="mt-2 text-sm text-ink-muted">
+                    {home.services.promoBody}
+                  </p>
+                </div>
+                <Link
+                  href={servicesPath}
+                  className="inline-flex h-11 items-center self-start rounded-card bg-panel px-5 font-semibold text-primary-strong outline-offset-2 hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-white"
+                >
+                  {home.services.promoAction}
+                </Link>
+              </div>
+              {services.length === 0 ? (
+                <p className="self-center text-muted">
+                  {listing.types.SERVICE.empty}
+                </p>
+              ) : (
+                <ul className="grid gap-6 min-[600px]:grid-cols-2">
+                  {services.map((item, index) => (
+                    <li key={item.id}>
+                      <ProductCard
+                        product={item}
+                        locale={locale}
+                        index={index}
+                        text={dictionary.product}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
 
-        <section className="flex flex-wrap items-center justify-between gap-5 rounded-panel bg-primary-strong p-5 text-white shadow-soft min-[600px]:p-6 min-[960px]:p-10">
-          <div>
-            <h2 className="text-2xl font-semibold">{home.cta.title}</h2>
-            <p className="mt-1 opacity-90">{home.cta.body}</p>
-          </div>
-          <Link href={productsPath} className={LIGHT_BUTTON}>
-            {home.cta.action}
-            <ArrowIcon className="size-[1.1em] rtl:-scale-x-100" />
-          </Link>
-        </section>
+        ) : null}
+
+        {show.showValues ? (
+          <section
+            aria-label={home.why}
+            className="grid gap-6 min-[600px]:grid-cols-2 min-[960px]:grid-cols-3"
+          >
+            <ValuePanel
+              icon={<BoltIcon className="size-6" />}
+              title={home.values.instant.title}
+              body={home.values.instant.body}
+            />
+            <ValuePanel
+              icon={<LockIcon className="size-6" />}
+              title={home.values.secure.title}
+              body={home.values.secure.body}
+            />
+            <ValuePanel
+              icon={<UsersIcon className="size-6" />}
+              title={home.values.people.title}
+              body={home.values.people.body}
+            />
+          </section>
+
+        ) : null}
+
+        {show.showHowItWorks ? (
+          <section
+            aria-labelledby="how-heading"
+            className={`${PANEL} ${PANEL_PADDING}`}
+          >
+            <SectionHead id="how-heading" title={home.howItWorks} />
+            <ol className="grid gap-8 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4 min-[960px]:gap-5">
+              {home.steps.map((step, index) => (
+                <li
+                  key={step.title}
+                  className="relative pt-16 min-[960px]:not-last:after:absolute min-[960px]:not-last:after:start-12 min-[960px]:not-last:after:end-0 min-[960px]:not-last:after:top-[18px] min-[960px]:not-last:after:border-t min-[960px]:not-last:after:border-dashed min-[960px]:not-last:after:border-border"
+                >
+                  {/* The ol already numbers the steps for assistive tech. */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute start-0 top-0 grid size-9 place-items-center rounded-full bg-primary-strong text-sm font-semibold text-white"
+                  >
+                    {index + 1}
+                  </span>
+                  <h3 className="font-semibold">{step.title}</h3>
+                  <p className="mt-2 text-sm text-muted">{step.body}</p>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+        ) : null}
+
+        {show.showCta ? (
+          <section className="flex flex-wrap items-center justify-between gap-5 rounded-panel bg-primary-strong p-5 text-white shadow-soft min-[600px]:p-6 min-[960px]:p-10">
+            <div>
+              <h2 className="text-2xl font-semibold">{cta.title}</h2>
+              <p className="mt-1 opacity-90">{cta.body}</p>
+            </div>
+            <Link href={productsPath} className={LIGHT_BUTTON}>
+              {cta.action}
+              <ArrowIcon className="size-[1.1em] rtl:-scale-x-100" />
+            </Link>
+          </section>
+        ) : null}
       </main>
     </div>
   );

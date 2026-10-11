@@ -210,6 +210,15 @@ export function MegaphoneIcon(props: IconProps) {
   );
 }
 
+export function LayoutIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <rect x="3.5" y="4" width="17" height="16" rx="2" />
+      <path d="M3.5 9h17M9 9v11" />
+    </Icon>
+  );
+}
+
 export function MailIcon(props: IconProps) {
   return (
     <Icon {...props}>

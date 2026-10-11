@@ -20,6 +20,9 @@ export const en = {
       tracking: "Track every service from your account",
     },
   },
+  announcement: {
+    label: "Announcement",
+  },
   footer: {
     blurb:
       "Digital products you can download today and services run by the Abody team.",

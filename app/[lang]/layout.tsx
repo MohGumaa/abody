@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Tajawal } from "next/font/google";
+import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { LOCALES, localeDirection } from "@/lib/i18n/config";
@@ -59,6 +60,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[lang]">) {
       className={`${geistSans.variable} ${geistMono.variable} ${tajawal.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <AnnouncementBar />
         <SiteHeader />
         {children}
         <SiteFooter />

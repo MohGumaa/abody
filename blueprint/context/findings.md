@@ -254,3 +254,11 @@
 **Why it matters:** Every other catalog query in `lib/catalog.ts` has a `lib/catalog.test.ts` case asserting its `where`, `orderBy`, and `select`. The new `listHomeProducts` has none. Three feature contracts rest on that query and are unproven by any automated check: only published rows reach the home page (the spec's "giving a position to an unpublished item changes nothing"), rows arrive `createdAt desc, id asc` (the newest-first input order that `selectHomeSections` relies on for ties and for filling open slots), and `featuredRank` is mapped onto the result. The spec also says `featuredRank` must never be added to `publicProductSelect`, but the existing "without private fields" test for `listPublishedProducts` checks only `digitalFile` and `status`, so adding the field there would not fail a test and would expose it through `/api/products` and the listings. The spec's dev-database check for step 3 is manual.
 **Suggested fix:** Add a `listHomeProducts` case to `lib/catalog.test.ts` with the existing `findMany` mock that asserts `where: { status: "PUBLISHED" }`, the `orderBy`, `select.featuredRank === true`, and that the result carries `featuredRank` plus localized fields; and add `expect(query.select).not.toHaveProperty("featuredRank")` to the existing `listPublishedProducts` private-fields test. Requirement lost: None.
 **Resolution:**
+
+### F-37 [P3] open - A failed site content save drops every edit the admin typed
+
+**File:** actions/admin-site-content.ts:54
+**Found:** 2026-10-11 by /audit independent (scope: current; lens: quality)
+**Why it matters:** The `unexpected` result carries no `values`, so `SiteContentForm` (`values = failed?.values ?? initial`, line 114) falls back to the last saved row after React resets the form. A transient database error on save therefore wipes up to 24 typed fields and switches with only "Something went wrong. Try again." The pattern matches `actions/admin-coupons.ts`, but this form is much larger, and the spec's "keeps what was typed" promise is only stated for invalid input, so this is a usability gap rather than a contract breach.
+**Suggested fix:** Parse before the `try` (or keep `parsed` in scope) and return `values: parsed.values` with the `unexpected` error too, plus one action-test assertion. Requirement lost: None.
+**Resolution:**

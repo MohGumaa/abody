@@ -184,3 +184,34 @@ model Session {
 
   @@index([userId])
 }
+
+// Admin-edited home page text and the announcement bar (feature 21b). One row,
+// id 1; with no row the store uses its built-in text. Blank text is null and
+// shows the built-in text for that language.
+model SiteContent {
+  id                  Int      @id @default(1)
+  heroEyebrow         String?
+  heroEyebrowAr       String?
+  heroTitle           String?
+  heroTitleAr         String?
+  heroLead            String?
+  heroLeadAr          String?
+  ctaTitle            String?
+  ctaTitleAr          String?
+  ctaBody             String?
+  ctaBodyAr           String?
+  ctaAction           String?
+  ctaActionAr         String?
+  showCategories      Boolean  @default(true)
+  showFeatured        Boolean  @default(true)
+  showServices        Boolean  @default(true)
+  showValues          Boolean  @default(true)
+  showHowItWorks      Boolean  @default(true)
+  showCta             Boolean  @default(true)
+  announcementEnabled Boolean  @default(false)
+  announcementText    String?
+  announcementTextAr  String?
+  // A store path without the language ("/products") or an https:// URL.
+  announcementLink    String?
+  updatedAt           DateTime @updatedAt
+}

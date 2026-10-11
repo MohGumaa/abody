@@ -36,7 +36,7 @@
 - [x] 20. **Discount & Coupon System** - Allow admins to create, edit, activate, deactivate, and apply discount codes to eligible products or services.
 - [ ] 21. **Website Content Management** - Allow admins to manage featured products, homepage sections, promotional content, and basic website settings.
   - [x] 21a. **Featured Picks** - Admins give products and services an optional featured position (1, 2, 3...); the home page hero card, Featured products row, and Services row show published picks in that order, and fall back to the newest items when nothing is picked.
-  - [ ] 21b. **Homepage Sections and Promotion** - Admins edit the home hero and call-to-action text in English and Arabic, show or hide home sections, and manage one site-wide announcement bar above the header (English and Arabic text, optional link, on/off).
+  - [x] 21b. **Homepage Sections and Promotion** - Admins edit the home hero and call-to-action text in English and Arabic, show or hide home sections, and manage one site-wide announcement bar above the header (English and Arabic text, optional link, on/off).
   - [ ] 21c. **Site Settings** - `/admin/settings` where admins set the public contact email shown in the footer.
 - [ ] 27. **Information Pages** - Add About, Contact, Terms and Conditions, Privacy Policy, and Return Policy pages in English and Arabic, linked from the header navigation and the footer.
 - [ ] 23. **Analytics & Sales Reporting** - Track product views, cart activity, purchases, revenue, customers, and basic ecommerce performance.
