@@ -1,6 +1,6 @@
 # Abody Digital Ecommerce Platform - Project Overview
 
-<!-- blueprint:source-hash a821fccb2dfaecbea3a0ac11a2defae1513c8d02cb522804777864ff34fc36d1 -->
+<!-- blueprint:source-hash 35162ffe2bceec4e1afb8b7838176a3f00ba0bb7e1ea5c1faaa6e98842e1febe -->
 
 > A bilingual (English and Arabic) storefront where customers buy Abody's
 > downloadable digital products and digital services with Stripe, plus an admin

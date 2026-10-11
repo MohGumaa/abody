@@ -326,6 +326,9 @@ describe("publicImageSrc", () => {
       "javascript:alert(1)",
       "data:image/png;base64,AAAA",
       "seed/a.png",
+      "/\t/evil.example.com/a.png",
+      "/\n/evil.example.com/a.png",
+      "https://ok.example/\r",
     ]) {
       expect(publicImageSrc(image)).toBeNull();
     }

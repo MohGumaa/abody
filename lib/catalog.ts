@@ -74,6 +74,9 @@ export function productPath(product: Pick<PublicProduct, "type" | "slug">): stri
 // schemes fall back to the placeholder.
 export function publicImageSrc(image: string | null): string | null {
   if (!image) return null;
+  // URL parsers drop tabs and line breaks, so "/\t/host" would resolve as
+  // protocol-relative after the check below.
+  if (/[\t\n\r]/.test(image)) return null;
   // Browsers read "//" and "/\" as protocol-relative, so those are not local.
   if (image.startsWith("/")) return /^\/[/\\]/.test(image) ? null : image;
   if (!image.startsWith("https://")) return null;
