@@ -85,9 +85,35 @@ describe("parseProductForm", () => {
         shortDescriptionAr: null,
         descriptionAr: null,
         includedAr: [],
+        featuredRank: null,
       },
     });
   });
+
+  it.each([
+    ["DIGITAL_PRODUCT", "1", 1],
+    ["DIGITAL_PRODUCT", " 99 ", 99],
+    ["DIGITAL_PRODUCT", "", null],
+    ["SERVICE", "7", 7],
+    ["SERVICE", "  ", null],
+  ] as const)("reads a %s featured position %j as %j", (type, input, rank) => {
+    const parsed = parseProductForm(form({ ...valid, featuredRank: input }), type);
+    expect(parsed.ok && parsed.data.featuredRank).toBe(rank);
+  });
+
+  it.each(["DIGITAL_PRODUCT", "SERVICE"] as const)(
+    "rejects an invalid %s featured position",
+    (type) => {
+      for (const input of ["0", "100", "1.5", "-1", "abc", "1e1", "007"]) {
+        const parsed = parseProductForm(form({ ...valid, featuredRank: input }), type);
+        expect(parsed).toMatchObject({
+          ok: false,
+          fieldErrors: { featuredRank: "invalid_featured_rank" },
+          values: { featuredRank: input },
+        });
+      }
+    },
+  );
 
   it("keeps Arabic content and an image", () => {
     const parsed = parseProductForm(

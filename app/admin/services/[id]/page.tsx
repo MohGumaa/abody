@@ -54,6 +54,7 @@ export default async function EditServicePage({ params }: PageProps<"/admin/serv
     descriptionAr: service.descriptionAr ?? "",
     includedAr: service.includedAr.join("\n"),
     requirementsAr: service.requirementsAr ?? "",
+    featuredRank: service.featuredRank === null ? "" : String(service.featuredRank),
   };
 
   return (

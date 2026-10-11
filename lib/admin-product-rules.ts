@@ -15,6 +15,9 @@ export const PRICE_MAX_CENTS = 9_999_999;
 // Services only (feature 14): an optional whole number of days.
 export const DURATION_MIN_DAYS = 1;
 export const DURATION_MAX_DAYS = 365;
+// Home page featured position (feature 21a): optional, lowest shows first.
+export const FEATURED_RANK_MIN = 1;
+export const FEATURED_RANK_MAX = 99;
 
 export const PRODUCT_FILE_MAX_BYTES = 25 * 1024 * 1024;
 export const PRODUCT_FILE_EXTENSIONS = [".pdf", ".zip"] as const;
@@ -33,6 +36,7 @@ export type ProductField =
   | "shortDescriptionAr"
   | "descriptionAr"
   | "includedAr"
+  | "featuredRank"
   // Services only.
   | "durationDays"
   | "requirements"
@@ -46,7 +50,8 @@ export type ProductFieldError =
   | "invalid_price"
   | "invalid_image"
   | "too_many_lines"
-  | "invalid_duration";
+  | "invalid_duration"
+  | "invalid_featured_rank";
 
 export type ProductFieldErrors = Partial<Record<ProductField, ProductFieldError>>;
 

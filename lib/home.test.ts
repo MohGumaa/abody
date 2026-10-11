@@ -4,9 +4,16 @@ import { selectHomeSections } from "@/lib/home";
 
 const { DIGITAL_PRODUCT, SERVICE } = ProductType;
 
-function item(id: string, type: ProductType, category: string) {
-  return { id, type, category, categoryLabel: `${category} label` };
+function item(
+  id: string,
+  type: ProductType,
+  category: string,
+  featuredRank: number | null = null,
+) {
+  return { id, type, category, categoryLabel: `${category} label`, featuredRank };
 }
+
+const ids = (list: { id: string }[]) => list.map(({ id }) => id);
 
 describe("selectHomeSections", () => {
   it("returns empty sections for an empty catalog", () => {
@@ -80,5 +87,51 @@ describe("selectHomeSections", () => {
       { type: DIGITAL_PRODUCT, category: "Social", label: "Social label", count: 1 },
       { type: SERVICE, category: "Social", label: "Social label", count: 1 },
     ]);
+  });
+
+  describe("featured picks", () => {
+    it("orders picks by position, the lowest product as the hero", () => {
+      const sections = selectHomeSections([
+        item("p1", DIGITAL_PRODUCT, "Guides", 3),
+        item("p2", DIGITAL_PRODUCT, "Guides", 1),
+        item("p3", DIGITAL_PRODUCT, "Guides", 2),
+        item("p4", DIGITAL_PRODUCT, "Guides", 4),
+      ]);
+      expect(sections.heroProduct?.id).toBe("p2");
+      expect(ids(sections.featured)).toEqual(["p2", "p3", "p1", "p4"]);
+    });
+
+    it("fills open slots with the newest unpicked items", () => {
+      const sections = selectHomeSections([
+        item("p1", DIGITAL_PRODUCT, "Guides"),
+        item("p2", DIGITAL_PRODUCT, "Guides"),
+        item("p3", DIGITAL_PRODUCT, "Guides", 2),
+        item("p4", DIGITAL_PRODUCT, "Guides"),
+        item("p5", DIGITAL_PRODUCT, "Guides", 1),
+      ]);
+      expect(ids(sections.featured)).toEqual(["p5", "p3", "p1", "p2"]);
+    });
+
+    it("keeps newest first for equal positions", () => {
+      const sections = selectHomeSections([
+        item("p1", DIGITAL_PRODUCT, "Guides", 5),
+        item("p2", DIGITAL_PRODUCT, "Guides", 5),
+        item("p3", DIGITAL_PRODUCT, "Guides", 1),
+      ]);
+      expect(ids(sections.featured)).toEqual(["p3", "p1", "p2"]);
+    });
+
+    it("orders services apart from products", () => {
+      const sections = selectHomeSections([
+        item("s1", SERVICE, "Ads"),
+        item("p1", DIGITAL_PRODUCT, "Guides", 1),
+        item("s2", SERVICE, "Ads"),
+        item("s3", SERVICE, "Ads", 1),
+        item("p2", DIGITAL_PRODUCT, "Guides"),
+      ]);
+      expect(ids(sections.services)).toEqual(["s3", "s1"]);
+      expect(ids(sections.featured)).toEqual(["p1", "p2"]);
+      expect(sections.heroProduct?.id).toBe("p1");
+    });
   });
 });

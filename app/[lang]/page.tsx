@@ -9,7 +9,7 @@ import {
   LockIcon,
   UsersIcon,
 } from "@/components/icons";
-import { listPublishedProducts } from "@/lib/catalog";
+import { listHomeProducts } from "@/lib/catalog";
 import { ProductType } from "@/lib/generated/prisma/enums";
 import { selectHomeSections } from "@/lib/home";
 import { localizedPath } from "@/lib/i18n/config";
@@ -97,7 +97,7 @@ export default async function Home() {
   const servicesPath = localizedPath(locale, "/services");
 
   // The catalog is small, so one query feeds every section.
-  const items = await listPublishedProducts({ locale });
+  const items = await listHomeProducts(locale);
   const { heroProduct, featured, services, categories } =
     selectHomeSections(items);
 

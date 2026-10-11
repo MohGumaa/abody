@@ -22,6 +22,8 @@ import {
   DESCRIPTION_MAX,
   DURATION_MAX_DAYS,
   DURATION_MIN_DAYS,
+  FEATURED_RANK_MAX,
+  FEATURED_RANK_MIN,
   IMAGE_MAX,
   INCLUDED_LINE_MAX,
   INCLUDED_MAX_LINES,
@@ -52,6 +54,7 @@ const FIELD_ERRORS: Record<ProductFieldError, string> = {
   invalid_image: "Use an https:// URL or a site path starting with /.",
   too_many_lines: `Use at most ${INCLUDED_MAX_LINES} lines.`,
   invalid_duration: `Enter a whole number of days from ${DURATION_MIN_DAYS} to ${DURATION_MAX_DAYS}, or leave it empty.`,
+  invalid_featured_rank: `Enter a whole number from ${FEATURED_RANK_MIN} to ${FEATURED_RANK_MAX}.`,
 };
 
 type FormError = Exclude<ProductActionResult, null | { success: true }>["error"];
@@ -131,6 +134,17 @@ function fieldSpecs(type: ProductType) {
       dir: "ltr",
     },
   ];
+  // A text field like the duration: the server checks the range.
+  const home: FieldSpec[] = [
+    {
+      field: "featuredRank",
+      label: "Featured position",
+      hint: "Shows on the home page in this order (1 first). Leave blank to not feature. Only published items appear.",
+      max: 2,
+      inputMode: "numeric",
+      dir: "ltr",
+    },
+  ];
   const arabic: FieldSpec[] = [
     { field: "nameAr", label: "Name (Arabic)", max: NAME_MAX, arabic: true },
     { field: "shortDescriptionAr", label: "Short description (Arabic)", max: SHORT_DESCRIPTION_MAX, multiline: 2, arabic: true },
@@ -141,7 +155,7 @@ function fieldSpecs(type: ProductType) {
       ? [{ field: "requirementsAr", label: "Requirements (Arabic)", hint: LINES_HINT, max: 0, multiline: 4, arabic: true } as const]
       : []),
   ];
-  return { english, lists, pricing, arabic };
+  return { english, lists, pricing, home, arabic };
 }
 
 function Field({
@@ -442,6 +456,13 @@ export function ProductForm({
           {isService ? "Price, duration, and image" : "Price and image"}
         </h2>
         {fields(specs.pricing)}
+      </section>
+
+      <section aria-labelledby="product-home" className={CARD}>
+        <h2 id="product-home" className="text-lg font-semibold">
+          Home page
+        </h2>
+        {fields(specs.home)}
       </section>
 
       <section aria-labelledby="product-arabic" className={CARD}>

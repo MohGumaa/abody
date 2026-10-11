@@ -71,6 +71,7 @@ export default async function AdminProductsPage() {
                 <TableHead scope="col">Category</TableHead>
                 <TableHead scope="col" className="text-end">Price</TableHead>
                 <TableHead scope="col">Status</TableHead>
+                <TableHead scope="col">Featured</TableHead>
                 <TableHead scope="col">File</TableHead>
                 <TableHead scope="col">Updated</TableHead>
               </TableRow>
@@ -97,6 +98,16 @@ export default async function AdminProductsPage() {
                   </TableCell>
                   <TableCell>
                     <ProductStatusChip status={product.status} />
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-muted tabular-nums">
+                    {product.featuredRank !== null ? (
+                      `#${product.featuredRank}`
+                    ) : (
+                      <>
+                        <span aria-hidden="true">—</span>
+                        <span className="sr-only">Not featured</span>
+                      </>
+                    )}
                   </TableCell>
                   <TableCell>
                     {product.hasFile ? (

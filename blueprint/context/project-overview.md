@@ -1,6 +1,6 @@
 # Abody Digital Ecommerce Platform - Project Overview
 
-<!-- blueprint:source-hash 8add2725df1cc16e7b6538fc6bd0c8f5bc5ae13f08f74295b4d8ad89333bfe62 -->
+<!-- blueprint:source-hash 1dc6c76ce535ae341dfd5cfb8be7b5ffc60f196673403e42cc503f85ec3bea3a -->
 
 > A bilingual (English and Arabic) storefront where customers buy Abody's
 > downloadable digital products and digital services with Stripe, plus an admin
@@ -34,9 +34,9 @@ through the store login and are promoted from a shell with
 
 ## Features
 
-In `build-plan.md` order. Shipped: 1-4, 26, 22, 5-15. Next: 16. The headline
-flow (discover, cart, pay, receive, manage) is complete; the remaining items
-are admin tools, storage, email, content, analytics, hardening, and launch.
+In `build-plan.md` order. Shipped: 1-4, 26, 22, 5-20. Next: 21. The headline
+flow (discover, cart, pay, receive, manage), the admin tools, and coupons are
+complete; the remaining items are content, analytics, hardening, and launch.
 
 1. **Product & Service Catalog** (done) - database models and catalog API.
 2. **Product & Service Details** (done) - detail pages with pricing,
@@ -80,15 +80,22 @@ are admin tools, storage, email, content, analytics, hardening, and launch.
     - 15b. **Refunds** (done) - full refund from the admin via the Stripe Refunds API;
       the verified `charge.refunded` webhook (also for dashboard refunds) marks
       the order Refunded, ending download access.
-16. **Admin Service Management** - purchased service work: requirements, notes,
-    progress, completion. (Same title as 14, different scope.)
-17. **Customer Management** - customers with their orders, purchases,
+16. **Admin Service Management** (done) - purchased service work at
+    `/admin/service-orders`: requirements, notes, status, start and completion
+    dates. (Same title as 14, different scope.)
+17. **Customer Management** (done) - customers with their orders, purchases,
     downloads, and active services.
-18. **Secure File Storage** - private object storage with protected,
-    authenticated download URLs.
-19. **Email Notifications** - transactional emails to customers and admins.
-20. **Discount & Coupon System** - admins create, edit, activate, deactivate,
-    and apply discount codes.
+18. **Secure File Storage** (done) - private S3-compatible bucket (R2 or S3)
+    when the `S3_*` variables are set, local `storage/` otherwise; downloads
+    redirect to a 300-second signed GET URL.
+19. **Email Notifications** (done) - transactional email through Resend.
+    - 19a. **Order Emails** (done) - bilingual customer order and payment
+      confirmation, and an admin new-order email, sent from the verified
+      Stripe webhook.
+    - 19b. **Service Emails** (done) - customer email on service status change;
+      admin email when requirements are submitted.
+20. **Discount & Coupon System** (done) - simple percentage codes,
+    one per order, applied on the cart and charged through Stripe Checkout.
 21. **Website Content Management** - featured products, homepage sections,
     promotional content, basic site settings.
 23. **Analytics & Sales Reporting** - page and product views, add to cart,
@@ -117,8 +124,9 @@ One model for both product types; `type` decides delivery.
 - `category` (string) - the language-neutral key for filters, `?category=`
   URLs, and related items; admins pick an existing one or add a new one
 - `image` (string, optional) - `https://` URL or site path
-- `digitalFile` (string, optional) - private storage key under `storage/`,
-  digital products only; never selected for a public response
+- `digitalFile` (string, optional) - private storage key, the same key in the
+  bucket or under `storage/`; digital products only; never selected for a
+  public response
 - `included` (string list), `durationDays` (int, optional), `requirements`
   (text, optional) - the last two for services
 - `nameAr`, `categoryAr`, `shortDescriptionAr`, `descriptionAr`, `includedAr`,
@@ -182,14 +190,30 @@ first sends onboarding details. The catalog entry is a `Product` of type
 - `adminNotes` (text, optional), `startDate`, `completedDate` (optional)
 - `createdAt`, `updatedAt`
 
+### Coupon
+
+Shipped by feature 20. Codes are entered on the cart (a `coupon` cookie holding
+the normalized code, re-checked on every render and at checkout), one per
+order, and a use counts only when the verified webhook marks the order paid.
+
+- `code` (string, unique; uppercase A-Z, 0-9, hyphens; 3-32; fixed after
+  creation), `percentOff` (int 1-99)
+- `appliesTo` (enum `ALL`, `DIGITAL_PRODUCTS`, `SERVICES`), `active` (bool,
+  default false)
+- `expiresOn` (date, optional, inclusive UTC), `maxRedemptions` (int, optional)
+- `redemptionCount` (int) - paid orders that used it; refunds don't give it back
+- `createdAt`, `updatedAt`; has many `Order`
+- `Order` gains `couponId` (optional, restrict delete) and `discountCents`
+  (int, default 0)
+
 ### Payments
 
 No local payments table. Stripe is the source of truth; the app stores only the
 references on `Order`.
 
-> TODO: no data shapes yet for discount codes (20),
-> managed website content (21), analytics events (23), `User.stripeCustomerId`,
-> or a signed-in customer's preferred language (today a `lang` cookie).
+> TODO: no data shapes yet for managed website content (21), analytics events
+> (23), `User.stripeCustomerId`, or a signed-in customer's preferred language
+> (today a `lang` cookie).
 
 ## Tech stack
 
@@ -203,12 +227,15 @@ Prisma 7, Stripe, Vitest, ESLint, pnpm.
 - **Authentication** - built in (feature 8a): scrypt password hashes and
   database sessions, no auth vendor
 - **Payments** - Stripe Checkout, confirmed by the signature-verified webhook
-- **File storage** - private local `storage/` folder (features 7 and 13) until
-  feature 18 moves files to private object storage (Cloudflare R2 or AWS S3,
-  undecided)
+- **File storage** - private S3-compatible bucket (Cloudflare R2 or AWS S3)
+  via `@aws-sdk/client-s3` and the presigner when all `S3_*` variables are set;
+  the local `storage/` folder when none are; partial config is an error.
+  `pnpm storage:upload` copies local files to the bucket
 - **Translations** - typed dictionaries in `lib/i18n/` and a root `proxy.ts`
   for the language redirect; no library
-- **Email and analytics** - required by features 19 and 23; no provider named
+- **Email** - Resend over HTTP (`lib/email.ts`); off when `RESEND_API_KEY` and
+  `EMAIL_FROM` are unset, error when only one is set
+- **Analytics** - required by feature 23; no provider named
 
 Security rules from the plan, applied as each feature ships:
 
@@ -267,9 +294,11 @@ URL redirects to the visitor's language. `/admin` and `/api` are never prefixed.
   `/admin/orders[?page=N]`, `/admin/orders/[id]`,
   `/admin/service-orders[?page=N]`, `/admin/service-orders/[itemId]`,
   `/admin/customers[?page=N]`, `/admin/customers/[id]` (shipped);
-  `/admin/settings` (planned). `/admin/services` holds the service catalog.
+  `/admin/coupons[/new|/[id]]` (shipped); `/admin/settings`
+  (planned). `/admin/services` holds the service catalog.
 - `/api/products`, `/api/products/[slug]` - catalog API, optional `?lang=en|ar`
 - `/api/downloads/[itemId]` - protected download for a paid order item
+  (streams locally, 302 to a signed URL in bucket mode)
 - `PUT /api/admin/products/[id]/file` - admin file upload (PDF or ZIP, 25 MB)
 - `/api/stripe/webhook` - Stripe webhook (signature verified)
 
@@ -277,9 +306,11 @@ URL redirects to the visitor's language. `/admin` and `/api` are never prefixed.
 
 > TODO: no deployment target is named. The plan requires HTTPS in production and
 > secure environment variables. In use: `DATABASE_URL`, `SITE_URL`,
-> `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`. The webhook needs a public
-> endpoint, production must run `prisma migrate deploy`, and until feature 18
-> the local `storage/` folder needs a host with a persistent disk.
+> `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `S3_BUCKET`, `S3_REGION`,
+> `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_ENDPOINT` (R2),
+> `RESEND_API_KEY`, `EMAIL_FROM`, `ADMIN_NOTIFICATION_EMAIL`. The webhook needs
+> a public endpoint and production must run `prisma migrate deploy`. With the
+> bucket configured, the host needs no persistent disk.
 
 ## Open questions
 
@@ -296,14 +327,18 @@ Resolve these in the plans, then re-run `/overview`.
 4. **About and Contact pages.** In the navigation, but no build-plan item or
    mockup.
 5. **Coupons conflict.** Build-plan item 20 is a coupon system; the project plan
-   lists advanced coupons as not v1 and coupons as a future feature.
+   lists advanced coupons as not v1 and coupons as a future feature. The
+   feature 20 spec settles it (simple percentage codes in v1, approved
+   2026-10-10), but neither plan records that.
 6. **Duplicate title.** Items 14 and 16 are both "Admin Service Management".
 7. **Image upload.** The plan's admin form shows an image upload; feature 13
-   uses an image URL field. Uploading images waits for storage (18).
+   uses an image URL field. Storage (18) shipped without image upload, so no
+   item owns it now.
 8. **Security as a late item.** Item 24 protects routes, APIs, files, and
    webhooks, but the plan requires those protections as each feature ships.
-9. **Undecided providers.** Object storage (R2 or S3), email, analytics, and the
-   deployment target.
+9. **Undecided providers.** Analytics and the deployment target. Storage (R2
+   or S3, chosen by environment) and email (Resend) were settled by 18 and 19
+   but are not recorded in the project plan.
 10. **Service packages.** Feature 14 shipped "one service is one package"
     (tiers are separate services), but item 14 and project-plan section 13
     ("Choose Package") still read as if packages exist. Record the decision.

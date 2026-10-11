@@ -4,6 +4,8 @@ import {
   DESCRIPTION_MAX,
   DURATION_MAX_DAYS,
   DURATION_MIN_DAYS,
+  FEATURED_RANK_MAX,
+  FEATURED_RANK_MIN,
   IMAGE_MAX,
   INCLUDED_LINE_MAX,
   INCLUDED_MAX_LINES,
@@ -38,6 +40,8 @@ export interface ProductFormData {
   shortDescriptionAr: string | null;
   descriptionAr: string | null;
   includedAr: string[];
+  // Home page position; null when not featured.
+  featuredRank: number | null;
   // Services only; always null for digital products.
   durationDays: number | null;
   requirements: string | null;
@@ -62,6 +66,7 @@ const FIELDS: readonly ProductField[] = [
   "shortDescriptionAr",
   "descriptionAr",
   "includedAr",
+  "featuredRank",
 ];
 
 const SERVICE_FIELDS: readonly ProductField[] = [
@@ -72,6 +77,7 @@ const SERVICE_FIELDS: readonly ProductField[] = [
 
 const PRICE_PATTERN = /^(\d{1,5})(?:\.(\d{1,2}))?$/;
 const DURATION_PATTERN = /^\d{1,3}$/;
+const FEATURED_RANK_PATTERN = /^\d{1,2}$/;
 
 // Dollars as typed ("49", "49.5", "49.50") to whole cents with integer math.
 export function parsePriceToCents(input: string): number | null {
@@ -156,6 +162,14 @@ export function parseProductForm(
   const shortDescriptionAr = optional("shortDescriptionAr", SHORT_DESCRIPTION_MAX);
   const descriptionAr = optional("descriptionAr", DESCRIPTION_MAX);
 
+  let featuredRank: number | null = null;
+  const rank = values.featuredRank ?? "";
+  if (rank !== "") {
+    const position = FEATURED_RANK_PATTERN.test(rank) ? Number(rank) : NaN;
+    if (position >= FEATURED_RANK_MIN && position <= FEATURED_RANK_MAX) featuredRank = position;
+    else fieldErrors.featuredRank = "invalid_featured_rank";
+  }
+
   let durationDays: number | null = null;
   let requirements: string | null = null;
   let requirementsAr: string | null = null;
@@ -192,6 +206,7 @@ export function parseProductForm(
       shortDescriptionAr,
       descriptionAr,
       includedAr,
+      featuredRank,
       durationDays,
       requirements,
       requirementsAr,

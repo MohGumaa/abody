@@ -20,15 +20,30 @@ export interface HomeSections<T> {
   categories: HomeCategory[];
 }
 
-// Items arrive newest first, so "featured" means newest until feature 21 adds
-// curated picks. Product categories come before service categories.
+// Picks first by featured position (feature 21a), then the rest. The sort is
+// stable, so equal positions and unpicked items keep the input order.
+function featuredFirst<T extends { featuredRank: number | null }>(items: T[]): T[] {
+  const rank = (item: T) => item.featuredRank ?? Number.MAX_SAFE_INTEGER;
+  return [...items].sort((a, b) => rank(a) - rank(b));
+}
+
+// Items arrive newest first, so open slots fill with the newest unpicked
+// items, and with no picks the rows show the newest. Product categories come
+// before service categories.
 export function selectHomeSections<
-  T extends { type: ProductType; category: string; categoryLabel: string },
+  T extends {
+    type: ProductType;
+    category: string;
+    categoryLabel: string;
+    featuredRank: number | null;
+  },
 >(items: T[]): HomeSections<T> {
-  const products = items.filter(
-    (item) => item.type === ProductType.DIGITAL_PRODUCT,
+  const products = featuredFirst(
+    items.filter((item) => item.type === ProductType.DIGITAL_PRODUCT),
   );
-  const services = items.filter((item) => item.type === ProductType.SERVICE);
+  const services = featuredFirst(
+    items.filter((item) => item.type === ProductType.SERVICE),
+  );
 
   return {
     heroProduct: products[0] ?? null,

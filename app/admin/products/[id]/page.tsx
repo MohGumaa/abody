@@ -54,6 +54,7 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
     shortDescriptionAr: product.shortDescriptionAr ?? "",
     descriptionAr: product.descriptionAr ?? "",
     includedAr: product.includedAr.join("\n"),
+    featuredRank: product.featuredRank === null ? "" : String(product.featuredRank),
   };
 
   return (

@@ -42,6 +42,9 @@ model Product {
   descriptionAr      String?       @db.Text
   includedAr         String[]      @default([])
   requirementsAr     String?       @db.Text
+  // Home page order (feature 21a): 1-99, lowest first. Null: not featured.
+  // Not unique; equal positions show the newer item first.
+  featuredRank       Int?
   status             ProductStatus
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt

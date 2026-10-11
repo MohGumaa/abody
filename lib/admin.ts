@@ -187,6 +187,7 @@ export interface AdminProductRow {
   status: ProductStatus;
   hasFile: boolean;
   durationDays: number | null;
+  featuredRank: number | null;
   updatedAt: Date;
 }
 
@@ -202,6 +203,7 @@ export async function listAdminProducts(type: ProductType): Promise<AdminProduct
       priceCents: true,
       status: true,
       durationDays: true,
+      featuredRank: true,
       updatedAt: true,
       digitalFile: true,
     },
@@ -230,6 +232,7 @@ export interface AdminProduct {
   durationDays: number | null;
   requirements: string | null;
   requirementsAr: string | null;
+  featuredRank: number | null;
   status: ProductStatus;
   // Only the download name; the storage key never leaves the server.
   fileName: string | null;
@@ -262,6 +265,7 @@ export async function getAdminProduct(
       durationDays: true,
       requirements: true,
       requirementsAr: true,
+      featuredRank: true,
       status: true,
       digitalFile: true,
       updatedAt: true,

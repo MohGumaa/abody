@@ -73,6 +73,7 @@ export default async function AdminServicesPage() {
                 <TableHead scope="col" className="text-end">Price</TableHead>
                 <TableHead scope="col">Duration</TableHead>
                 <TableHead scope="col">Status</TableHead>
+                <TableHead scope="col">Featured</TableHead>
                 <TableHead scope="col">Updated</TableHead>
               </TableRow>
             </TableHeader>
@@ -108,6 +109,16 @@ export default async function AdminServicesPage() {
                   </TableCell>
                   <TableCell>
                     <ProductStatusChip status={service.status} />
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-muted tabular-nums">
+                    {service.featuredRank !== null ? (
+                      `#${service.featuredRank}`
+                    ) : (
+                      <>
+                        <span aria-hidden="true">—</span>
+                        <span className="sr-only">Not featured</span>
+                      </>
+                    )}
                   </TableCell>
                   <TableCell className="whitespace-nowrap text-faint">
                     {formatDate(service.updatedAt, "en")}

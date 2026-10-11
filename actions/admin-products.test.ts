@@ -115,7 +115,15 @@ describe("createProduct", () => {
       status: "UNPUBLISHED",
     });
     expect(data).not.toHaveProperty("digitalFile");
+    expect(data.featuredRank).toBeNull();
     expect(revalidatePath).toHaveBeenCalled();
+  });
+
+  it("saves a featured position", async () => {
+    await expect(createProduct(null, form({ ...valid, featuredRank: "2" }))).rejects.toThrow(
+      "redirect:",
+    );
+    expect(db.product.create.mock.calls[0][0].data).toMatchObject({ featuredRank: 2 });
   });
 
   it("ignores status, type, and file fields from the form", async () => {
@@ -171,6 +179,13 @@ describe("updateProduct", () => {
     expect(where).toEqual(DIGITAL);
     expect(data).not.toHaveProperty("status");
     expect(data).not.toHaveProperty("digitalFile");
+  });
+
+  it("sets and clears the featured position", async () => {
+    await updateProduct(null, form({ ...valid, id: "p1", featuredRank: "3" }));
+    expect(db.product.updateMany.mock.calls[0][0].data).toMatchObject({ featuredRank: 3 });
+    await updateProduct(null, form({ ...valid, id: "p1", featuredRank: "" }));
+    expect(db.product.updateMany.mock.calls[1][0].data).toMatchObject({ featuredRank: null });
   });
 
   it("returns not_found for a service or unknown id", async () => {
@@ -351,12 +366,14 @@ describe("service actions", () => {
   });
 
   it("updates only a service, never status or file", async () => {
-    expect(await updateService(null, form({ ...service, id: "s1" }))).toEqual({
+    expect(
+      await updateService(null, form({ ...service, id: "s1", featuredRank: "1" })),
+    ).toEqual({
       success: true,
     });
     const { where, data } = db.product.updateMany.mock.calls[0][0];
     expect(where).toEqual(SERVICE);
-    expect(data).toMatchObject({ durationDays: 30 });
+    expect(data).toMatchObject({ durationDays: 30, featuredRank: 1 });
     expect(data).not.toHaveProperty("status");
     expect(data).not.toHaveProperty("digitalFile");
   });

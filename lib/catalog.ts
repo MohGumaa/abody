@@ -165,6 +165,23 @@ export async function listPublishedProducts(options: {
   return rows.map((row) => toPublicProduct(row, options.locale));
 }
 
+export type HomeProduct = PublicProduct & { featuredRank: number | null };
+
+// The home page's one query: every published item, newest first, with its
+// featured position for lib/home to order by. The position stays out of
+// publicProductSelect, so listings and the API never expose it.
+export async function listHomeProducts(locale: Locale): Promise<HomeProduct[]> {
+  const rows = await db.product.findMany({
+    where: { status: ProductStatus.PUBLISHED },
+    orderBy: [{ createdAt: "desc" }, { id: "asc" }],
+    select: { ...publicProductSelect, featuredRank: true },
+  });
+  return rows.map(({ featuredRank, ...row }) => ({
+    ...toPublicProduct(row, locale),
+    featuredRank,
+  }));
+}
+
 export async function getPublishedProductBySlug(
   slug: string,
   locale: Locale,
