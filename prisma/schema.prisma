@@ -213,5 +213,8 @@ model SiteContent {
   announcementTextAr  String?
   // A store path without the language ("/products") or an https:// URL.
   announcementLink    String?
+  // The public contact email in the store footer (feature 21c); stored
+  // trimmed and lowercase.
+  contactEmail        String?
   updatedAt           DateTime @updatedAt
 }

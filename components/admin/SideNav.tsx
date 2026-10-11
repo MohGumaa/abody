@@ -11,6 +11,7 @@ import {
   GridIcon,
   LayoutIcon,
   MegaphoneIcon,
+  SettingsIcon,
   TagIcon,
   UsersIcon,
 } from "@/components/icons";
@@ -27,6 +28,7 @@ const ICONS = {
   grid: GridIcon,
   layout: LayoutIcon,
   megaphone: MegaphoneIcon,
+  settings: SettingsIcon,
   tag: TagIcon,
   users: UsersIcon,
 };

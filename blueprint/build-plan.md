@@ -34,10 +34,10 @@
   - [x] 19a. **Order Emails** - Send transactional email through Resend: the customer's bilingual order and payment confirmation when an order is paid (with a link to the order page for downloads, and service next steps), and an admin new-order email (including new service purchases) to one configured address, both triggered by the verified Stripe webhook.
   - [x] 19b. **Service Emails** - Email the customer when an admin changes their service status, and email the admin address when a customer submits service requirements.
 - [x] 20. **Discount & Coupon System** - Allow admins to create, edit, activate, deactivate, and apply discount codes to eligible products or services.
-- [ ] 21. **Website Content Management** - Allow admins to manage featured products, homepage sections, promotional content, and basic website settings.
+- [x] 21. **Website Content Management** - Allow admins to manage featured products, homepage sections, promotional content, and basic website settings.
   - [x] 21a. **Featured Picks** - Admins give products and services an optional featured position (1, 2, 3...); the home page hero card, Featured products row, and Services row show published picks in that order, and fall back to the newest items when nothing is picked.
   - [x] 21b. **Homepage Sections and Promotion** - Admins edit the home hero and call-to-action text in English and Arabic, show or hide home sections, and manage one site-wide announcement bar above the header (English and Arabic text, optional link, on/off).
-  - [ ] 21c. **Site Settings** - `/admin/settings` where admins set the public contact email shown in the footer.
+  - [x] 21c. **Site Settings** - `/admin/settings` where admins set the public contact email shown in the footer.
 - [ ] 27. **Information Pages** - Add About, Contact, Terms and Conditions, Privacy Policy, and Return Policy pages in English and Arabic, linked from the header navigation and the footer.
 - [ ] 23. **Analytics & Sales Reporting** - Track product views, cart activity, purchases, revenue, customers, and basic ecommerce performance.
 - [ ] 24. **Security & Access Control** - Protect customer and admin routes, APIs, database operations, digital files, and Stripe webhook endpoints.

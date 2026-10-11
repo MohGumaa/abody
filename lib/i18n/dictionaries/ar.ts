@@ -30,6 +30,7 @@ export const ar: Dictionary = {
     securePayment: "دفع آمن",
     acceptedCards: "طرق الدفع المقبولة",
     shop: "المتجر",
+    contactLabel: "راسلنا",
   },
   product: {
     typeLabels: {

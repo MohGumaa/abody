@@ -30,6 +30,7 @@ export const en = {
     securePayment: "Secure payment",
     acceptedCards: "Accepted payment methods",
     shop: "Shop",
+    contactLabel: "Email us",
   },
   product: {
     typeLabels: {

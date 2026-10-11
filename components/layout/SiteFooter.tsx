@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { LockIcon } from "@/components/icons";
+import { LockIcon, MailIcon } from "@/components/icons";
 import type { NavItem } from "@/components/layout/MainNav";
 import { PaymentCards } from "@/components/layout/PaymentCards";
 import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
+import { getSiteContent } from "@/lib/site-content";
 
 interface FooterColumn {
   heading: string;
@@ -14,6 +15,8 @@ interface FooterColumn {
 export async function SiteFooter() {
   const locale = await getLocale();
   const { header, footer } = await getDictionary();
+  // Admin-set in /admin/settings (feature 21c); no line when none is saved.
+  const contactEmail = (await getSiteContent())?.contactEmail;
   // Company and Account columns join as their pages ship; a column with no
   // links is not shown.
   const columns: FooterColumn[] = [
@@ -47,6 +50,20 @@ export async function SiteFooter() {
             <p className="mt-4 max-w-[34ch] text-sm text-muted">
               {footer.blurb}
             </p>
+            {contactEmail && (
+              <p className="mt-3 flex flex-wrap items-center gap-2 text-sm text-muted">
+                <MailIcon className="size-[1.25em]" />
+                <span>{footer.contactLabel}</span>
+                {/* Validated on save; React text, so it never renders as HTML. */}
+                <a
+                  href={`mailto:${contactEmail}`}
+                  dir="ltr"
+                  className="rounded-control font-medium text-foreground outline-offset-2 hover:text-primary-strong focus-visible:outline-2 focus-visible:outline-primary-strong"
+                >
+                  {contactEmail}
+                </a>
+              </p>
+            )}
           </div>
           {shownColumns.map((column) => (
             <div key={column.heading}>
