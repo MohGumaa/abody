@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Every customer account page, and onboarding without a checkout session id,
 // sends a signed-out visitor to sign in before it reads data (feature 24a).
@@ -59,6 +59,14 @@ const cases = Object.keys(pages)
   .sort()
   .flatMap((file) => (["en", "ar"] as const).map((locale) => [file, locale] as const));
 
+// Loading a page imports its whole module graph, which can take longer than
+// one test's timeout on a busy machine. Load them all once, up front.
+const loaded: Record<string, PageModule> = {};
+
+beforeAll(async () => {
+  for (const [file, load] of Object.entries(pages)) loaded[file] = await load();
+}, 60_000);
+
 beforeEach(() => {
   touched.length = 0;
   getCurrentUser.mockReset().mockResolvedValue(null);
@@ -73,7 +81,7 @@ describe("customer account pages", () => {
 
   it.each(cases)("%s sends a signed-out visitor to sign in (%s)", async (file, locale) => {
     lang.mockResolvedValue(locale);
-    const page = await pages[file]();
+    const page = loaded[file];
     const next = `/${locale}${pagePath(file)}`;
 
     await expect(
