@@ -254,3 +254,27 @@
 **Why it matters:** `clientKey` returns `"unknown"` when the setting is unset or the named header is missing, as the spec intends for development. Nothing distinguishes that case in production, so a deploy that forgets the variable, or names a header the host never sets, caps registration at 5 per hour and discount code tries at 10 per 15 minutes for the whole site, and any single anonymous visitor can exhaust them and lock everyone else out; the beacon would drop page views above 120 per minute site-wide. The same applies when `x-forwarded-for` passes through more than one proxy hop (for example a CDN in front of the host), because the rightmost entry is then the CDN's address. The spec deliberately defers the production header choice to `/release`, so this is a deployment-readiness risk rather than a defect in the feature.
 **Suggested fix:** Make `/release` (or the deployment checklist) require `RATE_LIMIT_IP_HEADER` and confirm the chosen header is set by the host, cannot be supplied by clients, and identifies the visitor rather than an intermediate proxy. Optionally log one warning when it is unset with `NODE_ENV === "production"`. Requirement lost: None.
 **Resolution:**
+
+### F-40 [P3] open - Nothing fails if the browser-test server stops overriding the real email and Stripe keys
+
+**File:** playwright.config.ts:22
+**Found:** 2026-10-11 by /audit independent (scope: current; lens: tests)
+**Why it matters:** Email-off and fake-Stripe in the test server rest entirely on `APP_ENV` overriding `.env`. `.env` currently holds real Resend values, and Next.js keeps an empty-string process value over `.env` (verified in `@next/env` `processEnv`, and the empty value survives the Windows shell), so the current config is correct and the 20-test run passed. But step 2's Done-when ("no Resend request and no call to `api.stripe.com`") is proved only by reading the code: Playwright ignores the app server's stdout by default, and no test or assertion would fail if `RESEND_API_KEY: ""` or `EMAIL_FROM: ""` were removed. The suite would then send real email for every `@example.test` purchase from the developer's Resend account while still passing. Stripe is safer because the fake checkout page heading would fail the flow, but only after a real test-mode session was created.
+**Suggested fix:** Add one cheap guard, for example a check in `playwright.config.ts` (or a small unit test) that `APP_ENV` sets `RESEND_API_KEY`, `EMAIL_FROM`, and every `S3_*` key to `""` and `STRIPE_SECRET_KEY` to an `sk_test_` value with `STRIPE_API_BASE` set. Requirement lost: None.
+**Resolution:**
+
+### F-41 [P3] open - The fake Stripe listens on every network interface and can push signed "paid" webhooks into the dev database
+
+**File:** e2e/fake-stripe.ts:252
+**Found:** 2026-10-11 by /audit independent (scope: current; lens: security)
+**Why it matters:** `listen(PORT)` without a host binds all interfaces. While a browser run is up (or a reused server is left running), anyone on the same network can `POST /v1/checkout/sessions` and then `POST /pay/<id>/complete`, and the fake signs a `checkout.session.completed` event with the test secret and delivers it to the app on 3100, which writes orders to the `DATABASE_URL` database (the developer's dev database). Impact is limited to test-mode data on a developer machine, but binding to loopback costs nothing.
+**Suggested fix:** Call `.listen(PORT, "127.0.0.1", ...)` (the health URL and `STRIPE_API_BASE` already use `localhost`; if Node resolves `localhost` to `::1` on some machines, use `127.0.0.1` in those URLs too). Requirement lost: None.
+**Resolution:**
+
+### F-42 [P3] open - The project overview's tech stack does not list Playwright
+
+**File:** blueprint/context/project-overview.md:213
+**Found:** 2026-10-11 by /audit independent (scope: current; lens: quality)
+**Why it matters:** This delta regenerates the overview and adds `@playwright/test` as a dev dependency with a `pnpm test:browser` command in `AGENTS.md`, but the Tech stack line still names only Vitest for testing. Feature 25 mentions Playwright, so the omission is small, but the overview is the source of truth agents read before changing code.
+**Suggested fix:** Add Playwright (Chromium, `pnpm test:browser`, fake Stripe on 12111) to the Tech stack list on the next `/overview` refresh. Requirement lost: None.
+**Resolution:**

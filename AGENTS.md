@@ -313,6 +313,11 @@ change; do not create an npm or yarn lockfile.
 - Lint: `pnpm lint`
 - Test: `pnpm test` (Vitest, single run)
 - Test watch: `pnpm test:watch`
+- Browser tests: `pnpm test:browser` (Playwright, Chromium; re-seeds the
+  `DATABASE_URL` database, then builds and serves the app on port 3100 with a
+  fake Stripe on 12111 and email off; test users and orders with
+  `@example.test` emails are left behind; first run needs
+  `pnpm exec playwright install chromium`)
 - Database migrate: `pnpm db:migrate` (Prisma `migrate dev`; needs `DATABASE_URL`
   in `.env`, see `.env.example`)
 - Database seed: `pnpm db:seed` (development data only; safe to re-run)
