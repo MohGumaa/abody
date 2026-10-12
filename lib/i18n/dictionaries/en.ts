@@ -79,6 +79,15 @@ export const en = {
     catalogType: "Catalog type",
     categories: "Categories",
     categoryEmpty: "Nothing in this category right now.",
+    searchButton: "Search",
+    sortBy: "Sort by",
+    sort: {
+      newest: "Newest",
+      priceAsc: "Price: low to high",
+      priceDesc: "Price: high to low",
+    },
+    searchEmpty: "No results for",
+    clearSearch: "Clear search",
     types: {
       DIGITAL_PRODUCT: {
         title: "Products",
@@ -86,6 +95,7 @@ export const en = {
           "Templates, guides, and resources you can download as soon as your payment is confirmed.",
         tab: "Digital products",
         all: "All products",
+        searchLabel: "Search products",
         empty: "No products yet. Check back soon.",
         count: {
           zero: "{count} products",
@@ -102,6 +112,7 @@ export const en = {
           "Services run by the Abody team, from ad campaigns to account management. Work starts once we have your details.",
         tab: "Services",
         all: "All services",
+        searchLabel: "Search services",
         empty: "No services yet. Check back soon.",
         count: {
           zero: "{count} services",

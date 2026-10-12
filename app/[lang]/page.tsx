@@ -16,7 +16,7 @@ import { selectHomeSections } from "@/lib/home";
 import { localeDirection, localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatItemCount } from "@/lib/i18n/plural";
-import { categoryHref } from "@/lib/listing";
+import { listingHref } from "@/lib/listing";
 import { pageMetadata } from "@/lib/seo";
 import { getSiteContent } from "@/lib/site-content";
 import { resolveHomeContent } from "@/lib/site-content-rules";
@@ -171,9 +171,9 @@ export default async function Home() {
               {categories.map(({ type, category, label, count }) => (
                 <li key={`${type}-${category}`}>
                   <Link
-                    href={categoryHref(
+                    href={listingHref(
                       localizedPath(locale, LISTING_PATHS[type]),
-                      category,
+                      { category, q: null, sort: "newest" },
                     )}
                     className="group flex h-full flex-col gap-5 rounded-panel border border-border bg-panel p-5 outline-offset-2 transition-[box-shadow,border-color,transform] duration-150 hover:border-primary hover:shadow-raised focus-visible:outline-2 focus-visible:outline-primary-strong motion-safe:hover:-translate-y-0.5 min-[600px]:p-6"
                   >

@@ -79,12 +79,22 @@ export const ar: Dictionary = {
     catalogType: "نوع المنتجات",
     categories: "الفئات",
     categoryEmpty: "لا يوجد شيء في هذه الفئة حالياً.",
+    searchButton: "بحث",
+    sortBy: "ترتيب حسب",
+    sort: {
+      newest: "الأحدث",
+      priceAsc: "السعر: من الأقل إلى الأعلى",
+      priceDesc: "السعر: من الأعلى إلى الأقل",
+    },
+    searchEmpty: "لا توجد نتائج لـ",
+    clearSearch: "مسح البحث",
     types: {
       DIGITAL_PRODUCT: {
         title: "المنتجات",
         intro: "قوالب وأدلة وموارد يمكنك تحميلها فور تأكيد الدفع.",
         tab: "منتجات رقمية",
         all: "كل المنتجات",
+        searchLabel: "ابحث في المنتجات",
         empty: "لا توجد منتجات بعد. عد قريباً.",
         count: {
           zero: "لا منتجات",
@@ -101,6 +111,7 @@ export const ar: Dictionary = {
           "خدمات ينفذها فريق عبودي، من الحملات الإعلانية إلى إدارة الحسابات. يبدأ العمل فور استلام بياناتك.",
         tab: "الخدمات",
         all: "كل الخدمات",
+        searchLabel: "ابحث في الخدمات",
         empty: "لا توجد خدمات بعد. عد قريباً.",
         count: {
           zero: "لا خدمات",

@@ -186,6 +186,49 @@ describe("listPublishedProducts", () => {
     expect(result[0].currency).toBe("USD");
   });
 
+  describe("with a search query", () => {
+    const english = { ...row, id: "en-only", name: "Facebook Ads Guide" };
+    const arabic = {
+      ...row,
+      id: "ar-only",
+      name: "Content Calendar",
+      nameAr: "تقويم المحتوى",
+    };
+
+    it("matches an Arabic field on the English site", async () => {
+      findMany.mockResolvedValue([english, arabic]);
+
+      const result = await listPublishedProducts({ locale: "en", query: "تقويم" });
+
+      expect(result.map((p) => p.id)).toEqual(["ar-only"]);
+      expect(result[0].name).toBe("Content Calendar");
+    });
+
+    it("matches an English field on the Arabic site", async () => {
+      findMany.mockResolvedValue([english, arabic]);
+
+      const result = await listPublishedProducts({ locale: "ar", query: "facebook" });
+
+      expect(result.map((p) => p.id)).toEqual(["en-only"]);
+    });
+
+    it("returns nothing when no row matches", async () => {
+      findMany.mockResolvedValue([english, arabic]);
+
+      expect(
+        await listPublishedProducts({ locale: "en", query: "webinar" }),
+      ).toEqual([]);
+    });
+
+    it("returns every row without a query", async () => {
+      findMany.mockResolvedValue([english, arabic]);
+
+      const result = await listPublishedProducts({ locale: "en", query: null });
+
+      expect(result.map((p) => p.id)).toEqual(["en-only", "ar-only"]);
+    });
+  });
+
   it("filters by type when given", async () => {
     findMany.mockResolvedValue([]);
 

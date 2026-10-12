@@ -3,6 +3,7 @@ import { PAID_ORDER_STATUSES } from "@/lib/delivery";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { ProductStatus, ProductType } from "@/lib/generated/prisma/enums";
 import type { Locale } from "@/lib/i18n/config";
+import { matchesSearch } from "@/lib/listing";
 
 // The only fields public code may read. digitalFile and status stay out of the
 // query itself so a private file reference can never reach a response.
@@ -157,16 +158,35 @@ export function toPublicProduct(
   };
 }
 
+// A search query matches English and Arabic fields on both sites, so the
+// filter runs on the raw rows before they are localized.
 export async function listPublishedProducts(options: {
   type?: ProductType;
   locale: Locale;
+  query?: string | null;
 }): Promise<PublicProduct[]> {
   const rows = await db.product.findMany({
     where: { status: ProductStatus.PUBLISHED, type: options.type },
     orderBy: [{ createdAt: "desc" }, { id: "asc" }],
     select: publicProductSelect,
   });
-  return rows.map((row) => toPublicProduct(row, options.locale));
+  const { query } = options;
+  const matched = query
+    ? rows.filter((row) =>
+        matchesSearch(
+          [
+            row.name,
+            row.nameAr,
+            row.shortDescription,
+            row.shortDescriptionAr,
+            row.category,
+            row.categoryAr,
+          ],
+          query,
+        ),
+      )
+    : rows;
+  return matched.map((row) => toPublicProduct(row, options.locale));
 }
 
 export type HomeProduct = PublicProduct & { featuredRank: number | null };

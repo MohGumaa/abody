@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Form from "next/form";
 import Link from "next/link";
+import { ListingSortSelect } from "@/components/catalog/ListingSortSelect";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ChevronIcon } from "@/components/icons";
 import { listPublishedProducts } from "@/lib/catalog";
@@ -8,13 +10,22 @@ import { localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatItemCount } from "@/lib/i18n/plural";
 import {
-  categoryHref,
   filterByCategory,
+  listingHref,
+  type ListingSort,
+  SEARCH_MAX_LENGTH,
+  sortProducts,
   summarizeCategories,
 } from "@/lib/listing";
 import { pageMetadata } from "@/lib/seo";
 
 const PANEL = "rounded-panel bg-panel shadow-soft";
+const FIELD =
+  "h-11 rounded-control border border-border bg-surface px-3 text-sm text-foreground outline-offset-2 placeholder:text-faint focus-visible:outline-2 focus-visible:outline-primary-strong";
+const BUTTON =
+  "h-11 shrink-0 rounded-control bg-primary-strong px-5 text-sm font-semibold text-white outline-offset-2 hover:shadow-raised focus-visible:outline-2 focus-visible:outline-primary-strong";
+const TEXT_LINK =
+  "rounded-control font-semibold text-primary-strong outline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-primary-strong";
 const LISTING_PATHS: Record<ProductType, string> = {
   [ProductType.DIGITAL_PRODUCT]: "/products",
   [ProductType.SERVICE]: "/services",
@@ -23,7 +34,7 @@ const LISTING_PATHS: Record<ProductType, string> = {
 export async function listingMetadata(type: ProductType): Promise<Metadata> {
   const { listing, meta } = await getDictionary();
   const text = listing.types[type];
-  // A ?category= filter canonicalizes to the unfiltered listing.
+  // ?category=, ?q=, and ?sort= all canonicalize to the unfiltered listing.
   return pageMetadata({
     locale: await getLocale(),
     path: LISTING_PATHS[type],
@@ -37,9 +48,17 @@ interface StoreListingProps {
   type: ProductType;
   // The parsed `category` query value; null means All.
   category: string | null;
+  // The parsed `q` query value; null means no search.
+  q: string | null;
+  sort: ListingSort;
 }
 
-export async function StoreListing({ type, category }: StoreListingProps) {
+export async function StoreListing({
+  type,
+  category,
+  q,
+  sort,
+}: StoreListingProps) {
   const locale = await getLocale();
   const dictionary = await getDictionary();
   const { listing } = dictionary;
@@ -47,9 +66,17 @@ export async function StoreListing({ type, category }: StoreListingProps) {
   const basePath = localizedPath(locale, LISTING_PATHS[type]);
 
   // The catalog is small, so one query feeds the counts and the filter.
-  const products = await listPublishedProducts({ type, locale });
+  // Counts follow the search, so each link shows what it leads to.
+  const products = await listPublishedProducts({ type, locale, query: q });
   const categories = summarizeCategories(products);
-  const shown = filterByCategory(products, category);
+  const shown = sortProducts(filterByCategory(products, category), sort);
+  const href = (state: { category: string | null; q: string | null }) =>
+    listingHref(basePath, { ...state, sort });
+  const sortOptions: { value: ListingSort; label: string }[] = [
+    { value: "newest", label: listing.sort.newest },
+    { value: "price-asc", label: listing.sort.priceAsc },
+    { value: "price-desc", label: listing.sort.priceDesc },
+  ];
 
   const filterLinks = [
     { key: "all", label: text.all, count: products.length, value: null },
@@ -110,7 +137,7 @@ export async function StoreListing({ type, category }: StoreListingProps) {
               {filterLinks.map((link) => (
                 <li key={link.key}>
                   <Link
-                    href={categoryHref(basePath, link.value)}
+                    href={href({ category: link.value, q })}
                     aria-current={link.value === category ? "true" : undefined}
                     className="flex justify-between gap-3 rounded-control px-3 py-2 text-muted outline-offset-2 hover:bg-surface hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary-strong aria-[current=true]:bg-primary-soft aria-[current=true]:font-semibold aria-[current=true]:text-primary-strong"
                   >
@@ -128,15 +155,62 @@ export async function StoreListing({ type, category }: StoreListingProps) {
             aria-label={text.title}
             className={`p-5 min-[600px]:p-6 min-[960px]:p-10 ${PANEL}`}
           >
-            {products.length === 0 ? (
+            {/* Keyed so a link that clears the search also resets the fields. */}
+            <Form
+              key={`${category}|${q}|${sort}`}
+              action={basePath}
+              scroll={false}
+              className="mb-8 grid gap-4 min-[960px]:grid-cols-[minmax(0,1fr)_auto] min-[960px]:items-end"
+            >
+              {category !== null && (
+                <input type="hidden" name="category" value={category} />
+              )}
+              <div className="flex gap-2">
+                <label htmlFor="listing-search" className="sr-only">
+                  {text.searchLabel}
+                </label>
+                <input
+                  id="listing-search"
+                  type="search"
+                  name="q"
+                  dir="auto"
+                  defaultValue={q ?? ""}
+                  maxLength={SEARCH_MAX_LENGTH}
+                  placeholder={text.searchLabel}
+                  className={`min-w-0 flex-1 ${FIELD}`}
+                />
+                <button type="submit" className={BUTTON}>
+                  {listing.searchButton}
+                </button>
+              </div>
+              <label className="flex items-center gap-3 text-sm text-muted">
+                <span className="shrink-0">{listing.sortBy}</span>
+                <ListingSortSelect
+                  value={sort}
+                  options={sortOptions}
+                  className={`min-w-0 flex-1 ${FIELD}`}
+                />
+              </label>
+            </Form>
+
+            {q !== null && shown.length === 0 ? (
+              <div className="grid justify-items-start gap-3">
+                <p className="text-muted">
+                  {listing.searchEmpty}{" "}
+                  <q dir="auto" className="font-semibold text-foreground">
+                    {q}
+                  </q>
+                </p>
+                <Link href={href({ category, q: null })} className={TEXT_LINK}>
+                  {listing.clearSearch}
+                </Link>
+              </div>
+            ) : products.length === 0 ? (
               <p className="text-muted">{text.empty}</p>
             ) : shown.length === 0 ? (
               <div className="grid justify-items-start gap-3">
                 <p className="text-muted">{listing.categoryEmpty}</p>
-                <Link
-                  href={basePath}
-                  className="rounded-control font-semibold text-primary-strong outline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-primary-strong"
-                >
+                <Link href={href({ category: null, q })} className={TEXT_LINK}>
                   {text.all}
                 </Link>
               </div>

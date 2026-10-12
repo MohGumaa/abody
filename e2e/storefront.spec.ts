@@ -26,6 +26,36 @@ test("products listing shows published seeded products and filters by category",
   await expect(results.getByRole("heading", { name: SEED.template.name })).toHaveCount(0);
 });
 
+test("listing search, sort, and category combine in the URL", async ({ page }) => {
+  const text = en.listing;
+  await page.goto("/en/products");
+  const results = page.getByRole("region", { name: text.types.DIGITAL_PRODUCT.title });
+  const names = () => results.getByRole("heading", { level: 2 }).allInnerTexts();
+
+  await page.getByLabel(text.sortBy).selectOption({ label: text.sort.priceDesc });
+  await expect(page).toHaveURL(/sort=price-desc/);
+  const byPrice = await names();
+  expect(byPrice.indexOf(SEED.template.name)).toBeLessThan(byPrice.indexOf(SEED.guide.name));
+
+  await page.getByRole("link", { name: new RegExp(`^${SEED.guide.category}`) }).click();
+  await expect(page).toHaveURL(/category=.*sort=price-desc/);
+
+  const search = page.getByRole("searchbox", { name: text.types.DIGITAL_PRODUCT.searchLabel });
+  await search.fill("facebook ads");
+  await page.getByRole("button", { name: text.searchButton }).click();
+  await expect(page).toHaveURL(/category=.*q=facebook\+ads.*sort=price-desc/);
+  await expect(results.getByRole("heading", { name: SEED.guide.name })).toBeVisible();
+
+  await search.fill("zzqx nothing");
+  await page.getByRole("button", { name: text.searchButton }).click();
+  await expect(results.getByText(text.searchEmpty)).toBeVisible();
+  await results.getByRole("link", { name: text.clearSearch }).click();
+  await expect(page).not.toHaveURL(/q=/);
+  await expect(page).toHaveURL(/category=.*sort=price-desc/);
+  await expect(search).toHaveValue("");
+  await expect(results.getByRole("heading", { name: SEED.guide.name })).toBeVisible();
+});
+
 test("product and service detail pages show name, price, and add to cart", async ({ page }) => {
   await page.goto(`/en/products/${SEED.template.slug}`);
   await expect(page.getByRole("heading", { level: 1, name: SEED.template.name })).toBeVisible();
