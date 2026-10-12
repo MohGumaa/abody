@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Form from "next/form";
 import Link from "next/link";
+import { ListingSearchInput } from "@/components/catalog/ListingSearchInput";
 import { ListingSortSelect } from "@/components/catalog/ListingSortSelect";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ChevronIcon } from "@/components/icons";
@@ -13,7 +14,6 @@ import {
   filterByCategory,
   listingHref,
   type ListingSort,
-  SEARCH_MAX_LENGTH,
   sortProducts,
   summarizeCategories,
 } from "@/lib/listing";
@@ -70,6 +70,14 @@ export async function StoreListing({
   const products = await listPublishedProducts({ type, locale, query: q });
   const categories = summarizeCategories(products);
   const shown = sortProducts(filterByCategory(products, category), sort);
+  const view =
+    q !== null && shown.length === 0
+      ? "search-empty"
+      : products.length === 0
+        ? "empty"
+        : shown.length === 0
+          ? "category-empty"
+          : "results";
   const href = (state: { category: string | null; q: string | null }) =>
     listingHref(basePath, { ...state, sort });
   const sortOptions: { value: ListingSort; label: string }[] = [
@@ -155,9 +163,10 @@ export async function StoreListing({
             aria-label={text.title}
             className={`p-5 min-[600px]:p-6 min-[960px]:p-10 ${PANEL}`}
           >
-            {/* Keyed so a link that clears the search also resets the fields. */}
+            {/* Keyed so a category or sort change resets the fields; the
+                search box follows `q` itself so typing keeps focus. */}
             <Form
-              key={`${category}|${q}|${sort}`}
+              key={`${category}|${sort}`}
               action={basePath}
               scroll={false}
               className="mb-8 grid gap-4 min-[960px]:grid-cols-[minmax(0,1fr)_auto] min-[960px]:items-end"
@@ -166,22 +175,21 @@ export async function StoreListing({
                 <input type="hidden" name="category" value={category} />
               )}
               <div className="flex gap-2">
-                <label htmlFor="listing-search" className="sr-only">
-                  {text.searchLabel}
-                </label>
-                <input
-                  id="listing-search"
-                  type="search"
-                  name="q"
-                  dir="auto"
-                  defaultValue={q ?? ""}
-                  maxLength={SEARCH_MAX_LENGTH}
-                  placeholder={text.searchLabel}
-                  className={`min-w-0 flex-1 ${FIELD}`}
+                <ListingSearchInput
+                  basePath={basePath}
+                  category={category}
+                  q={q}
+                  sort={sort}
+                  text={{
+                    label: text.searchLabel,
+                    clear: listing.clearSearch,
+                  }}
                 />
-                <button type="submit" className={BUTTON}>
-                  {listing.searchButton}
-                </button>
+                <noscript>
+                  <button type="submit" className={BUTTON}>
+                    {listing.searchButton}
+                  </button>
+                </noscript>
               </div>
               <label className="flex items-center gap-3 text-sm text-muted">
                 <span className="shrink-0">{listing.sortBy}</span>
@@ -193,47 +201,58 @@ export async function StoreListing({
               </label>
             </Form>
 
-            {q !== null && shown.length === 0 ? (
-              <div className="grid justify-items-start gap-3">
-                <p className="text-muted">
+            {/* One status line that stays mounted, so screen readers hear
+                each change as results update while the customer types. */}
+            <p
+              role="status"
+              className={
+                view === "results" ? "mb-8 text-sm text-muted" : "text-muted"
+              }
+            >
+              {view === "search-empty" ? (
+                <>
                   {listing.searchEmpty}{" "}
                   <q dir="auto" className="font-semibold text-foreground">
                     {q}
                   </q>
-                </p>
-                <Link href={href({ category, q: null })} className={TEXT_LINK}>
-                  {listing.clearSearch}
-                </Link>
-              </div>
-            ) : products.length === 0 ? (
-              <p className="text-muted">{text.empty}</p>
-            ) : shown.length === 0 ? (
-              <div className="grid justify-items-start gap-3">
-                <p className="text-muted">{listing.categoryEmpty}</p>
-                <Link href={href({ category: null, q })} className={TEXT_LINK}>
-                  {text.all}
-                </Link>
-              </div>
-            ) : (
-              <>
-                <p className="mb-8 text-sm text-muted">
-                  {formatItemCount(locale, shown.length, text.count)}
-                </p>
-                <ul className="grid gap-6 min-[600px]:grid-cols-2 min-[960px]:grid-cols-3">
-                  {shown.map((item, index) => (
-                    <li key={item.id}>
-                      <ProductCard
-                        product={item}
-                        locale={locale}
-                        index={index}
-                        text={dictionary.product}
-                        headingLevel="h2"
-                      />
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
+                </>
+              ) : view === "empty" ? (
+                text.empty
+              ) : view === "category-empty" ? (
+                listing.categoryEmpty
+              ) : (
+                formatItemCount(locale, shown.length, text.count)
+              )}
+            </p>
+            {view === "search-empty" ? (
+              <Link
+                href={href({ category, q: null })}
+                className={`mt-3 inline-block ${TEXT_LINK}`}
+              >
+                {listing.clearSearch}
+              </Link>
+            ) : view === "category-empty" ? (
+              <Link
+                href={href({ category: null, q })}
+                className={`mt-3 inline-block ${TEXT_LINK}`}
+              >
+                {text.all}
+              </Link>
+            ) : view === "results" ? (
+              <ul className="grid gap-6 min-[600px]:grid-cols-2 min-[960px]:grid-cols-3">
+                {shown.map((item, index) => (
+                  <li key={item.id}>
+                    <ProductCard
+                      product={item}
+                      locale={locale}
+                      index={index}
+                      text={dictionary.product}
+                      headingLevel="h2"
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </section>
         </div>
       </main>

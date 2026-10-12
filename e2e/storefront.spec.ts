@@ -40,15 +40,27 @@ test("listing search, sort, and category combine in the URL", async ({ page }) =
   await page.getByRole("link", { name: new RegExp(`^${SEED.guide.category}`) }).click();
   await expect(page).toHaveURL(/category=.*sort=price-desc/);
 
+  // Searches as you type, with no button, and keeps focus in the field.
   const search = page.getByRole("searchbox", { name: text.types.DIGITAL_PRODUCT.searchLabel });
-  await search.fill("facebook ads");
-  await page.getByRole("button", { name: text.searchButton }).click();
+  await expect(page.getByRole("button", { name: text.searchButton })).toHaveCount(0);
+  await search.pressSequentially("facebook ads");
   await expect(page).toHaveURL(/category=.*q=facebook\+ads.*sort=price-desc/);
+  await expect(search).toBeFocused();
+  await expect(search).toHaveValue("facebook ads");
   await expect(results.getByRole("heading", { name: SEED.guide.name })).toBeVisible();
 
+  // The clear button drops only the search.
+  await page.getByRole("button", { name: text.clearSearch }).click();
+  await expect(page).not.toHaveURL(/q=/);
+  await expect(page).toHaveURL(/category=.*sort=price-desc/);
+  await expect(search).toHaveValue("");
+  await expect(search).toBeFocused();
+
+  // Enter searches without waiting for the pause.
   await search.fill("zzqx nothing");
-  await page.getByRole("button", { name: text.searchButton }).click();
-  await expect(results.getByText(text.searchEmpty)).toBeVisible();
+  await search.press("Enter");
+  await expect(page).toHaveURL(/q=zzqx\+nothing/);
+  await expect(results.getByRole("status")).toContainText(text.searchEmpty);
   await results.getByRole("link", { name: text.clearSearch }).click();
   await expect(page).not.toHaveURL(/q=/);
   await expect(page).toHaveURL(/category=.*sort=price-desc/);
