@@ -13,6 +13,7 @@ import {
   type AuthFieldErrors,
 } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { errorLabel } from "@/lib/error-label";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { isLocale, localizedPath } from "@/lib/i18n/config";
 import {
@@ -85,7 +86,7 @@ export async function register(
     if (isEmailTaken(error)) {
       return { success: false, error: "email_taken", values: { name, email } };
     }
-    console.error("register failed", error);
+    console.error("register failed", errorLabel(error));
     return { success: false, error: "unexpected", values: { name, email } };
   }
   // Outside the try block, so the redirect is not caught as an error.
@@ -128,7 +129,7 @@ export async function signIn(
     clearLoginFailures(email);
     await createSession(user.id);
   } catch (error) {
-    console.error("signIn failed", error);
+    console.error("signIn failed", errorLabel(error));
     return { success: false, error: "unexpected", values: { email } };
   }
   redirect(next);
@@ -177,26 +178,28 @@ export async function requestPasswordReset(
       select: { id: true, email: true },
     });
     if (user) {
-      // Only the newest link works.
+      // Only the newest link works. Locking the user's row makes a second
+      // request for the same account wait, so its delete sees this token.
       const token = createResetToken();
-      const [, created] = await db.$transaction([
-        db.passwordResetToken.deleteMany({ where: { userId: user.id } }),
-        db.passwordResetToken.create({
+      const created = await db.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${user.id} FOR UPDATE`;
+        await tx.passwordResetToken.deleteMany({ where: { userId: user.id } });
+        return tx.passwordResetToken.create({
           data: {
             tokenHash: hashResetToken(token),
             userId: user.id,
             expiresAt: resetTokenExpiry(new Date()),
           },
           select: { id: true },
-        }),
-      ]);
+        });
+      });
       // After the response, so sending never delays or changes it.
       after(() =>
         sendPasswordResetEmail({ tokenId: created.id, email: user.email, token, locale }),
       );
     }
   } catch (error) {
-    console.error("requestPasswordReset failed", error);
+    console.error("requestPasswordReset failed", errorLabel(error));
     return { success: false, error: "unexpected", values: { email } };
   }
   return { success: true };
@@ -255,7 +258,7 @@ export async function resetPassword(
     if (!reset) return { success: false, error: "invalid_token" };
     await deleteCurrentSession();
   } catch (error) {
-    console.error("resetPassword failed", error);
+    console.error("resetPassword failed", errorLabel(error));
     return { success: false, error: "unexpected" };
   }
   redirect(`${localizedPath(locale, "/login")}?reset=1`);

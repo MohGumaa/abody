@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
+import { errorLabel } from "@/lib/error-label";
 import {
   canEditOnboarding,
   parseOnboardingForm,
@@ -33,12 +34,6 @@ export type OnboardingActionResult =
 function formText(form: FormData, key: string): string | null {
   const value = form.get(key);
   return typeof value === "string" && value.length > 0 ? value : null;
-}
-
-function errorLabel(error: unknown): string {
-  if (!(error instanceof Error)) return "unknown error";
-  const code = "code" in error ? ` ${String(error.code)}` : "";
-  return `${error.name}${code}`;
 }
 
 export async function submitOnboarding(

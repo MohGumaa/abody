@@ -5,6 +5,7 @@ const {
   passwordResetToken,
   session,
   transaction,
+  queryRaw,
   createSession,
   deleteCurrentSession,
   redirect,
@@ -16,6 +17,7 @@ const {
   passwordResetToken: { findUnique: vi.fn(), create: vi.fn(), deleteMany: vi.fn() },
   session: { deleteMany: vi.fn() },
   transaction: vi.fn(),
+  queryRaw: vi.fn(),
   createSession: vi.fn(),
   deleteCurrentSession: vi.fn(),
   // Like Next.js, redirect throws so nothing after it runs.
@@ -86,12 +88,13 @@ beforeEach(async () => {
   passwordResetToken.create.mockReset().mockResolvedValue({ id: "prt1" });
   passwordResetToken.deleteMany.mockReset().mockResolvedValue({ count: 1 });
   session.deleteMany.mockReset().mockResolvedValue({ count: 2 });
-  // Arrays run as given; a callback gets the same mocked models.
-  transaction.mockReset().mockImplementation(async (work: unknown) =>
-    typeof work === "function"
-      ? work({ user, passwordResetToken, session })
-      : Promise.all(work as Promise<unknown>[]),
-  );
+  queryRaw.mockReset().mockResolvedValue([{ id: "u1" }]);
+  // The callback gets the same mocked models as its transaction client.
+  transaction
+    .mockReset()
+    .mockImplementation(async (work: (tx: unknown) => unknown) =>
+      work({ user, passwordResetToken, session, $queryRaw: queryRaw }),
+    );
   after.mockReset();
   sendPasswordResetEmail.mockReset().mockResolvedValue(undefined);
   clearLoginFailures("layla@example.com");
@@ -328,6 +331,20 @@ describe("requestPasswordReset", () => {
     expect(hashResetToken(delivery.token)).toBe(data.tokenHash);
   });
 
+  it("locks the account row before replacing its tokens, in one transaction", async () => {
+    await requestPasswordReset(null, form(fields));
+
+    expect(transaction).toHaveBeenCalledTimes(1);
+    const [strings, userId] = queryRaw.mock.calls[0];
+    expect(strings.join("?")).toBe(`SELECT id FROM "User" WHERE id = ? FOR UPDATE`);
+    expect(userId).toBe("u1");
+    const lock = queryRaw.mock.invocationCallOrder[0];
+    const drop = passwordResetToken.deleteMany.mock.invocationCallOrder[0];
+    const create = passwordResetToken.create.mock.invocationCallOrder[0];
+    expect(lock).toBeLessThan(drop);
+    expect(drop).toBeLessThan(create);
+  });
+
   it("answers an unknown email the same way without a token or email", async () => {
     user.findUnique.mockResolvedValue(null);
 
@@ -377,6 +394,21 @@ describe("requestPasswordReset", () => {
       error: "unexpected",
     });
     expect(after).not.toHaveBeenCalled();
+  });
+
+  it("logs a failure without the email the query carried", async () => {
+    // A Prisma message can repeat the query's arguments.
+    user.findUnique.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError(
+        "Invalid `findUnique` where: { email: \"layla@example.com\" }",
+        { code: "P2009", clientVersion: "test" },
+      ),
+    );
+
+    await requestPasswordReset(null, form(fields));
+    const log = vi.mocked(console.error).mock.calls.flat().join(" ");
+    expect(log).toBe("requestPasswordReset failed PrismaClientKnownRequestError P2009");
+    expect(log).not.toContain("layla@example.com");
   });
 });
 
@@ -469,5 +501,17 @@ describe("resetPassword", () => {
       error: "unexpected",
     });
     expect(deleteCurrentSession).not.toHaveBeenCalled();
+  });
+
+  it("logs a failure without the token hash the query carried", async () => {
+    const tokenHash = hashResetToken(TOKEN);
+    passwordResetToken.findUnique.mockRejectedValue(
+      new Error(`Invalid \`findUnique\` where: { tokenHash: "${tokenHash}" }`),
+    );
+
+    await resetPassword(null, form(fields));
+    const log = vi.mocked(console.error).mock.calls.flat().join(" ");
+    expect(log).toBe("resetPassword failed Error");
+    expect(log).not.toContain(tokenHash);
   });
 });
