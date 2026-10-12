@@ -139,7 +139,7 @@ function fieldSpecs(type: ProductType) {
     {
       field: "featuredRank",
       label: "Featured position",
-      hint: "Shows on the home page in this order (1 first). Leave blank to not feature. Only published items appear.",
+      hint: "Orders the home page hero card and Services row (1 first). Leave blank to not feature. Only published items appear.",
       max: 2,
       inputMode: "numeric",
       dir: "ltr",

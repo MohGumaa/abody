@@ -127,6 +127,11 @@ export const en = {
     featured: {
       title: "Featured products",
       intro: "Ready to use the minute your payment clears.",
+      tabs: {
+        bestSellers: "Best sellers",
+        new: "New",
+        templates: "Templates",
+      },
     },
     services: {
       title: "Services",

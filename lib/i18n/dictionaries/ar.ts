@@ -126,6 +126,11 @@ export const ar: Dictionary = {
     featured: {
       title: "منتجات مميزة",
       intro: "جاهزة للاستخدام فور تأكيد الدفع.",
+      tabs: {
+        bestSellers: "الأكثر مبيعًا",
+        new: "الأحدث",
+        templates: "القوالب",
+      },
     },
     services: {
       title: "الخدمات",

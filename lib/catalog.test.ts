@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { findMany, findFirst } = vi.hoisted(() => ({
+const { findMany, findFirst, groupBy } = vi.hoisted(() => ({
   findMany: vi.fn(),
   findFirst: vi.fn(),
+  groupBy: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
-  db: { product: { findMany, findFirst } },
+  db: { product: { findMany, findFirst }, orderItem: { groupBy } },
 }));
 
 import {
@@ -19,6 +20,7 @@ import {
   listPublishedProducts,
   listPublishedProductsByIds,
   listRelatedProducts,
+  listUnitsSold,
   productPath,
   publicImageSrc,
   toPublicProduct,
@@ -61,6 +63,7 @@ const ARABIC_KEYS = Object.keys(arabic);
 beforeEach(() => {
   findMany.mockReset();
   findFirst.mockReset();
+  groupBy.mockReset();
 });
 
 describe("isProductType", () => {
@@ -465,5 +468,30 @@ describe("listRelatedProducts", () => {
 
     expect(findMany.mock.calls[0][0].where.category).toBe("Templates");
     expect(result[0].name).toBe(arabic.nameAr);
+  });
+});
+
+describe("listUnitsSold", () => {
+  it("sums paid units of published digital products", async () => {
+    groupBy.mockResolvedValue([
+      { productId: "p1", _sum: { quantity: 3 } },
+      { productId: "p2", _sum: { quantity: null } },
+    ]);
+    const result = await listUnitsSold();
+
+    expect(groupBy).toHaveBeenCalledWith({
+      by: ["productId"],
+      where: {
+        order: { status: { in: ["PAID", "PROCESSING", "COMPLETED"] } },
+        product: { status: "PUBLISHED", type: "DIGITAL_PRODUCT" },
+      },
+      _sum: { quantity: true },
+    });
+    expect(result).toEqual(
+      new Map([
+        ["p1", 3],
+        ["p2", 0],
+      ]),
+    );
   });
 });

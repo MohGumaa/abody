@@ -9,10 +9,11 @@ import {
   LockIcon,
   UsersIcon,
 } from "@/components/icons";
-import { listHomeProducts } from "@/lib/catalog";
+import { FeaturedTabs } from "@/components/home/FeaturedTabs";
+import { listHomeProducts, listUnitsSold } from "@/lib/catalog";
 import { ProductType } from "@/lib/generated/prisma/enums";
 import { selectHomeSections } from "@/lib/home";
-import { localizedPath } from "@/lib/i18n/config";
+import { localeDirection, localizedPath } from "@/lib/i18n/config";
 import { getDictionary, getLocale } from "@/lib/i18n/dictionaries";
 import { formatItemCount } from "@/lib/i18n/plural";
 import { categoryHref } from "@/lib/listing";
@@ -98,10 +99,19 @@ export default async function Home() {
   const productsPath = localizedPath(locale, "/products");
   const servicesPath = localizedPath(locale, "/services");
 
-  // The catalog is small, so one query feeds every section.
-  const items = await listHomeProducts(locale);
-  const { heroProduct, featured, services, categories } =
-    selectHomeSections(items);
+  // The catalog is small, so one product query feeds every section.
+  const [items, unitsSold] = await Promise.all([
+    listHomeProducts(locale),
+    listUnitsSold(),
+  ]);
+  const { heroProduct, featuredTabs, services, categories } =
+    selectHomeSections(items, unitsSold);
+  const tabText = home.featured.tabs;
+  const featuredTabList = [
+    { id: "best-sellers", label: tabText.bestSellers, products: featuredTabs.bestSellers },
+    { id: "new", label: tabText.new, products: featuredTabs.newest },
+    { id: "templates", label: tabText.templates, products: featuredTabs.templates },
+  ].filter(({ products }) => products.length > 0);
   // Admin-edited text and section switches (feature 21b).
   const { hero, cta, show } = resolveHomeContent(
     await getSiteContent(),
@@ -203,28 +213,48 @@ export default async function Home() {
             aria-labelledby="featured-heading"
             className={`${PANEL} ${PANEL_PADDING}`}
           >
-            <SectionHead
-              id="featured-heading"
-              title={home.featured.title}
-              intro={home.featured.intro}
-            />
-            {featured.length === 0 ? (
-              <p className="text-muted">
-                {listing.types.DIGITAL_PRODUCT.empty}
-              </p>
+            {featuredTabs.newest.length === 0 ? (
+              <>
+                <SectionHead
+                  id="featured-heading"
+                  title={home.featured.title}
+                  intro={home.featured.intro}
+                />
+                <p className="text-muted">
+                  {listing.types.DIGITAL_PRODUCT.empty}
+                </p>
+              </>
             ) : (
-              <ul className="grid gap-5 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4">
-                {featured.map((item, index) => (
-                  <li key={item.id}>
-                    <ProductCard
-                      product={item}
-                      locale={locale}
-                      index={index}
-                      text={dictionary.product}
-                    />
-                  </li>
-                ))}
-              </ul>
+              <FeaturedTabs
+                head={
+                  <div>
+                    <h2 id="featured-heading" className="text-2xl font-semibold">
+                      {home.featured.title}
+                    </h2>
+                    <p className="mt-2 text-muted">{home.featured.intro}</p>
+                  </div>
+                }
+                label={home.featured.title}
+                dir={localeDirection(locale)}
+                tabs={featuredTabList.map(({ id, label, products }) => ({
+                  id,
+                  label,
+                  panel: (
+                    <ul className="grid gap-5 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4">
+                      {products.map((item, index) => (
+                        <li key={item.id}>
+                          <ProductCard
+                            product={item}
+                            locale={locale}
+                            index={index}
+                            text={dictionary.product}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  ),
+                }))}
+              />
             )}
           </section>
 

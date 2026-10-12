@@ -1,6 +1,6 @@
 # Abody Digital Ecommerce Platform - Project Overview
 
-<!-- blueprint:source-hash 76b41a7726817a8c7ce03717d8d0f7ba2025ab392243d67b13ea5b7073dcc397 -->
+<!-- blueprint:source-hash 6317f9707147ec8ce0ffaed4264bf62497fe5b67bf59bdb05780e4c8ecd96791 -->
 
 > A bilingual (English and Arabic) storefront where customers buy Abody's
 > downloadable digital products and digital services with Stripe, plus an admin
@@ -34,8 +34,8 @@ no web request grants the role.
 
 ## Features
 
-In `build-plan.md` order. Every item is shipped except **28, Forgot
-Password**, which is next and last.
+In `build-plan.md` order. Every item is shipped except **29, Catalog
+Discovery**, which is next and last.
 
 1. **Product & Service Catalog** (done) - models and catalog API.
 2. **Product & Service Details** (done) - detail pages with purchase actions.
@@ -85,14 +85,23 @@ Password**, which is next and last.
 24. **Security & Access Control** (done) - 24a access-control test sweep; 24b
     database rate limits on registration, coupon entry, and the beacon; 24c
     security headers (no CSP).
-28. **Forgot Password** (next) - "Forgot password?" on login, an email form,
-    a bilingual Resend email with a single-use expiring link to
-    `/<lang>/reset-password`, new password signs out existing sessions; same
-    response whether or not the account exists; rate-limited.
+28. **Forgot Password** (done) - `/<lang>/forgot-password` emails a
+    bilingual single-use 1-hour link to `/<lang>/reset-password`; a new
+    password signs out existing sessions; same response whether or not the
+    account exists; rate-limited.
 25. **Production Testing & Launch** (done) - 25a Playwright end-to-end tests of
     the main customer and admin flows in both languages and at phone width,
     Stripe stubbed at the server boundary; 25b deployment to Vercel with
     migrations, live webhook, bucket, `RATE_LIMIT_IP_HEADER`, and a smoke test.
+29. **Catalog Discovery** (next) - no schema change.
+    - 29a **Featured Product Tabs** - home Featured products gets Best sellers
+      (published products by units sold in paid orders, then newest), New
+      (newest first), and Templates (`category` "Templates"; tab hidden when
+      no product uses it) tabs, in both languages.
+    - 29b **Listing Search and Sort** - `/products` and `/services` take `?q=`
+      (name, short description, category, English and Arabic) and `?sort=`
+      (Newest default, price low to high, price high to low), combined with
+      `?category=` in the URL; empty state with a clear-search link.
 
 ## Data model
 
@@ -135,10 +144,9 @@ cookie holds the applied code.
   (enum `CUSTOMER` default, `ADMIN`), `createdAt`; has many `Session`, `Order`
 - `Session`: `tokenHash` (unique SHA-256 of the cookie token), `userId`
   (cascade), `expiresAt`, `createdAt`
-- Password reset (feature 28) needs a stored single-use, expiring reset token
-  per user.
-
-> TODO: the reset token's fields and lifetime are set by the feature 28 spec.
+- `PasswordResetToken`: `tokenHash` (unique SHA-256 of the emailed token),
+  `userId` (cascade, indexed), `expiresAt` (1 hour), `createdAt`. A new token
+  deletes the user's older ones; a successful reset deletes all of them.
 
 ### Order
 
@@ -206,8 +214,7 @@ Counts only; never a visitor, user, session, IP, or cookie value.
 
 Fixed-window counters: `key` (id, SHA-256 of `<action>:<client>`), `count`,
 `resetAt`. Registration 5/hour, coupon apply 10/15 min, beacon 120/min per
-client. Sign-in keeps its own limiter. Forgot-password requests are also
-rate-limited (feature 28).
+client, forgot password 5/hour. Sign-in keeps its own limiter.
 
 ### Payments
 
@@ -275,10 +282,12 @@ existing Abody brand.
 Routes. Customer pages live under `/en` or `/ar`; unprefixed customer URLs
 redirect. `/admin` and `/api` are never prefixed.
 
-- `/<lang>`, `/products[/slug]`, `/services[/slug]`, `/cart`
+- `/<lang>`, `/products[/slug]`, `/services[/slug]`, `/cart`; listings take
+  `?category=`, plus `?q=` and `?sort=` (29b)
 - `/<lang>/checkout/return`, `/success` - Stripe return and downloads
-- `/<lang>/login`, `/register`, `/reset-password` (28), `/account`, `.../orders`, `.../downloads`,
-  `.../services[/itemId]`, `.../settings`
+- `/<lang>/login`, `/register`, `/forgot-password`, `/reset-password`,
+  `/account`, `.../orders`, `.../downloads`, `.../services[/itemId]`,
+  `.../settings`
 - `/<lang>/onboarding/[itemId]` - service onboarding form
 - `/<lang>/about`, `/contact`, `/terms`, `/privacy`, `/returns`
 - `/admin`, `/admin/analytics[?range=7|30|90]`, `/admin/products[/new|/[id]]`,
@@ -329,3 +338,6 @@ Plan-level gaps; resolve in the plans, then re-run `/overview`.
 8. **Legal copy.** Terms, Privacy, and Returns text is a draft for Abody to
    review before launch; Privacy predates analytics (feature 23).
 9. **Heading typo.** Project-plan "9. Stripe Payment Flow" lacks its `##`.
+10. **Catalog discovery not in the project plan.** Build-plan 29 adds home
+    tabs, listing search, and sort; the project plan's Homepage and Product
+    Store sections mention none of them.

@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { PAID_ORDER_STATUSES } from "@/lib/delivery";
 import type { Prisma } from "@/lib/generated/prisma/client";
 import { ProductStatus, ProductType } from "@/lib/generated/prisma/enums";
 import type { Locale } from "@/lib/i18n/config";
@@ -183,6 +184,25 @@ export async function listHomeProducts(locale: Locale): Promise<HomeProduct[]> {
     ...toPublicProduct(row, locale),
     featuredRank,
   }));
+}
+
+// Units sold in paid orders per published digital product, for the home page
+// Best sellers tab. Only ids and counts leave this function.
+export async function listUnitsSold(): Promise<Map<string, number>> {
+  const groups = await db.orderItem.groupBy({
+    by: ["productId"],
+    where: {
+      order: { status: { in: [...PAID_ORDER_STATUSES] } },
+      product: {
+        status: ProductStatus.PUBLISHED,
+        type: ProductType.DIGITAL_PRODUCT,
+      },
+    },
+    _sum: { quantity: true },
+  });
+  return new Map(
+    groups.map((group) => [group.productId, group._sum.quantity ?? 0]),
+  );
 }
 
 export async function getPublishedProductBySlug(
