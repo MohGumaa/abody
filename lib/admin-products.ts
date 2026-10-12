@@ -19,7 +19,7 @@ import {
   type ProductFormValues,
   productFileExtension,
 } from "@/lib/admin-product-rules";
-import { checklistLines, isValidSlug, publicImageSrc } from "@/lib/catalog";
+import { checklistLines, isMegaImageUrl, isValidSlug, publicImageSrc } from "@/lib/catalog";
 import { isSafeStorageKey } from "@/lib/delivery";
 import type { ProductType } from "@/lib/generated/prisma/enums";
 
@@ -154,7 +154,7 @@ export function parseProductForm(
 
   const image = optional("image", IMAGE_MAX);
   if (image !== null && !fieldErrors.image && publicImageSrc(image) === null) {
-    fieldErrors.image = "invalid_image";
+    fieldErrors.image = isMegaImageUrl(image) ? "unsupported_image_host" : "invalid_image";
   }
 
   const included = lines("included");

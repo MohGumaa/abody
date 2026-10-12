@@ -375,8 +375,32 @@ describe("publicImageSrc", () => {
       "/\t/evil.example.com/a.png",
       "/\n/evil.example.com/a.png",
       "https://ok.example/\r",
+      "https://mega.nz/file/o2ZGgTaL#zkZHua3MXp_PPkQJ_WaArUBivo9Zo7XsGiLEYpz0I3Q",
+      "https://www.mega.co.nz/file/abc#key",
     ]) {
       expect(publicImageSrc(image)).toBeNull();
+    }
+  });
+
+  it("turns Google Drive share links into direct image URLs", () => {
+    const direct = "https://lh3.googleusercontent.com/d/1wg_FpZ-NYG";
+    for (const image of [
+      "https://drive.google.com/file/d/1wg_FpZ-NYG/view?usp=sharing",
+      "https://drive.google.com/file/d/1wg_FpZ-NYG",
+      "https://drive.google.com/open?id=1wg_FpZ-NYG",
+      "https://drive.google.com/uc?export=view&id=1wg_FpZ-NYG",
+    ]) {
+      expect(publicImageSrc(image)).toBe(direct);
+    }
+  });
+
+  it("keeps Drive URLs without a usable file ID as entered", () => {
+    for (const image of [
+      "https://drive.google.com/drive/folders/abc",
+      "https://drive.google.com/open",
+      "https://drive.google.com/file/d/a%22b/view",
+    ]) {
+      expect(publicImageSrc(image)).toBe(image);
     }
   });
 });

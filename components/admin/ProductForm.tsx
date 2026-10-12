@@ -52,6 +52,8 @@ const FIELD_ERRORS: Record<ProductFieldError, string> = {
   slug_taken: "Another product or service already uses this slug.",
   invalid_price: "Enter a price from 0.50 to 99999.99, with at most two decimals.",
   invalid_image: "Use an https:// URL or a site path starting with /.",
+  unsupported_image_host:
+    "Mega links can't be shown as images. Upload the image somewhere that gives a direct link, such as Google Drive (shared with anyone with the link).",
   too_many_lines: `Use at most ${INCLUDED_MAX_LINES} lines.`,
   invalid_duration: `Enter a whole number of days from ${DURATION_MIN_DAYS} to ${DURATION_MAX_DAYS}, or leave it empty.`,
   invalid_featured_rank: `Enter a whole number from ${FEATURED_RANK_MIN} to ${FEATURED_RANK_MAX}.`,

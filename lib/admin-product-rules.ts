@@ -49,6 +49,7 @@ export type ProductFieldError =
   | "slug_taken"
   | "invalid_price"
   | "invalid_image"
+  | "unsupported_image_host"
   | "too_many_lines"
   | "invalid_duration"
   | "invalid_featured_rank";

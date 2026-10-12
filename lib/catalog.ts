@@ -81,8 +81,30 @@ export function publicImageSrc(image: string | null): string | null {
   if (/[\t\n\r]/.test(image)) return null;
   // Browsers read "//" and "/\" as protocol-relative, so those are not local.
   if (image.startsWith("/")) return /^\/[/\\]/.test(image) ? null : image;
-  if (!image.startsWith("https://")) return null;
-  return URL.canParse(image) ? image : null;
+  if (!image.startsWith("https://") || !URL.canParse(image)) return null;
+  const url = new URL(image);
+  if (isMegaHost(url.hostname)) return null;
+  return googleDriveImageSrc(url) ?? image;
+}
+
+// Mega files are end-to-end encrypted (the key is the # fragment), so only
+// Mega's own page can show them.
+export function isMegaImageUrl(image: string): boolean {
+  return image.startsWith("https://") && URL.canParse(image) && isMegaHost(new URL(image).hostname);
+}
+
+function isMegaHost(host: string): boolean {
+  return ["mega.nz", "mega.co.nz"].some((mega) => host === mega || host.endsWith(`.${mega}`));
+}
+
+// A Drive share link opens Drive's preview page, not the image, so point it at
+// the file's direct image URL instead.
+function googleDriveImageSrc(url: URL): string | null {
+  if (url.hostname !== "drive.google.com") return null;
+  const id =
+    /^\/file\/d\/([^/]+)/.exec(url.pathname)?.[1] ??
+    (url.pathname === "/open" || url.pathname === "/uc" ? url.searchParams.get("id") : null);
+  return id && /^[A-Za-z0-9_-]+$/.test(id) ? `https://lh3.googleusercontent.com/d/${id}` : null;
 }
 
 // Latin digits in Arabic too, so numbers match prices and order numbers.

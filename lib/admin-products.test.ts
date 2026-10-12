@@ -184,6 +184,18 @@ describe("parseProductForm", () => {
     expect(errorsFor({ image }).image).toBe("invalid_image");
   });
 
+  it("rejects a Mega link with its own message", () => {
+    expect(errorsFor({ image: "https://mega.nz/file/o2ZGgTaL#key" }).image).toBe(
+      "unsupported_image_host",
+    );
+  });
+
+  it("stores a Google Drive share link as entered", () => {
+    const image = "https://drive.google.com/file/d/1wg_FpZ/view?usp=sharing";
+    const parsed = parseProductForm(form({ ...valid, image }), "DIGITAL_PRODUCT");
+    expect(parsed.ok && parsed.data.image).toBe(image);
+  });
+
   it("accepts a local image path", () => {
     const parsed = parseProductForm(form({ ...valid, image: "/seed/a.svg" }), "DIGITAL_PRODUCT");
     expect(parsed.ok && parsed.data.image).toBe("/seed/a.svg");
