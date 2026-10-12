@@ -55,6 +55,32 @@ describe("emailConfig", () => {
     expect(message).not.toContain("re_secret_123");
     expect(message).not.toContain("orders@abody.test");
   });
+
+  it.each(["Abody <orders@abody.com>", "orders@abody.com"])(
+    "accepts the sender %s",
+    (from) => {
+      setEnv({ key: "re_secret_123", from });
+      expect(emailConfig()).toEqual({ apiKey: "re_secret_123", from });
+    },
+  );
+
+  it.each(["Abody App <abody.com>", "Abody", "<orders@abody.com", "orders@abody"])(
+    "rejects the sender %s without repeating it",
+    (from) => {
+      setEnv({ key: "re_secret_123", from });
+      let error: unknown;
+      try {
+        emailConfig();
+      } catch (caught) {
+        error = caught;
+      }
+      expect(error).toBeInstanceOf(EmailConfigError);
+      const message = (error as Error).message;
+      expect(message).toContain("EMAIL_FROM");
+      expect(message).not.toContain(from);
+      expect(message).not.toContain("re_secret_123");
+    },
+  );
 });
 
 describe("adminNotificationEmail", () => {

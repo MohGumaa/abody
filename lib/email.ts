@@ -2,6 +2,8 @@
 // 19a). Without RESEND_API_KEY and EMAIL_FROM, email is off, as in local
 // development. Never log the key, an address, or email content.
 
+import { isValidEmail } from "@/lib/auth";
+
 const RESEND_URL = "https://api.resend.com/emails";
 
 export interface EmailConfig {
@@ -25,7 +27,16 @@ function env(name: string): string | undefined {
   return value ? value : undefined;
 }
 
-// null when email is off. Only one of the two set throws, naming the missing one.
+// The address in a sender Resend accepts: "you@domain" or "Name <you@domain>".
+function senderAddress(from: string): string | null {
+  const named = from.match(/^[^<>]+<([^<>]+)>$/);
+  if (named) return named[1].trim();
+  return /[<>]/.test(from) ? null : from;
+}
+
+// null when email is off. Only one of the two set throws, naming the missing
+// one; a sender without a valid address throws too, so a typo is named in the
+// log instead of failing every send at Resend. Messages never repeat values.
 export function emailConfig(): EmailConfig | null {
   const apiKey = env("RESEND_API_KEY");
   const from = env("EMAIL_FROM");
@@ -33,6 +44,12 @@ export function emailConfig(): EmailConfig | null {
   if (!apiKey || !from) {
     throw new EmailConfigError(
       `Email is partly configured; missing ${apiKey ? "EMAIL_FROM" : "RESEND_API_KEY"}`,
+    );
+  }
+  const address = senderAddress(from);
+  if (!address || !isValidEmail(address)) {
+    throw new EmailConfigError(
+      'Email is misconfigured; EMAIL_FROM must be "you@domain" or "Name <you@domain>"',
     );
   }
   return { apiKey, from };
