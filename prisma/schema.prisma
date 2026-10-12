@@ -162,16 +162,31 @@ enum Role {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  name         String
+  id                  String               @id @default(cuid())
+  name                String
   // Trimmed and lowercased before every write and lookup.
-  email        String    @unique
+  email               String               @unique
   // "scrypt$N$r$p$salt$hash", salt and hash base64url (lib/password.ts).
-  passwordHash String
-  role         Role      @default(CUSTOMER)
-  sessions     Session[]
-  orders       Order[]
-  createdAt    DateTime  @default(now())
+  passwordHash        String
+  role                Role                 @default(CUSTOMER)
+  sessions            Session[]
+  orders              Order[]
+  passwordResetTokens PasswordResetToken[]
+  createdAt           DateTime             @default(now())
+}
+
+// Forgot-password links (feature 28). Single use, one hour; requesting a new
+// link deletes the user's older ones.
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  // SHA-256 hex of the emailed token; the raw token is never stored.
+  tokenHash String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Session {

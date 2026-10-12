@@ -141,6 +141,77 @@ export function parseLoginForm(form: FormData): ParseResult<LoginInput> {
   };
 }
 
+// Forgot-password forms (feature 28).
+
+// Longer than any token createResetToken() makes; checked before hashing.
+export const RESET_TOKEN_MAX_LENGTH = 128;
+
+export interface ForgotPasswordInput {
+  locale: Locale;
+  email: string;
+}
+
+export function parseForgotPasswordForm(form: FormData): ParseResult<ForgotPasswordInput> {
+  const locale = text(form, "lang");
+  const rawEmail = text(form, "email");
+  if (!locale || !isLocale(locale) || rawEmail === null) {
+    return { ok: false, invalidInput: true };
+  }
+
+  const email = normalizeEmail(rawEmail);
+  const invalidEmail = emailError(email);
+  if (invalidEmail) {
+    return {
+      ok: false,
+      invalidInput: false,
+      fieldErrors: { email: invalidEmail },
+      values: { email },
+    };
+  }
+  return { ok: true, data: { locale, email } };
+}
+
+export interface ResetPasswordInput {
+  locale: Locale;
+  token: string;
+  password: string;
+}
+
+// A missing or oversized token is tampering, so it is invalid input.
+export function isResetTokenShape(token: unknown): token is string {
+  return (
+    typeof token === "string" &&
+    token.length > 0 &&
+    token.length <= RESET_TOKEN_MAX_LENGTH
+  );
+}
+
+export function parseResetPasswordForm(form: FormData): ParseResult<ResetPasswordInput> {
+  const locale = text(form, "lang");
+  const token = text(form, "token");
+  const password = text(form, "password");
+  const confirm = text(form, "confirm");
+  if (
+    !locale ||
+    !isLocale(locale) ||
+    !isResetTokenShape(token) ||
+    password === null ||
+    confirm === null
+  ) {
+    return { ok: false, invalidInput: true };
+  }
+
+  const fieldErrors: AuthFieldErrors = {};
+  const invalidPassword = newPasswordError(password);
+  if (invalidPassword) fieldErrors.password = invalidPassword;
+  else if (confirm !== password) fieldErrors.confirm = "password_mismatch";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return { ok: false, invalidInput: false, fieldErrors, values: {} };
+  }
+  return { ok: true, data: { locale, token, password } };
+}
+
 // Account settings forms (feature 8b). The signed-in user comes from the
 // session, never from these fields.
 

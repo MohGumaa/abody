@@ -2,10 +2,13 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import {
   clearLoginFailures,
+  parseForgotPasswordForm,
   parseLoginForm,
   parseRegisterForm,
+  parseResetPasswordForm,
   reserveLoginAttempt,
   type AuthFieldErrors,
 } from "@/lib/auth";
@@ -17,6 +20,13 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/password";
+import {
+  createResetToken,
+  hashResetToken,
+  isResetTokenExpired,
+  resetTokenExpiry,
+} from "@/lib/password-reset";
+import { sendPasswordResetEmail } from "@/lib/password-reset-notifications";
 import { clientKey, reserveRateLimit } from "@/lib/rate-limit";
 import { createSession, deleteCurrentSession } from "@/lib/session";
 
@@ -122,6 +132,133 @@ export async function signIn(
     return { success: false, error: "unexpected", values: { email } };
   }
   redirect(next);
+}
+
+export type ForgotPasswordError =
+  | "invalid_input"
+  | "invalid_fields"
+  | "rate_limited"
+  | "unexpected";
+
+// Success is the same whether or not the email has an account.
+export type ForgotPasswordResult =
+  | { success: true }
+  | {
+      success: false;
+      error: ForgotPasswordError;
+      fieldErrors?: AuthFieldErrors;
+      values?: { email?: string };
+    }
+  | null;
+
+export async function requestPasswordReset(
+  _previous: ForgotPasswordResult,
+  formData: FormData,
+): Promise<ForgotPasswordResult> {
+  const parsed = parseForgotPasswordForm(formData);
+  if (!parsed.ok) {
+    return parsed.invalidInput
+      ? { success: false, error: "invalid_input" }
+      : {
+          success: false,
+          error: "invalid_fields",
+          fieldErrors: parsed.fieldErrors,
+          values: parsed.values,
+        };
+  }
+  const { locale, email } = parsed.data;
+
+  try {
+    if (!(await reserveRateLimit("passwordReset", clientKey(await headers())))) {
+      return { success: false, error: "rate_limited", values: { email } };
+    }
+    const user = await db.user.findUnique({
+      where: { email },
+      select: { id: true, email: true },
+    });
+    if (user) {
+      // Only the newest link works.
+      const token = createResetToken();
+      const [, created] = await db.$transaction([
+        db.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+        db.passwordResetToken.create({
+          data: {
+            tokenHash: hashResetToken(token),
+            userId: user.id,
+            expiresAt: resetTokenExpiry(new Date()),
+          },
+          select: { id: true },
+        }),
+      ]);
+      // After the response, so sending never delays or changes it.
+      after(() =>
+        sendPasswordResetEmail({ tokenId: created.id, email: user.email, token, locale }),
+      );
+    }
+  } catch (error) {
+    console.error("requestPasswordReset failed", error);
+    return { success: false, error: "unexpected", values: { email } };
+  }
+  return { success: true };
+}
+
+export type ResetPasswordError =
+  | "invalid_input"
+  | "invalid_fields"
+  | "invalid_token"
+  | "unexpected";
+
+// Success never returns: the action redirects. Passwords are never echoed.
+export type ResetPasswordResult = {
+  success: false;
+  error: ResetPasswordError;
+  fieldErrors?: AuthFieldErrors;
+} | null;
+
+export async function resetPassword(
+  _previous: ResetPasswordResult,
+  formData: FormData,
+): Promise<ResetPasswordResult> {
+  const parsed = parseResetPasswordForm(formData);
+  if (!parsed.ok) {
+    return parsed.invalidInput
+      ? { success: false, error: "invalid_input" }
+      : { success: false, error: "invalid_fields", fieldErrors: parsed.fieldErrors };
+  }
+  const { locale, token, password } = parsed.data;
+
+  try {
+    const tokenHash = hashResetToken(token);
+    const now = new Date();
+    // The account comes from the token row, never from the form.
+    const row = await db.passwordResetToken.findUnique({
+      where: { tokenHash },
+      select: { userId: true, expiresAt: true },
+    });
+    if (!row || isResetTokenExpired(row.expiresAt, now)) {
+      return { success: false, error: "invalid_token" };
+    }
+    const passwordHash = await hashPassword(password);
+    // Claiming the token by deleting it makes it single use: of two racing
+    // submits only one deletes the row.
+    const reset = await db.$transaction(async (tx) => {
+      const claimed = await tx.passwordResetToken.deleteMany({
+        where: { tokenHash, expiresAt: { gt: now } },
+      });
+      if (claimed.count !== 1) return false;
+      await tx.user.update({ where: { id: row.userId }, data: { passwordHash } });
+      await tx.passwordResetToken.deleteMany({ where: { userId: row.userId } });
+      // Everyone signed in with the old password is signed out.
+      await tx.session.deleteMany({ where: { userId: row.userId } });
+      return true;
+    });
+    if (!reset) return { success: false, error: "invalid_token" };
+    await deleteCurrentSession();
+  } catch (error) {
+    console.error("resetPassword failed", error);
+    return { success: false, error: "unexpected" };
+  }
+  redirect(`${localizedPath(locale, "/login")}?reset=1`);
 }
 
 export async function signOut(formData: FormData): Promise<void> {

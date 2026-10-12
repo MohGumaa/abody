@@ -816,6 +816,8 @@ Service purchase confirmation.
 
 Service status update.
 
+Password reset link.
+
 Admin
 New order.
 

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   useActionState,
   useEffect,
@@ -17,7 +18,7 @@ import {
   UserIcon,
 } from "@/components/icons";
 import type { AuthField, AuthFieldError } from "@/lib/auth";
-import type { Locale } from "@/lib/i18n/config";
+import { localizedPath, type Locale } from "@/lib/i18n/config";
 
 export type AuthMode = "signIn" | "register";
 
@@ -31,6 +32,7 @@ export interface AuthFormText {
   hidePassword: string;
   submit: string;
   pending: string;
+  forgotLink: string;
   errors: Record<Exclude<AuthActionError, "invalid_input">, string>;
   fieldErrors: Record<AuthFieldError, string>;
 }
@@ -159,9 +161,19 @@ export function AuthForm({ mode, locale, next, text }: AuthFormProps) {
       </div>
 
       <div className="grid gap-2">
-        <label htmlFor="password" className={labelClass}>
-          {text.password}
-        </label>
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <label htmlFor="password" className={labelClass}>
+            {text.password}
+          </label>
+          {mode === "signIn" && (
+            <Link
+              href={localizedPath(locale, "/forgot-password")}
+              className="rounded-control text-sm font-medium text-primary-strong underline-offset-2 outline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-primary-strong"
+            >
+              {text.forgotLink}
+            </Link>
+          )}
+        </div>
         <PasswordInput
           id="password"
           name="password"

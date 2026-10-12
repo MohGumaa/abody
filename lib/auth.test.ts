@@ -4,7 +4,9 @@ import {
   LOGIN_MAX_ATTEMPTS,
   LOGIN_WINDOW_MS,
   normalizeEmail,
+  parseForgotPasswordForm,
   parseLoginForm,
+  parseResetPasswordForm,
   parsePasswordChangeForm,
   parseProfileForm,
   parseRegisterForm,
@@ -350,5 +352,86 @@ describe("parsePasswordChangeForm", () => {
     expect(
       parsePasswordChangeForm(form({ currentPassword: "a", newPassword: "b" })),
     ).toEqual({ ok: false, invalidInput: true });
+  });
+});
+
+describe("parseForgotPasswordForm", () => {
+  it("normalizes the email and keeps the language", () => {
+    expect(
+      parseForgotPasswordForm(form({ lang: "ar", email: " Layla@Example.COM " })),
+    ).toEqual({ ok: true, data: { locale: "ar", email: "layla@example.com" } });
+  });
+
+  it("returns a field error for a bad email", () => {
+    expect(parseForgotPasswordForm(form({ lang: "en", email: "nope" }))).toEqual({
+      ok: false,
+      invalidInput: false,
+      fieldErrors: { email: "email_invalid" },
+      values: { email: "nope" },
+    });
+  });
+
+  it("rejects a missing field or tampered language as invalid input", () => {
+    expect(parseForgotPasswordForm(form({ lang: "en" }))).toEqual({
+      ok: false,
+      invalidInput: true,
+    });
+    expect(
+      parseForgotPasswordForm(form({ lang: "xx", email: "a@b.co" })),
+    ).toEqual({ ok: false, invalidInput: true });
+  });
+});
+
+describe("parseResetPasswordForm", () => {
+  const reset = {
+    lang: "en",
+    token: "t".repeat(43),
+    password: "new password",
+    confirm: "new password",
+  };
+
+  it("returns the language, token, and new password", () => {
+    expect(parseResetPasswordForm(form(reset))).toEqual({
+      ok: true,
+      data: { locale: "en", token: "t".repeat(43), password: "new password" },
+    });
+  });
+
+  it("checks the new password without echoing it", () => {
+    expect(
+      parseResetPasswordForm(form({ ...reset, password: "short", confirm: "short" })),
+    ).toEqual({
+      ok: false,
+      invalidInput: false,
+      fieldErrors: { password: "password_too_short" },
+      values: {},
+    });
+    expect(
+      parseResetPasswordForm(form({ ...reset, password: "x".repeat(129) })),
+    ).toMatchObject({ fieldErrors: { password: "password_too_long" } });
+    expect(
+      parseResetPasswordForm(form({ ...reset, confirm: "different" })),
+    ).toMatchObject({ fieldErrors: { confirm: "password_mismatch" } });
+  });
+
+  it("rejects a missing, empty, or oversized token as invalid input", () => {
+    const noToken = { lang: reset.lang, password: reset.password, confirm: reset.confirm };
+    for (const fields of [
+      noToken,
+      { ...reset, token: "" },
+      { ...reset, token: "t".repeat(129) },
+      { ...reset, lang: "xx" },
+    ]) {
+      expect(parseResetPasswordForm(form(fields))).toEqual({
+        ok: false,
+        invalidInput: true,
+      });
+    }
+  });
+
+  it("accepts a token at the length limit", () => {
+    expect(
+      parseResetPasswordForm(form({ ...reset, token: "t".repeat(128) })),
+    ).toMatchObject({ ok: true });
   });
 });

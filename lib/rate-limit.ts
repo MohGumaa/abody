@@ -8,6 +8,7 @@ export const RATE_LIMITS = {
   register: { max: 5, windowMs: 60 * 60 * 1000 },
   coupon: { max: 10, windowMs: 15 * 60 * 1000 },
   analytics: { max: 120, windowMs: 60 * 1000 },
+  passwordReset: { max: 5, windowMs: 60 * 60 * 1000 },
 } as const;
 
 export type RateLimitAction = keyof typeof RATE_LIMITS;

@@ -1,6 +1,6 @@
 # Abody Digital Ecommerce Platform - Project Overview
 
-<!-- blueprint:source-hash a3247ffde4b657bfbf16e210c4a00ee2b31e8b086b9813e0519c57a8c1d135a8 -->
+<!-- blueprint:source-hash 76b41a7726817a8c7ce03717d8d0f7ba2025ab392243d67b13ea5b7073dcc397 -->
 
 > A bilingual (English and Arabic) storefront where customers buy Abody's
 > downloadable digital products and digital services with Stripe, plus an admin
@@ -34,8 +34,8 @@ no web request grants the role.
 
 ## Features
 
-In `build-plan.md` order. Every item is shipped except **25b, Production
-Deployment**, which is next and last.
+In `build-plan.md` order. Every item is shipped except **28, Forgot
+Password**, which is next and last.
 
 1. **Product & Service Catalog** (done) - models and catalog API.
 2. **Product & Service Details** (done) - detail pages with purchase actions.
@@ -85,9 +85,13 @@ Deployment**, which is next and last.
 24. **Security & Access Control** (done) - 24a access-control test sweep; 24b
     database rate limits on registration, coupon entry, and the beacon; 24c
     security headers (no CSP).
-25. **Production Testing & Launch** - 25a (done) Playwright end-to-end tests of
+28. **Forgot Password** (next) - "Forgot password?" on login, an email form,
+    a bilingual Resend email with a single-use expiring link to
+    `/<lang>/reset-password`, new password signs out existing sessions; same
+    response whether or not the account exists; rate-limited.
+25. **Production Testing & Launch** (done) - 25a Playwright end-to-end tests of
     the main customer and admin flows in both languages and at phone width,
-    Stripe stubbed at the server boundary; 25b (next) deployment to Vercel with
+    Stripe stubbed at the server boundary; 25b deployment to Vercel with
     migrations, live webhook, bucket, `RATE_LIMIT_IP_HEADER`, and a smoke test.
 
 ## Data model
@@ -131,6 +135,10 @@ cookie holds the applied code.
   (enum `CUSTOMER` default, `ADMIN`), `createdAt`; has many `Session`, `Order`
 - `Session`: `tokenHash` (unique SHA-256 of the cookie token), `userId`
   (cascade), `expiresAt`, `createdAt`
+- Password reset (feature 28) needs a stored single-use, expiring reset token
+  per user.
+
+> TODO: the reset token's fields and lifetime are set by the feature 28 spec.
 
 ### Order
 
@@ -198,7 +206,8 @@ Counts only; never a visitor, user, session, IP, or cookie value.
 
 Fixed-window counters: `key` (id, SHA-256 of `<action>:<client>`), `count`,
 `resetAt`. Registration 5/hour, coupon apply 10/15 min, beacon 120/min per
-client. Sign-in keeps its own limiter.
+client. Sign-in keeps its own limiter. Forgot-password requests are also
+rate-limited (feature 28).
 
 ### Payments
 
@@ -224,7 +233,10 @@ Vitest, Playwright (browser tests with a fake Stripe), ESLint, pnpm.
 - **Translations** - typed dictionaries in `lib/i18n/`, root `proxy.ts` for the
   language redirect; no library
 - **Email** - Resend over HTTP (`lib/email.ts`); off when `RESEND_API_KEY` and
-  `EMAIL_FROM` are unset, error when only one is set
+  `EMAIL_FROM` are unset, error when only one is set. Customer emails: order
+  and payment confirmation, downloads, service purchase and status, password
+  reset link (28); admin: new order, new service purchase, requirements
+  submitted
 - **Analytics** - first-party client beacon to `POST /api/analytics` plus
   server-side cart and checkout events; no third-party script
 - **Security** - verified webhook as payment authority, no card data stored,
@@ -265,7 +277,7 @@ redirect. `/admin` and `/api` are never prefixed.
 
 - `/<lang>`, `/products[/slug]`, `/services[/slug]`, `/cart`
 - `/<lang>/checkout/return`, `/success` - Stripe return and downloads
-- `/<lang>/login`, `/register`, `/account`, `.../orders`, `.../downloads`,
+- `/<lang>/login`, `/register`, `/reset-password` (28), `/account`, `.../orders`, `.../downloads`,
   `.../services[/itemId]`, `.../settings`
 - `/<lang>/onboarding/[itemId]` - service onboarding form
 - `/<lang>/about`, `/contact`, `/terms`, `/privacy`, `/returns`
@@ -279,7 +291,7 @@ redirect. `/admin` and `/api` are never prefixed.
 
 ## Deployment
 
-Target: Vercel (build-plan 25b), so the file bucket is required (no persistent
+Target: Vercel (build-plan 25b, done), so the file bucket is required (no persistent
 disk) and Postgres is external. The deploy itself needs a separate yes.
 
 > TODO: the database provider and domain are not named. The plan requires

@@ -14,13 +14,20 @@ export default async function LoginPage({
   searchParams,
 }: PageProps<"/[lang]/login">) {
   const locale = await getLocale();
-  const next = safeNextPath((await searchParams).next, locale);
+  const params = await searchParams;
+  const next = safeNextPath(params.next, locale);
   if (await getCurrentUser()) redirect(next);
   const { auth } = await getDictionary();
 
   return (
     <div className="flex-1">
-      <AuthPanel mode="signIn" locale={locale} next={next} text={auth} />
+      <AuthPanel
+        mode="signIn"
+        locale={locale}
+        next={next}
+        text={auth}
+        notice={params.reset === "1" ? auth.resetDone : undefined}
+      />
     </div>
   );
 }
