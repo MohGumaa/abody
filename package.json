@@ -13,6 +13,7 @@
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
+    "db:deploy": "prisma migrate deploy",
     "admin:promote": "tsx scripts/promote-admin.ts",
     "storage:upload": "tsx scripts/upload-storage.ts"
   },

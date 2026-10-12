@@ -3,6 +3,7 @@ import {
   bucketConfig,
   deletePrefix,
   signedDownloadUrl,
+  signedUploadUrl,
   StorageConfigError,
 } from "@/lib/object-storage";
 
@@ -87,8 +88,23 @@ describe("with a bucket", () => {
     async (key) => {
       setEnv(FULL);
       await expect(signedDownloadUrl(key)).rejects.toThrow("Unsafe storage key");
+      await expect(signedUploadUrl(key, "application/pdf")).rejects.toThrow(
+        "Unsafe storage key",
+      );
     },
   );
+
+  it("signs a short-lived upload link bound to the content type", async () => {
+    setEnv(FULL);
+    const url = new URL(
+      await signedUploadUrl("products/p1/0123456789abcdef/guide.pdf", "application/pdf"),
+    );
+
+    expect(url.pathname).toContain("products/p1/0123456789abcdef/guide.pdf");
+    expect(url.searchParams.get("X-Amz-Expires")).toBe("300");
+    expect(url.searchParams.get("X-Amz-SignedHeaders")).toContain("content-type");
+    expect(url.href).not.toContain("secret-value-123");
+  });
 
   it.each(["products/p1", "products/../", "/", "seed//"])(
     "refuses to delete the unsafe prefix %j",

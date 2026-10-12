@@ -105,22 +105,53 @@ export async function putObjectFromFile(
   );
 }
 
+function isNotFound(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    (error.name === "NotFound" ||
+      (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+        ?.httpStatusCode === 404)
+  );
+}
+
 export async function objectExists(key: string): Promise<boolean> {
+  return (await objectSize(key)) !== null;
+}
+
+// The stored size in bytes, or null when there is no such object.
+export async function objectSize(key: string): Promise<number | null> {
   const { client, bucket: Bucket } = bucket();
   try {
-    await client.send(new HeadObjectCommand({ Bucket, Key: safeKey(key) }));
-    return true;
+    const head = await client.send(new HeadObjectCommand({ Bucket, Key: safeKey(key) }));
+    return head.ContentLength ?? 0;
   } catch (error) {
-    if (
-      error instanceof Error &&
-      (error.name === "NotFound" ||
-        (error as { $metadata?: { httpStatusCode?: number } }).$metadata
-          ?.httpStatusCode === 404)
-    ) {
-      return false;
-    }
+    if (isNotFound(error)) return null;
     throw error;
   }
+}
+
+// The first `length` bytes of a non-empty object, for a file type check.
+export async function readObjectStart(key: string, length: number): Promise<Buffer> {
+  const { client, bucket: Bucket } = bucket();
+  const result = await client.send(
+    new GetObjectCommand({ Bucket, Key: safeKey(key), Range: `bytes=0-${length - 1}` }),
+  );
+  const bytes = result.Body ? await result.Body.transformToByteArray() : new Uint8Array();
+  return Buffer.from(bytes).subarray(0, length);
+}
+
+// A PUT link the admin's browser uploads one new product file to (Vercel caps
+// function request bodies far below the 25 MB limit). It expires after
+// SIGNED_URL_SECONDS and must be sent with exactly this Content-Type. The
+// server checks the object's size and type afterwards; the link proves nothing.
+export async function signedUploadUrl(key: string, contentType: string): Promise<string> {
+  const { client, bucket: Bucket } = bucket();
+  return getSignedUrl(
+    client,
+    new PutObjectCommand({ Bucket, Key: safeKey(key), ContentType: contentType }),
+    // Not signed by default; signing it makes any other type fail the upload.
+    { expiresIn: SIGNED_URL_SECONDS, signableHeaders: new Set(["content-type"]) },
+  );
 }
 
 // Deletes every object under a folder-like prefix such as "products/p1/". The

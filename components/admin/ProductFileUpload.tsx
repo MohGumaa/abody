@@ -20,14 +20,63 @@ const SERVER_ERRORS: Record<string, string> = {
   not_found: "This product no longer exists.",
 };
 
-// The file goes to the upload route as the raw request body. The checks here
-// only save a wasted upload; the server checks everything again.
+type Outcome = { ok: true; fileName: string } | { ok: false; code: unknown };
+
+async function outcome(response: Response): Promise<Outcome> {
+  const body = await response.json().catch(() => null);
+  return response.ok
+    ? { ok: true, fileName: body?.fileName }
+    : { ok: false, code: body?.error?.code };
+}
+
+// Local storage: the file goes to the upload route as the raw request body.
+function uploadThroughServer(productId: string, file: File): Promise<Outcome> {
+  return fetch(`/api/admin/products/${productId}/file`, {
+    method: "PUT",
+    headers: { "x-file-name": encodeURIComponent(file.name) },
+    body: file,
+  }).then(outcome);
+}
+
+// Bucket: a signed link, the file straight to the bucket (past the host's
+// request size cap), then the server checks what arrived.
+async function uploadDirect(productId: string, file: File): Promise<Outcome> {
+  const base = `/api/admin/products/${productId}/file`;
+  const json = { "content-type": "application/json" };
+  const linkResponse = await fetch(`${base}/upload-url`, {
+    method: "POST",
+    headers: json,
+    body: JSON.stringify({ fileName: file.name, size: file.size }),
+  });
+  if (!linkResponse.ok) return outcome(linkResponse);
+  const link: { url: string; key: string; contentType: string } = await linkResponse.json();
+
+  const put = await fetch(link.url, {
+    method: "PUT",
+    headers: { "content-type": link.contentType },
+    body: file,
+  });
+  if (!put.ok) return { ok: false, code: null };
+
+  return outcome(
+    await fetch(`${base}/complete`, {
+      method: "POST",
+      headers: json,
+      body: JSON.stringify({ key: link.key }),
+    }),
+  );
+}
+
+// The checks here only save a wasted upload; the server checks everything
+// again. `direct` is true when a bucket is configured.
 export function ProductFileUpload({
   productId,
   fileName,
+  direct,
 }: {
   productId: string;
   fileName: string | null;
+  direct: boolean;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -51,14 +100,11 @@ export function ProductFileUpload({
 
     setState({ kind: "uploading" });
     try {
-      const response = await fetch(`/api/admin/products/${productId}/file`, {
-        method: "PUT",
-        headers: { "x-file-name": encodeURIComponent(file.name) },
-        body: file,
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok) {
-        const code: unknown = body?.error?.code;
+      const result = direct
+        ? await uploadDirect(productId, file)
+        : await uploadThroughServer(productId, file);
+      if (!result.ok) {
+        const code = result.code;
         setState({
           kind: "error",
           message:
@@ -67,7 +113,7 @@ export function ProductFileUpload({
         });
         return;
       }
-      setState({ kind: "done", fileName: body.fileName });
+      setState({ kind: "done", fileName: result.fileName });
       if (inputRef.current) inputRef.current.value = "";
       router.refresh();
     } catch {

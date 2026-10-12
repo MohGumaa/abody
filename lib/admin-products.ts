@@ -17,8 +17,10 @@ import {
   type ProductField,
   type ProductFieldErrors,
   type ProductFormValues,
+  productFileExtension,
 } from "@/lib/admin-product-rules";
 import { checklistLines, isValidSlug, publicImageSrc } from "@/lib/catalog";
+import { isSafeStorageKey } from "@/lib/delivery";
 import type { ProductType } from "@/lib/generated/prisma/enums";
 
 // Admin product and service form parsing (features 13 and 14) and storage keys. Server code only:
@@ -247,4 +249,21 @@ export function productUploadPrefix(productId: string): string {
 // and other products' files never match.
 export function isOwnUploadKey(productId: string, key: string | null): boolean {
   return key !== null && key.startsWith(productUploadPrefix(productId));
+}
+
+const UPLOAD_FOLDER_PATTERN = /^[0-9a-f]{16}\/([^/]+)$/;
+
+// Exactly the shape productFileKey() makes for this product: its prefix, a
+// 16-character hex token, and a clean PDF or ZIP name. A key the browser sends
+// back after a direct upload must pass this before the server touches it.
+export function isUploadKeyFor(productId: string, key: unknown): key is string {
+  if (typeof key !== "string" || !isSafeStorageKey(key)) return false;
+  const prefix = productUploadPrefix(productId);
+  if (!key.startsWith(prefix)) return false;
+  const name = UPLOAD_FOLDER_PATTERN.exec(key.slice(prefix.length))?.[1];
+  return (
+    name !== undefined &&
+    productFileExtension(name) !== null &&
+    uploadFileName(name) === name
+  );
 }

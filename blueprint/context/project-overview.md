@@ -34,8 +34,8 @@ no web request grants the role.
 
 ## Features
 
-In `build-plan.md` order. Every item is shipped except **25, Production Testing
-& Launch**, which is next and last.
+In `build-plan.md` order. Every item is shipped except **25b, Production
+Deployment**, which is next and last.
 
 1. **Product & Service Catalog** (done) - models and catalog API.
 2. **Product & Service Details** (done) - detail pages with purchase actions.
@@ -85,10 +85,10 @@ In `build-plan.md` order. Every item is shipped except **25, Production Testing
 24. **Security & Access Control** (done) - 24a access-control test sweep; 24b
     database rate limits on registration, coupon entry, and the beacon; 24c
     security headers (no CSP).
-25. **Production Testing & Launch** - 25a Playwright end-to-end tests of the
-    main customer and admin flows in both languages and at phone width, Stripe
-    stubbed at the server boundary; 25b deployment to Vercel with migrations,
-    live webhook, bucket, `RATE_LIMIT_IP_HEADER`, and a smoke test.
+25. **Production Testing & Launch** - 25a (done) Playwright end-to-end tests of
+    the main customer and admin flows in both languages and at phone width,
+    Stripe stubbed at the server boundary; 25b (next) deployment to Vercel with
+    migrations, live webhook, bucket, `RATE_LIMIT_IP_HEADER`, and a smoke test.
 
 ## Data model
 
@@ -212,7 +212,7 @@ references.
 
 Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, shadcn/ui
 (`components/ui/`, restyled to theme tokens), PostgreSQL with Prisma 7, Stripe,
-Vitest, ESLint, pnpm.
+Vitest, Playwright (browser tests with a fake Stripe), ESLint, pnpm.
 
 - **Next.js** - server components by default; Server Actions for forms; route
   handlers for the webhook, downloads, admin file upload, and analytics beacon

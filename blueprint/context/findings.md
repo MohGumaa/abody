@@ -271,10 +271,18 @@
 **Suggested fix:** Call `.listen(PORT, "127.0.0.1", ...)` (the health URL and `STRIPE_API_BASE` already use `localhost`; if Node resolves `localhost` to `::1` on some machines, use `127.0.0.1` in those URLs too). Requirement lost: None.
 **Resolution:**
 
-### F-42 [P3] open - The project overview's tech stack does not list Playwright
+### F-43 [P3] open - A failed completion deletes the whole token folder named by the client key, which can be the live file's folder
 
-**File:** blueprint/context/project-overview.md:213
-**Found:** 2026-10-11 by /audit independent (scope: current; lens: quality)
-**Why it matters:** This delta regenerates the overview and adds `@playwright/test` as a dev dependency with a `pnpm test:browser` command in `AGENTS.md`, but the Tech stack line still names only Vitest for testing. Feature 25 mentions Playwright, so the omission is small, but the overview is the source of truth agents read before changing code.
-**Suggested fix:** Add Playwright (Chromium, `pnpm test:browser`, fake Stripe on 12111) to the Tech stack list on the next `/overview` refresh. Requirement lost: None.
+**File:** lib/product-files.ts:170
+**Found:** 2026-10-12 by /audit independent (scope: current; lens: security, quality)
+**Why it matters:** `isUploadKeyFor` accepts any clean PDF/ZIP name inside any 16-hex token folder of the product, and the complete route only guards the exact key `product.digitalFile === key` (`app/api/admin/products/[id]/file/complete/route.ts:57`). A completion request for `products/<id>/<token of the current file>/other.pdf` finds no object, so `finishDirectUpload` returns `empty_file` after `deletePrefix("products/<id>/<token>/")`, which also deletes the product's live file. The product keeps pointing at a missing object and every buyer's download fails. The route's `catch` path does the same through `removeOwnUpload(id, pending)` if a check throws after another completion of the same key already committed (for example a retried request racing a transient storage error). The browser only ever sends the key the upload-url route minted with a fresh random token, so the normal flow cannot reach this; it needs a hand-crafted admin request or that rare race. Only admins can call the route, so this is a missing guard on a destructive cleanup, not an authorization break.
+**Suggested fix:** In the complete route, return `invalid_request` (and delete nothing) when `path.posix.dirname(key) === path.posix.dirname(product.digitalFile ?? "")`, or have the failure and `catch` cleanups delete only the exact key instead of its folder. Add one route or helper test for a key in the current file's folder. Requirement lost: None.
+**Resolution:**
+
+### F-44 [P3] open - A network or CORS failure on the bucket PUT shows the connection message, not the spec's "The upload failed. Try again."
+
+**File:** components/admin/ProductFileUpload.tsx:120
+**Found:** 2026-10-12 by /audit independent (scope: current; lens: quality)
+**Why it matters:** Spec step 3 says "A failed bucket `PUT` (network or CORS) shows 'The upload failed. Try again.'" A CORS rejection or network error makes `fetch(link.url, ...)` reject rather than resolve, so `uploadDirect` never reaches its `if (!put.ok)` branch; the rejection reaches the outer `catch`, which shows "The upload failed. Check your connection and try again." Only a non-2xx bucket answer (for example an expired link or wrong signature) shows the spec's text. The likely launch-day failure, a missing or wrong bucket CORS rule, therefore tells the admin to check their connection, which points away from the real cause. Wording only; no data is affected.
+**Suggested fix:** Catch a rejected bucket `fetch` inside `uploadDirect` and return `{ ok: false, code: null }` so it shows "The upload failed. Try again.", or record in the spec that network/CORS failures use the existing connection message. Requirement lost: None.
 **Resolution:**

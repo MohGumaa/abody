@@ -6,15 +6,24 @@ import path from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import type { ReadableStream as WebReadableStream } from "node:stream/web";
+import { productFileExtension } from "@/lib/admin-product-rules";
 import {
   isOwnUploadKey,
+  isUploadKeyFor,
   productFileKey,
   productUploadPrefix,
   uploadFileName,
 } from "@/lib/admin-products";
-import { isSafeStorageKey, storagePath } from "@/lib/delivery";
+import { contentTypeFor, isSafeStorageKey, storagePath } from "@/lib/delivery";
 import { STORAGE_ROOT } from "@/lib/downloads";
-import { bucketConfig, deletePrefix, putObjectFromFile } from "@/lib/object-storage";
+import {
+  bucketConfig,
+  deletePrefix,
+  objectSize,
+  putObjectFromFile,
+  readObjectStart,
+  signedUploadUrl,
+} from "@/lib/object-storage";
 
 // Server code only: admin writes and removals of private product files, in the
 // bucket when one is configured, otherwise under storage/. Local paths always
@@ -46,12 +55,24 @@ function byteLimit(limit: number, counter: { bytes: number }): Transform {
   });
 }
 
-async function startsWith(filePath: string, signature: Buffer): Promise<boolean> {
+const SIGNATURE_MAX_LENGTH = Math.max(...Object.values(SIGNATURES).map((s) => s.length));
+
+// Whether a file's first bytes match the type its name claims.
+export function hasFileSignature(fileName: string, head: Buffer): boolean {
+  const signature = SIGNATURES[path.posix.extname(fileName).toLowerCase()];
+  return (
+    signature !== undefined &&
+    head.length >= signature.length &&
+    head.subarray(0, signature.length).equals(signature)
+  );
+}
+
+async function fileStart(filePath: string, length: number): Promise<Buffer> {
   const file = await open(filePath, "r");
   try {
-    const head = Buffer.alloc(signature.length);
-    const { bytesRead } = await file.read(head, 0, signature.length, 0);
-    return bytesRead === signature.length && head.equals(signature);
+    const head = Buffer.alloc(length);
+    const { bytesRead } = await file.read(head, 0, length, 0);
+    return head.subarray(0, bytesRead);
   } finally {
     await file.close();
   }
@@ -92,7 +113,7 @@ export async function saveProductUpload(
       await rm(tempPath, { force: true });
       return { ok: false, error: "empty_file" };
     }
-    if (!(await startsWith(tempPath, signature))) {
+    if (!hasFileSignature(fileName, await fileStart(tempPath, signature.length))) {
       await rm(tempPath, { force: true });
       return { ok: false, error: "invalid_file_type" };
     }
@@ -109,6 +130,56 @@ export async function saveProductUpload(
     if (error instanceof TooLargeError) return { ok: false, error: "file_too_large" };
     throw error;
   }
+}
+
+export type DirectUploadStart =
+  | { ok: true; key: string; url: string; contentType: string }
+  | { ok: false; error: UploadError };
+
+// Bucket mode: a new key of its own and a short-lived link the admin's browser
+// uploads to directly. Nothing is stored or changed yet.
+export async function startDirectUpload(
+  productId: string,
+  originalName: string,
+  size: number,
+  limit: number,
+): Promise<DirectUploadStart> {
+  if (!productFileExtension(originalName)) return { ok: false, error: "invalid_file_type" };
+  if (size <= 0) return { ok: false, error: "empty_file" };
+  if (size > limit) return { ok: false, error: "file_too_large" };
+  const token = randomBytes(8).toString("hex");
+  const key = productFileKey(productId, token, uploadFileName(originalName));
+  if (!isUploadKeyFor(productId, key)) return { ok: false, error: "invalid_file_type" };
+  const contentType = contentTypeFor(key);
+  const url = await signedUploadUrl(key, contentType);
+  return { ok: true, key, url, contentType };
+}
+
+// Bucket mode: checks what actually arrived at a key from startDirectUpload()
+// (its stored size, then its first bytes) and removes the upload's folder
+// unless it is a non-empty PDF or ZIP within the limit. The size the browser
+// declared is never trusted. Callers check the key with isUploadKeyFor() first.
+export async function finishDirectUpload(
+  productId: string,
+  key: string,
+  limit: number,
+): Promise<SaveResult> {
+  if (!isUploadKeyFor(productId, key)) return { ok: false, error: "invalid_file_type" };
+  const error = await checkUploadedObject(key, limit);
+  if (error) {
+    await deletePrefix(`${path.posix.dirname(key)}/`);
+    return { ok: false, error };
+  }
+  return { ok: true, key, fileName: path.posix.basename(key) };
+}
+
+// A missing object counts as empty: nothing arrived.
+async function checkUploadedObject(key: string, limit: number): Promise<UploadError | null> {
+  const size = await objectSize(key);
+  if (!size) return "empty_file";
+  if (size > limit) return "file_too_large";
+  const head = await readObjectStart(key, Math.min(size, SIGNATURE_MAX_LENGTH));
+  return hasFileSignature(key, head) ? null : "invalid_file_type";
 }
 
 // A replaced upload and its folder. Only this product's own uploads are

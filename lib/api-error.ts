@@ -9,6 +9,8 @@ export type ApiErrorCode =
   | "file_too_large"
   | "invalid_path"
   | "rate_limited"
+  | "invalid_request"
+  | "direct_upload_unavailable"
   | "internal_error";
 
 export function apiError(

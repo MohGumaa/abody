@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Every admin page refuses anyone but an admin before it reads data (feature
 // 24a). Pages are found with import.meta.glob, so a new page is covered
@@ -57,6 +57,14 @@ function props() {
   };
 }
 
+// Loading a page imports its whole module graph, which can take longer than
+// one test's timeout on a busy machine. Load them all once, up front.
+const loaded: Record<string, PageModule> = {};
+
+beforeAll(async () => {
+  for (const [path, load] of Object.entries(pages)) loaded[path] = await load();
+}, 60_000);
+
 beforeEach(() => {
   touched.length = 0;
   getCurrentUser.mockReset();
@@ -69,7 +77,7 @@ describe("admin pages", () => {
 
   it.each(cases)("%s refuses %s", async (path, _actor, user) => {
     getCurrentUser.mockResolvedValue(user);
-    const page = await pages[path]();
+    const page = loaded[path];
 
     await expect(Promise.resolve().then(() => page.default(props()))).rejects.toThrow(
       "NOT_FOUND",
@@ -79,7 +87,7 @@ describe("admin pages", () => {
 
   it.each(cases)("%s metadata hides the area from %s", async (path, _actor, user) => {
     getCurrentUser.mockResolvedValue(user);
-    const page = await pages[path]();
+    const page = loaded[path];
     if (!page.generateMetadata) return;
 
     await expect(page.generateMetadata(props())).resolves.toEqual({

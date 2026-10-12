@@ -13,6 +13,7 @@ import {
   requireAdmin,
 } from "@/lib/admin";
 import { centsToPriceInput } from "@/lib/admin-products";
+import { bucketConfig } from "@/lib/object-storage";
 import { getCurrentUser } from "@/lib/session";
 
 export async function generateMetadata({
@@ -89,7 +90,11 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
             <h2 id="product-file-title" className="text-lg font-semibold">
               Downloadable file
             </h2>
-            <ProductFileUpload productId={product.id} fileName={product.fileName} />
+            <ProductFileUpload
+              productId={product.id}
+              fileName={product.fileName}
+              direct={bucketConfig() !== null}
+            />
           </section>
           <section aria-labelledby="product-status-title" className={CARD}>
             <h2 id="product-status-title" className="text-lg font-semibold">

@@ -5,6 +5,7 @@ vi.mock("@/lib/db", () => ({ db: {} }));
 import {
   centsToPriceInput,
   isOwnUploadKey,
+  isUploadKeyFor,
   parsePriceToCents,
   parseProductForm,
   productFileKey,
@@ -336,5 +337,28 @@ describe("upload file names and keys", () => {
     expect(isOwnUploadKey("p1", "seed/facebook-ads-guide.pdf")).toBe(false);
     expect(isOwnUploadKey("p1", "products/p12/abc/Guide.pdf")).toBe(false);
     expect(isOwnUploadKey("p1", null)).toBe(false);
+  });
+
+  it("accepts only the exact key shape of this product's direct uploads", () => {
+    const token = "0123456789abcdef";
+    expect(isUploadKeyFor("p1", productFileKey("p1", token, "Guide.pdf"))).toBe(true);
+    expect(isUploadKeyFor("p1", `products/p1/${token}/pack.zip`)).toBe(true);
+    for (const key of [
+      `products/p2/${token}/Guide.pdf`,
+      `products/p12/${token}/Guide.pdf`,
+      "products/p1/0123456789abcde/Guide.pdf",
+      "products/p1/0123456789ABCDEF/Guide.pdf",
+      `products/p1/${token}/extra/Guide.pdf`,
+      `products/p1/${token}/../Guide.pdf`,
+      `products/p1/${token}/Guide.exe`,
+      `products/p1/${token}/Guide.PDF`,
+      `products/p1/${token}/a b.pdf`,
+      "seed/facebook-ads-guide.pdf",
+      "",
+      null,
+      42,
+    ]) {
+      expect(isUploadKeyFor("p1", key), String(key)).toBe(false);
+    }
   });
 });

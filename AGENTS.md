@@ -324,6 +324,9 @@ change; do not create an npm or yarn lockfile.
 - Prisma client: `pnpm exec prisma generate` (runs automatically after
   `pnpm install`; output in `lib/generated/prisma` is not committed)
 - Migration status: `pnpm exec prisma migrate status`
+- Production migrations: `pnpm db:deploy` (`prisma migrate deploy`; run by
+  hand with the Neon direct URL in the shell before deploying a new migration,
+  never in the Vercel build; see the README's Deploy on Vercel section)
 - Copy product files to the bucket: `pnpm storage:upload` (copies
   `storage/seed/` and `storage/products/` under the same keys, skips existing
   objects, never deletes; needs the `S3_*` variables in `.env.example`)
