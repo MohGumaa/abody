@@ -1,5 +1,6 @@
 import { createReadStream } from "node:fs";
 import {
+  DeleteObjectCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
@@ -152,6 +153,12 @@ export async function signedUploadUrl(key: string, contentType: string): Promise
     // Not signed by default; signing it makes any other type fail the upload.
     { expiresIn: SIGNED_URL_SECONDS, signableHeaders: new Set(["content-type"]) },
   );
+}
+
+// Deletes one object; an object that is already gone is not an error.
+export async function deleteObject(key: string): Promise<void> {
+  const { client, bucket: Bucket } = bucket();
+  await client.send(new DeleteObjectCommand({ Bucket, Key: safeKey(key) }));
 }
 
 // Deletes every object under a folder-like prefix such as "products/p1/". The

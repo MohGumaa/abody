@@ -18,6 +18,7 @@ import { contentTypeFor, isSafeStorageKey, storagePath } from "@/lib/delivery";
 import { STORAGE_ROOT } from "@/lib/downloads";
 import {
   bucketConfig,
+  deleteObject,
   deletePrefix,
   objectSize,
   putObjectFromFile,
@@ -156,9 +157,10 @@ export async function startDirectUpload(
 }
 
 // Bucket mode: checks what actually arrived at a key from startDirectUpload()
-// (its stored size, then its first bytes) and removes the upload's folder
-// unless it is a non-empty PDF or ZIP within the limit. The size the browser
-// declared is never trusted. Callers check the key with isUploadKeyFor() first.
+// (its stored size, then its first bytes) and removes that object unless it is
+// a non-empty PDF or ZIP within the limit. The size the browser declared is
+// never trusted. Callers check the key with isUploadKeyFor() first, and never
+// pass the key the product currently points at.
 export async function finishDirectUpload(
   productId: string,
   key: string,
@@ -167,10 +169,17 @@ export async function finishDirectUpload(
   if (!isUploadKeyFor(productId, key)) return { ok: false, error: "invalid_file_type" };
   const error = await checkUploadedObject(key, limit);
   if (error) {
-    await deletePrefix(`${path.posix.dirname(key)}/`);
+    await removeDirectUpload(productId, key);
     return { ok: false, error };
   }
   return { ok: true, key, fileName: path.posix.basename(key) };
+}
+
+// Removes exactly one direct upload, never its folder: the key comes from the
+// browser, and its folder may hold the product's live file (F-43).
+export async function removeDirectUpload(productId: string, key: string): Promise<void> {
+  if (!isUploadKeyFor(productId, key)) return;
+  await deleteObject(key);
 }
 
 // A missing object counts as empty: nothing arrived.

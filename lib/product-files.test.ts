@@ -6,6 +6,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 const storage = vi.hoisted(() => ({
   bucketConfig: vi.fn(),
   deletePrefix: vi.fn(),
+  deleteObject: vi.fn(),
   putObjectFromFile: vi.fn(),
   objectSize: vi.fn(),
   readObjectStart: vi.fn(),
@@ -25,6 +26,7 @@ import { STORAGE_ROOT } from "@/lib/downloads";
 import {
   finishDirectUpload,
   hasFileSignature,
+  removeDirectUpload,
   removeOwnUpload,
   removeProductUploads,
   saveProductUpload,
@@ -174,6 +176,7 @@ describe("direct uploads", () => {
     storage.signedUploadUrl.mockReset().mockResolvedValue("https://bucket.example/signed");
     storage.objectSize.mockReset().mockResolvedValue(PDF.length);
     storage.readObjectStart.mockReset().mockResolvedValue(PDF.subarray(0, 5));
+    storage.deleteObject.mockReset().mockResolvedValue(undefined);
   });
 
   it("signs a new key of its own for a valid file", async () => {
@@ -214,12 +217,30 @@ describe("direct uploads", () => {
     ["empty_file", 0, PDF],
     ["file_too_large", LIMIT + 1, PDF],
     ["invalid_file_type", 9, Buffer.from("not a pdf")],
-  ])("returns %s and removes the upload's folder", async (error, size, head) => {
+  ])("returns %s and removes only that object", async (error, size, head) => {
     storage.objectSize.mockResolvedValue(size);
     storage.readObjectStart.mockResolvedValue(head.subarray(0, 5));
 
     expect(await finishDirectUpload("p1", KEY, LIMIT)).toEqual({ ok: false, error });
-    expect(deletePrefix).toHaveBeenCalledWith("products/p1/0123456789abcdef/");
+    expect(storage.deleteObject).toHaveBeenCalledTimes(1);
+    expect(storage.deleteObject).toHaveBeenCalledWith(KEY);
+    // Never the folder: it may hold the product's live file (F-43).
+    expect(deletePrefix).not.toHaveBeenCalled();
+  });
+
+  it("removes exactly one direct upload", async () => {
+    await removeDirectUpload("p1", KEY);
+    expect(storage.deleteObject).toHaveBeenCalledWith(KEY);
+    expect(deletePrefix).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    "products/p2/0123456789abcdef/Guide.pdf",
+    "seed/facebook-ads-guide.pdf",
+    "products/p1/0123456789abcdef/",
+  ])("never removes the foreign key %s", async (key) => {
+    await removeDirectUpload("p1", key);
+    expect(storage.deleteObject).not.toHaveBeenCalled();
   });
 
   it("reads no more bytes than a tiny object has", async () => {
@@ -243,6 +264,7 @@ describe("direct uploads", () => {
       error: "invalid_file_type",
     });
     expect(storage.objectSize).not.toHaveBeenCalled();
+    expect(storage.deleteObject).not.toHaveBeenCalled();
     expect(deletePrefix).not.toHaveBeenCalled();
   });
 });

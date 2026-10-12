@@ -271,14 +271,6 @@
 **Suggested fix:** Call `.listen(PORT, "127.0.0.1", ...)` (the health URL and `STRIPE_API_BASE` already use `localhost`; if Node resolves `localhost` to `::1` on some machines, use `127.0.0.1` in those URLs too). Requirement lost: None.
 **Resolution:**
 
-### F-43 [P3] open - A failed completion deletes the whole token folder named by the client key, which can be the live file's folder
-
-**File:** lib/product-files.ts:170
-**Found:** 2026-10-12 by /audit independent (scope: current; lens: security, quality)
-**Why it matters:** `isUploadKeyFor` accepts any clean PDF/ZIP name inside any 16-hex token folder of the product, and the complete route only guards the exact key `product.digitalFile === key` (`app/api/admin/products/[id]/file/complete/route.ts:57`). A completion request for `products/<id>/<token of the current file>/other.pdf` finds no object, so `finishDirectUpload` returns `empty_file` after `deletePrefix("products/<id>/<token>/")`, which also deletes the product's live file. The product keeps pointing at a missing object and every buyer's download fails. The route's `catch` path does the same through `removeOwnUpload(id, pending)` if a check throws after another completion of the same key already committed (for example a retried request racing a transient storage error). The browser only ever sends the key the upload-url route minted with a fresh random token, so the normal flow cannot reach this; it needs a hand-crafted admin request or that rare race. Only admins can call the route, so this is a missing guard on a destructive cleanup, not an authorization break.
-**Suggested fix:** In the complete route, return `invalid_request` (and delete nothing) when `path.posix.dirname(key) === path.posix.dirname(product.digitalFile ?? "")`, or have the failure and `catch` cleanups delete only the exact key instead of its folder. Add one route or helper test for a key in the current file's folder. Requirement lost: None.
-**Resolution:**
-
 ### F-44 [P3] open - A network or CORS failure on the bucket PUT shows the connection message, not the spec's "The upload failed. Try again."
 
 **File:** components/admin/ProductFileUpload.tsx:120

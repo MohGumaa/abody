@@ -6,7 +6,11 @@ import { isUploadKeyFor } from "@/lib/admin-products";
 import { apiError } from "@/lib/api-error";
 import { db } from "@/lib/db";
 import { bucketConfig } from "@/lib/object-storage";
-import { finishDirectUpload, removeOwnUpload } from "@/lib/product-files";
+import {
+  finishDirectUpload,
+  removeDirectUpload,
+  removeOwnUpload,
+} from "@/lib/product-files";
 import { getCurrentUser } from "@/lib/session";
 import {
   isCrossOrigin,
@@ -17,7 +21,16 @@ import {
 
 // Step two of a direct upload (feature 25b). Body: { key } from the upload-url
 // route. The object's real size and first bytes are checked before the product
-// points at it; a failed check removes the upload.
+// points at it; a failed check removes that one object. Cleanups never touch a
+// whole folder or the product's live file (F-43).
+
+// Removes a failed upload unless the product now points at it, which a retried
+// request racing a finished one can see.
+async function discardUnlessLive(id: string, key: string): Promise<void> {
+  const product = await db.product.findFirst({ where: { id }, select: { digitalFile: true } });
+  if (product?.digitalFile === key) return;
+  await removeDirectUpload(id, key);
+}
 
 export async function POST(
   request: NextRequest,
@@ -49,7 +62,7 @@ export async function POST(
       select: { digitalFile: true },
     });
     if (!product) {
-      await removeOwnUpload(id, key);
+      await removeDirectUpload(id, key);
       return notFound();
     }
     // A repeated completion: the product already uses this file, so nothing
@@ -69,7 +82,7 @@ export async function POST(
     });
     if (count === 0) {
       pending = null;
-      await removeOwnUpload(id, key);
+      await removeDirectUpload(id, key);
       return notFound();
     }
     pending = null;
@@ -89,7 +102,7 @@ export async function POST(
       `POST /api/admin/products: completing the upload for ${id} failed`,
       error instanceof Error ? error.name : "unknown error",
     );
-    if (pending) await removeOwnUpload(id, pending).catch(() => {});
+    if (pending) await discardUnlessLive(id, pending).catch(() => {});
     return apiError(500, "internal_error", "Something went wrong.");
   }
 }

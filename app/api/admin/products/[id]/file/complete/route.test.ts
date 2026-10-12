@@ -1,20 +1,30 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getCurrentUser, db, bucketConfig, finishDirectUpload, removeOwnUpload } = vi.hoisted(
-  () => ({
-    getCurrentUser: vi.fn(),
-    db: { product: { findFirst: vi.fn(), updateMany: vi.fn() } },
-    bucketConfig: vi.fn(),
-    finishDirectUpload: vi.fn(),
-    removeOwnUpload: vi.fn(),
-  }),
-);
+const {
+  getCurrentUser,
+  db,
+  bucketConfig,
+  finishDirectUpload,
+  removeDirectUpload,
+  removeOwnUpload,
+} = vi.hoisted(() => ({
+  getCurrentUser: vi.fn(),
+  db: { product: { findFirst: vi.fn(), updateMany: vi.fn() } },
+  bucketConfig: vi.fn(),
+  finishDirectUpload: vi.fn(),
+  removeDirectUpload: vi.fn(),
+  removeOwnUpload: vi.fn(),
+}));
 
 vi.mock("@/lib/session", () => ({ getCurrentUser }));
 vi.mock("@/lib/db", () => ({ db }));
 vi.mock("@/lib/object-storage", () => ({ bucketConfig }));
-vi.mock("@/lib/product-files", () => ({ finishDirectUpload, removeOwnUpload }));
+vi.mock("@/lib/product-files", () => ({
+  finishDirectUpload,
+  removeDirectUpload,
+  removeOwnUpload,
+}));
 
 import { POST } from "./route";
 
@@ -47,6 +57,7 @@ beforeEach(() => {
   finishDirectUpload
     .mockReset()
     .mockResolvedValue({ ok: true, key: KEY, fileName: "Guide.pdf" });
+  removeDirectUpload.mockReset().mockResolvedValue(undefined);
   removeOwnUpload.mockReset().mockResolvedValue(undefined);
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -63,6 +74,7 @@ describe("POST /api/admin/products/[id]/file/complete", () => {
     });
     expect(removeOwnUpload).toHaveBeenCalledTimes(1);
     expect(removeOwnUpload).toHaveBeenCalledWith("p1", OLD);
+    expect(removeDirectUpload).not.toHaveBeenCalled();
   });
 
   it("succeeds when removing the old file fails", async () => {
@@ -117,10 +129,21 @@ describe("POST /api/admin/products/[id]/file/complete", () => {
     expect(removeOwnUpload).not.toHaveBeenCalled();
   });
 
-  it("removes the upload when the product is a service or gone", async () => {
+  it("removes only the upload when the product is a service or gone", async () => {
     db.product.findFirst.mockResolvedValue(null);
     await expectError(await call({ key: KEY }), 404, "not_found");
-    expect(removeOwnUpload).toHaveBeenCalledWith("p1", KEY);
+    expect(removeDirectUpload).toHaveBeenCalledWith("p1", KEY);
+    expect(removeOwnUpload).not.toHaveBeenCalled();
+  });
+
+  it("leaves the live file alone for another name in its folder (F-43)", async () => {
+    const sibling = `${OLD.slice(0, OLD.lastIndexOf("/"))}/other.pdf`;
+    finishDirectUpload.mockResolvedValue({ ok: false, error: "empty_file" });
+    await expectError(await call({ key: sibling }), 400, "empty_file");
+    expect(finishDirectUpload).toHaveBeenCalledWith("p1", sibling, 25 * 1024 * 1024);
+    expect(db.product.updateMany).not.toHaveBeenCalled();
+    expect(removeOwnUpload).not.toHaveBeenCalled();
+    expect(removeDirectUpload).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -134,18 +157,30 @@ describe("POST /api/admin/products/[id]/file/complete", () => {
     expect(removeOwnUpload).not.toHaveBeenCalled();
   });
 
-  it("removes the upload when the product disappears mid-check", async () => {
+  it("removes only the upload when the product disappears mid-check", async () => {
     db.product.updateMany.mockResolvedValue({ count: 0 });
     await expectError(await call({ key: KEY }), 404, "not_found");
-    expect(removeOwnUpload).toHaveBeenCalledWith("p1", KEY);
-    expect(removeOwnUpload).not.toHaveBeenCalledWith("p1", OLD);
+    expect(removeDirectUpload).toHaveBeenCalledWith("p1", KEY);
+    expect(removeOwnUpload).not.toHaveBeenCalled();
   });
 
-  it("removes the upload when the database update fails", async () => {
+  it("removes only the upload when the database update fails", async () => {
     db.product.updateMany.mockRejectedValue(new Error("down"));
     await expectError(await call({ key: KEY }), 500, "internal_error");
-    expect(removeOwnUpload).toHaveBeenCalledWith("p1", KEY);
-    expect(removeOwnUpload).not.toHaveBeenCalledWith("p1", OLD);
+    expect(removeDirectUpload).toHaveBeenCalledWith("p1", KEY);
+    expect(removeOwnUpload).not.toHaveBeenCalled();
+  });
+
+  it("keeps a key another request made live while this one failed (F-43)", async () => {
+    // First read: the old file. The cleanup's re-read: a racing retry has
+    // already pointed the product at this key.
+    db.product.findFirst
+      .mockResolvedValueOnce({ digitalFile: OLD })
+      .mockResolvedValueOnce({ digitalFile: KEY });
+    finishDirectUpload.mockRejectedValue(new Error("timeout"));
+    await expectError(await call({ key: KEY }), 500, "internal_error");
+    expect(removeDirectUpload).not.toHaveBeenCalled();
+    expect(removeOwnUpload).not.toHaveBeenCalled();
   });
 
   it("never logs the key", async () => {

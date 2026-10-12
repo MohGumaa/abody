@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   bucketConfig,
+  deleteObject,
   deletePrefix,
   signedDownloadUrl,
   signedUploadUrl,
@@ -91,6 +92,7 @@ describe("with a bucket", () => {
       await expect(signedUploadUrl(key, "application/pdf")).rejects.toThrow(
         "Unsafe storage key",
       );
+      await expect(deleteObject(key)).rejects.toThrow("Unsafe storage key");
     },
   );
 
