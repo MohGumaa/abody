@@ -56,7 +56,7 @@ describe("selectHomeSections", () => {
     ]);
   });
 
-  it("keeps the newest four products and two services in input order", () => {
+  it("keeps the newest three products and two services in input order", () => {
     const items = [
       item("s1", SERVICE, "Ads"),
       item("p1", DIGITAL_PRODUCT, "Templates"),
@@ -69,7 +69,7 @@ describe("selectHomeSections", () => {
     ];
     const sections = selectHomeSections(items, NO_SALES);
     expect(sections.heroProduct?.id).toBe("p1");
-    expect(ids(sections.featuredTabs.newest)).toEqual(["p1", "p2", "p3", "p4"]);
+    expect(ids(sections.featuredTabs.newest)).toEqual(["p1", "p2", "p3"]);
     expect(ids(sections.services)).toEqual(["s1", "s2"]);
     expect(sections.categories).toEqual([
       { type: DIGITAL_PRODUCT, category: "Guides", label: "Guides label", count: 3 },
@@ -107,12 +107,12 @@ describe("selectHomeSections", () => {
           ["p2", 2],
         ]),
       );
-      expect(ids(sections.featuredTabs.bestSellers)).toEqual(["p5", "p2", "p4", "p1"]);
+      expect(ids(sections.featuredTabs.bestSellers)).toEqual(["p5", "p2", "p4"]);
     });
 
-    it("shows the newest four with no sales", () => {
+    it("shows the newest three with no sales", () => {
       const sections = selectHomeSections(products, NO_SALES);
-      expect(ids(sections.featuredTabs.bestSellers)).toEqual(["p1", "p2", "p3", "p4"]);
+      expect(ids(sections.featuredTabs.bestSellers)).toEqual(["p1", "p2", "p3"]);
     });
 
     it("ignores sales of items that are not listed products", () => {
@@ -161,12 +161,12 @@ describe("selectHomeSections", () => {
       expect(sections.featuredTabs.templates).toEqual([]);
     });
 
-    it("caps at four", () => {
+    it("caps at three", () => {
       const sections = selectHomeSections(
-        ["p1", "p2", "p3", "p4", "p5"].map((id) => item(id, DIGITAL_PRODUCT, "Templates")),
+        ["p1", "p2", "p3", "p4"].map((id) => item(id, DIGITAL_PRODUCT, "Templates")),
         NO_SALES,
       );
-      expect(ids(sections.featuredTabs.templates)).toEqual(["p1", "p2", "p3", "p4"]);
+      expect(ids(sections.featuredTabs.templates)).toEqual(["p1", "p2", "p3"]);
     });
   });
 

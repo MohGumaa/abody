@@ -240,7 +240,7 @@ export default async function Home() {
                   id,
                   label,
                   panel: (
-                    <ul className="grid gap-5 min-[600px]:grid-cols-2 min-[960px]:grid-cols-4">
+                    <ul className="grid gap-5 min-[600px]:grid-cols-2 min-[960px]:grid-cols-3">
                       {products.map((item, index) => (
                         <li key={item.id}>
                           <ProductCard
