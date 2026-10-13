@@ -1,14 +1,10 @@
 import type Stripe from "stripe";
 import { localizedName } from "@/lib/catalog";
 import { db } from "@/lib/db";
-import { adminNotificationEmail, emailConfig, sendEmail } from "@/lib/email";
+import { adminNotificationEmail, emailBrand, emailConfig, sendEmail } from "@/lib/email";
+import type { BuiltEmail, EmailBrand } from "@/lib/email-layout";
 import { isLocale, localizedPath, type Locale } from "@/lib/i18n/config";
-import {
-  adminOrderEmail,
-  customerOrderEmail,
-  type BuiltEmail,
-  type EmailOrder,
-} from "@/lib/order-emails";
+import { adminOrderEmail, customerOrderEmail, type EmailOrder } from "@/lib/order-emails";
 import { formatOrderNumber } from "@/lib/orders";
 import { absoluteUrl } from "@/lib/seo";
 
@@ -34,6 +30,7 @@ async function loadOrder(orderId: string, locale: Locale) {
       number: true,
       totalCents: true,
       customerEmail: true,
+      createdAt: true,
       items: {
         orderBy: { product: { name: "asc" } },
         select: {
@@ -59,6 +56,7 @@ async function loadOrder(orderId: string, locale: Locale) {
     number: order.number,
     totalCents: order.totalCents,
     customerEmail: order.customerEmail,
+    createdAt: order.createdAt,
   };
   return { customer: { ...base, lines: lines(locale) }, admin: { ...base, lines: lines("en") } };
 }
@@ -81,15 +79,22 @@ export async function sendOrderPaidEmails(
       return;
     }
 
-    const send = async (kind: string, to: string | null, build: () => BuiltEmail) => {
+    // Looked up once, and only when an email will go out.
+    let brand: Promise<EmailBrand> | undefined;
+    const send = async (
+      kind: string,
+      to: string | null,
+      build: (brand: EmailBrand) => BuiltEmail,
+    ) => {
       if (!to) {
         console.info(`Order ${number} ${kind} email skipped: no address`);
         return;
       }
       try {
+        brand ??= emailBrand();
         await sendEmail(config, {
           to,
-          ...build(),
+          ...build(await brand),
           idempotencyKey: `order-paid-${kind}/${orderId}`,
         });
       } catch (error) {
@@ -98,14 +103,15 @@ export async function sendOrderPaidEmails(
     };
 
     const orderPageUrl = `${absoluteUrl(localizedPath(locale, "/success"))}?session_id=${encodeURIComponent(session.id)}`;
-    await send("customer", order.customer.customerEmail, () =>
-      customerOrderEmail(order.customer, locale, orderPageUrl),
+    await send("customer", order.customer.customerEmail, (brand) =>
+      customerOrderEmail(order.customer, locale, orderPageUrl, brand),
     );
-    await send("admin", adminNotificationEmail(), () =>
+    await send("admin", adminNotificationEmail(), (brand) =>
       adminOrderEmail(
         order.admin,
         absoluteUrl(`/admin/orders/${encodeURIComponent(orderId)}`),
         (itemId) => absoluteUrl(`/admin/service-orders/${encodeURIComponent(itemId)}`),
+        brand,
       ),
     );
   } catch (error) {

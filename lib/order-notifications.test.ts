@@ -1,24 +1,27 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { order, emailConfig, adminNotificationEmail, sendEmail } = vi.hoisted(() => ({
+const { order, emailConfig, emailBrand, adminNotificationEmail, sendEmail } = vi.hoisted(() => ({
   order: { findUnique: vi.fn() },
   emailConfig: vi.fn(),
+  emailBrand: vi.fn(),
   adminNotificationEmail: vi.fn(),
   sendEmail: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({ db: { order } }));
-vi.mock("@/lib/email", () => ({ emailConfig, adminNotificationEmail, sendEmail }));
+vi.mock("@/lib/email", () => ({ emailConfig, emailBrand, adminNotificationEmail, sendEmail }));
 
 import { sendOrderPaidEmails, sessionLocale } from "@/lib/order-notifications";
 
 const CONFIG = { apiKey: "re_secret_123", from: "Abody <orders@abody.test>" };
+const BRAND = { siteUrl: "https://abody.test/", contactEmail: "hello@abody.test" };
 const SESSION = { id: "cs_test_1", metadata: { locale: "ar" } };
 
 const ORDER = {
   number: 1001,
   totalCents: 33700,
   customerEmail: "buyer@example.com",
+  createdAt: new Date("2026-10-13T14:32:00.000Z"),
   items: [
     {
       id: "item_1",
@@ -54,6 +57,7 @@ beforeEach(() => {
   vi.stubEnv("SITE_URL", "https://abody.test");
   order.findUnique.mockReset().mockResolvedValue(ORDER);
   emailConfig.mockReset().mockReturnValue(CONFIG);
+  emailBrand.mockReset().mockResolvedValue(BRAND);
   adminNotificationEmail.mockReset().mockReturnValue("team@abody.test");
   sendEmail.mockReset().mockResolvedValue(undefined);
   vi.spyOn(console, "error").mockImplementation(() => {});
@@ -98,6 +102,11 @@ describe("sendOrderPaidEmails", () => {
     expect(admin.html).toContain("Facebook Ads Guide");
     expect(admin.text).toContain("https://abody.test/admin/orders/o1");
     expect(admin.text).toContain("https://abody.test/admin/service-orders/item_2");
+    // The brand is looked up once for both emails.
+    expect(emailBrand).toHaveBeenCalledTimes(1);
+    expect(customer.html).toContain('src="https://abody.test/Logo-0.jpg"');
+    expect(customer.html).toContain("13 أكتوبر 2026");
+    expect(customer.text).toContain("hello@abody.test");
   });
 
   it("writes English when the session has no valid language", async () => {
@@ -126,12 +135,23 @@ describe("sendOrderPaidEmails", () => {
     expect(sent("admin")).toBeUndefined();
   });
 
+  it("skips the site content lookup when neither email has an address", async () => {
+    order.findUnique.mockResolvedValue({ ...ORDER, customerEmail: null });
+    adminNotificationEmail.mockReturnValue(null);
+
+    await sendOrderPaidEmails("o1", SESSION);
+
+    expect(sendEmail).not.toHaveBeenCalled();
+    expect(emailBrand).not.toHaveBeenCalled();
+  });
+
   it("sends nothing when email is off", async () => {
     emailConfig.mockReturnValue(null);
 
     await sendOrderPaidEmails("o1", SESSION);
 
     expect(sendEmail).not.toHaveBeenCalled();
+    expect(emailBrand).not.toHaveBeenCalled();
     expect(logged()).toContain("#1001");
   });
 

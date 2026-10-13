@@ -555,13 +555,21 @@ export const ar: Dictionary = {
     add: "أضف تفاصيلك",
     edit: "حدّث تفاصيلك",
   },
+  emailLayout: {
+    questions: "لديك سؤال؟ راسلنا على",
+    digitalProduct: "منتج رقمي",
+    service: "خدمة",
+  },
   orderEmail: {
     subject: "تم تأكيد طلبك {number} من عبودي",
+    preheader: "تم استلام الدفع للطلب {number}.",
+    orderLabel: "الطلب",
     heading: "شكرًا لطلبك",
     intro: "استلمنا دفعتك. إليك ملخص الطلب {number}.",
     paymentReceived: "تم استلام الدفع",
     quantity: "الكمية",
     total: "إجمالي المدفوع",
+    nextTitle: "ماذا بعد",
     downloadsTitle: "ملفاتك جاهزة",
     downloadsBody:
       "نزّل ملفاتك من صفحة طلبك. احتفظ بهذه الرسالة للعودة إليها لاحقًا.",
@@ -574,6 +582,8 @@ export const ar: Dictionary = {
   serviceEmail: {
     subject: "تحديث على خدمتك من عبودي: {name}",
     heading: "هناك تحديث على خدمتك",
+    waitingHeading: "نحتاج إلى بعض التفاصيل الإضافية",
+    cancelledHeading: "تم إلغاء خدمتك",
     intro: "إليك آخر المستجدات على {name} من الطلب {number}.",
     status: "الحالة الجديدة",
     viewOrder: "عرض طلبك",
@@ -581,11 +591,16 @@ export const ar: Dictionary = {
   },
   passwordResetEmail: {
     subject: "إعادة تعيين كلمة مرور عبودي",
+    preheader: "استخدم هذا الرابط خلال ساعة واحدة لاختيار كلمة مرور جديدة.",
     heading: "أعد تعيين كلمة المرور",
     intro: "تلقينا طلبًا لإعادة تعيين كلمة المرور لحسابك في عبودي.",
     button: "اختر كلمة مرور جديدة",
     expires: "يعمل هذا الرابط مرة واحدة وتنتهي صلاحيته خلال ساعة واحدة.",
     ignore: "إذا لم تطلب ذلك، يمكنك تجاهل هذه الرسالة. ستبقى كلمة المرور كما هي.",
+    didntAsk: "لم تطلب ذلك؟",
+    ignoreBody: "يمكنك تجاهل هذه الرسالة. ستبقى كلمة المرور كما هي.",
+    pasteLink: "الزر لا يعمل؟ الصق هذا الرابط في متصفحك:",
+    footer: "وصلتك هذه الرسالة لأن أحدهم طلب إعادة تعيين كلمة مرور حسابك في عبودي.",
   },
   notFound: {
     title: "الصفحة غير موجودة",

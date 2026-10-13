@@ -1,17 +1,18 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { service, orderItem, emailConfig, adminNotificationEmail, sendEmail, retrieve } =
+const { service, orderItem, emailConfig, emailBrand, adminNotificationEmail, sendEmail, retrieve } =
   vi.hoisted(() => ({
     service: { findUnique: vi.fn() },
     orderItem: { findUnique: vi.fn() },
     emailConfig: vi.fn(),
+    emailBrand: vi.fn(),
     adminNotificationEmail: vi.fn(),
     sendEmail: vi.fn(),
     retrieve: vi.fn(),
   }));
 
 vi.mock("@/lib/db", () => ({ db: { service, orderItem } }));
-vi.mock("@/lib/email", () => ({ emailConfig, adminNotificationEmail, sendEmail }));
+vi.mock("@/lib/email", () => ({ emailConfig, emailBrand, adminNotificationEmail, sendEmail }));
 vi.mock("@/lib/stripe", () => ({
   getStripe: () => ({ checkout: { sessions: { retrieve } } }),
 }));
@@ -23,6 +24,7 @@ import {
 } from "@/lib/service-notifications";
 
 const CONFIG = { apiKey: "re_secret_123", from: "Abody <orders@abody.test>" };
+const BRAND = { siteUrl: "https://abody.test/", contactEmail: "hello@abody.test" };
 const CHANGED_AT = new Date("2026-10-10T12:00:00.000Z");
 
 const SERVICE = {
@@ -60,6 +62,7 @@ beforeEach(() => {
   service.findUnique.mockReset().mockResolvedValue(SERVICE);
   orderItem.findUnique.mockReset().mockResolvedValue(ITEM);
   emailConfig.mockReset().mockReturnValue(CONFIG);
+  emailBrand.mockReset().mockResolvedValue(BRAND);
   adminNotificationEmail.mockReset().mockReturnValue("team@abody.test");
   sendEmail.mockReset().mockResolvedValue(undefined);
   retrieve.mockReset().mockResolvedValue({ id: "cs_test_1", metadata: { locale: "ar" } });
@@ -116,6 +119,7 @@ describe("sendServiceStatusEmail", () => {
 
     expect(sendEmail).not.toHaveBeenCalled();
     expect(retrieve).not.toHaveBeenCalled();
+    expect(emailBrand).not.toHaveBeenCalled();
     expect(logged()).toContain("svc_1");
   });
 
@@ -125,6 +129,7 @@ describe("sendServiceStatusEmail", () => {
 
     expect(sendEmail).not.toHaveBeenCalled();
     expect(retrieve).not.toHaveBeenCalled();
+    expect(emailBrand).not.toHaveBeenCalled();
   });
 
   it("logs a missing service", async () => {
@@ -167,7 +172,8 @@ describe("sendServiceRequirementsEmail", () => {
     expect(sent.to).toBe("team@abody.test");
     expect(sent.subject).toBe(subject);
     expect(sent.idempotencyKey).toMatch(/^service-requirements\/item_2\/\d{4}-\d\d-\d\dT/);
-    expect(sent.html).toContain("Customer: Sara");
+    expect(sent.html).toContain("Sara");
+    expect(sent.html).toContain('src="https://abody.test/Logo-0.jpg"');
     expect(sent.text).toContain("https://abody.test/admin/service-orders/item_2");
     expect(retrieve).not.toHaveBeenCalled();
   });
@@ -184,6 +190,7 @@ describe("sendServiceRequirementsEmail", () => {
     await sendServiceRequirementsEmail("item_2", "created");
 
     expect(sendEmail).not.toHaveBeenCalled();
+    expect(emailBrand).not.toHaveBeenCalled();
     expect(logged()).toContain("item_2");
   });
 
@@ -192,6 +199,7 @@ describe("sendServiceRequirementsEmail", () => {
     await sendServiceRequirementsEmail("item_2", "created");
 
     expect(sendEmail).not.toHaveBeenCalled();
+    expect(emailBrand).not.toHaveBeenCalled();
   });
 
   it("never throws, and logs a failure without addresses", async () => {

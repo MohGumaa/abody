@@ -1,4 +1,4 @@
-import { emailConfig, sendEmail } from "@/lib/email";
+import { emailBrand, emailConfig, sendEmail } from "@/lib/email";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { passwordResetEmail } from "@/lib/password-reset-email";
 import { absoluteUrl } from "@/lib/seo";
@@ -33,7 +33,7 @@ export async function sendPasswordResetEmail({
     }
     await sendEmail(config, {
       to: email,
-      ...passwordResetEmail(locale, resetPasswordUrl(locale, token)),
+      ...passwordResetEmail(locale, resetPasswordUrl(locale, token), await emailBrand()),
       idempotencyKey: `password-reset/${tokenId}`,
     });
   } catch (error) {

@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { emailConfig, sendEmail } = vi.hoisted(() => ({
+const { emailConfig, emailBrand, sendEmail } = vi.hoisted(() => ({
   emailConfig: vi.fn(),
+  emailBrand: vi.fn(),
   sendEmail: vi.fn(),
 }));
 
-vi.mock("@/lib/email", () => ({ emailConfig, sendEmail }));
+vi.mock("@/lib/email", () => ({ emailConfig, emailBrand, sendEmail }));
 
 import { en } from "@/lib/i18n/dictionaries/en";
 import {
@@ -14,6 +15,7 @@ import {
 } from "@/lib/password-reset-notifications";
 
 const CONFIG = { apiKey: "re_secret_123", from: "Abody <hello@abody.test>" };
+const BRAND = { siteUrl: "https://abody.test/", contactEmail: "hello@abody.test" };
 const TOKEN = "tok_ABC-123_secret";
 const DELIVERY = {
   tokenId: "prt1",
@@ -34,6 +36,7 @@ function logged(): string {
 beforeEach(() => {
   vi.stubEnv("SITE_URL", "https://abody.test");
   emailConfig.mockReset().mockReturnValue(CONFIG);
+  emailBrand.mockReset().mockResolvedValue(BRAND);
   sendEmail.mockReset().mockResolvedValue(undefined);
   vi.spyOn(console, "error").mockImplementation(() => {});
   vi.spyOn(console, "info").mockImplementation(() => {});
@@ -71,6 +74,7 @@ describe("sendPasswordResetEmail", () => {
 
     await expect(sendPasswordResetEmail(DELIVERY)).resolves.toBeUndefined();
     expect(sendEmail).not.toHaveBeenCalled();
+    expect(emailBrand).not.toHaveBeenCalled();
     expect(logged()).toContain("password reset email skipped");
   });
 

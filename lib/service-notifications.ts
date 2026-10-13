@@ -1,7 +1,7 @@
 import { customerLabel } from "@/lib/admin";
 import { localizedName } from "@/lib/catalog";
 import { db } from "@/lib/db";
-import { adminNotificationEmail, emailConfig, sendEmail } from "@/lib/email";
+import { adminNotificationEmail, emailBrand, emailConfig, sendEmail } from "@/lib/email";
 import { localizedPath, type Locale } from "@/lib/i18n/config";
 import { sessionLocale } from "@/lib/order-notifications";
 import { absoluteUrl } from "@/lib/seo";
@@ -78,6 +78,7 @@ export async function sendServiceStatusEmail(serviceId: string, changedAt: Date)
         },
         locale,
         orderPageUrl,
+        await emailBrand(),
       ),
       idempotencyKey: `service-status/${serviceId}/${changedAt.toISOString()}`,
     });
@@ -125,6 +126,7 @@ export async function sendServiceRequirementsEmail(
         },
         kind,
         absoluteUrl(`/admin/service-orders/${encodeURIComponent(itemId)}`),
+        await emailBrand(),
       ),
       idempotencyKey: `service-requirements/${itemId}/${new Date().toISOString()}`,
     });

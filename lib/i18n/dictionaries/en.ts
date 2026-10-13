@@ -571,14 +571,23 @@ export const en = {
     add: "Add your details",
     edit: "Update your details",
   },
+  // The branded wrapper shared by the customer emails.
+  emailLayout: {
+    questions: "Questions? Write to us at",
+    digitalProduct: "Digital product",
+    service: "Service",
+  },
   // Customer order confirmation email (feature 19a). {number} is "#1001".
   orderEmail: {
     subject: "Your Abody order {number} is confirmed",
+    preheader: "Payment received for order {number}.",
+    orderLabel: "Order",
     heading: "Thank you for your order",
     intro: "We received your payment. Here is a summary of order {number}.",
     paymentReceived: "Payment received",
     quantity: "Qty",
     total: "Total paid",
+    nextTitle: "What happens next",
     downloadsTitle: "Your files are ready",
     downloadsBody:
       "Download your files from your order page. Keep this email to find them again later.",
@@ -591,6 +600,8 @@ export const en = {
   serviceEmail: {
     subject: "Update on your Abody service: {name}",
     heading: "Your service has an update",
+    waitingHeading: "We need a few more details",
+    cancelledHeading: "Your service was cancelled",
     intro: "Here is the latest on {name} from order {number}.",
     status: "New status",
     viewOrder: "View your order",
@@ -599,11 +610,17 @@ export const en = {
   // Forgot-password email (feature 28).
   passwordResetEmail: {
     subject: "Reset your Abody password",
+    preheader: "Use this link within 1 hour to choose a new password.",
     heading: "Reset your password",
     intro: "We received a request to reset the password for your Abody account.",
     button: "Choose a new password",
     expires: "This link works once and expires in 1 hour.",
     ignore: "If you didn't ask for this, you can ignore this email. Your password stays the same.",
+    didntAsk: "Didn't ask for this?",
+    ignoreBody: "You can ignore this email. Your password stays the same.",
+    pasteLink: "Button not working? Paste this link into your browser:",
+    footer:
+      "You received this email because a password reset was requested for your Abody account.",
   },
   notFound: {
     title: "Page not found",

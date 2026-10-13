@@ -3,6 +3,9 @@
 // development. Never log the key, an address, or email content.
 
 import { isValidEmail } from "@/lib/auth";
+import type { EmailBrand } from "@/lib/email-layout";
+import { siteUrl } from "@/lib/seo";
+import { getSiteContent } from "@/lib/site-content";
 
 const RESEND_URL = "https://api.resend.com/emails";
 
@@ -58,6 +61,14 @@ export function emailConfig(): EmailConfig | null {
 // The admin inbox for new-order notices, or null when none is set.
 export function adminNotificationEmail(): string | null {
   return env("ADMIN_NOTIFICATION_EMAIL") ?? null;
+}
+
+// The site link and saved contact email for the branded layout. Callers ask
+// only once an email will go out. getSiteContent() never throws, so a failed
+// read leaves out the contact line instead of the email.
+export async function emailBrand(): Promise<EmailBrand> {
+  const content = await getSiteContent();
+  return { siteUrl: siteUrl().href, contactEmail: content?.contactEmail ?? null };
 }
 
 export async function sendEmail(config: EmailConfig, message: EmailMessage): Promise<void> {
