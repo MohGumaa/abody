@@ -34,8 +34,8 @@ no web request grants the role.
 
 ## Features
 
-In `build-plan.md` order. Every item is shipped except **29, Catalog
-Discovery**, which is next and last.
+In `build-plan.md` order. Every item is shipped; the build plan has no
+remaining work.
 
 1. **Product & Service Catalog** (done) - models and catalog API.
 2. **Product & Service Details** (done) - detail pages with purchase actions.
@@ -93,7 +93,7 @@ Discovery**, which is next and last.
     the main customer and admin flows in both languages and at phone width,
     Stripe stubbed at the server boundary; 25b deployment to Vercel with
     migrations, live webhook, bucket, `RATE_LIMIT_IP_HEADER`, and a smoke test.
-29. **Catalog Discovery** (next) - no schema change.
+29. **Catalog Discovery** (done) - no schema change.
     - 29a **Featured Product Tabs** - home Featured products gets Best sellers
       (published products by units sold in paid orders, then newest), New
       (newest first), and Templates (`category` "Templates"; tab hidden when
