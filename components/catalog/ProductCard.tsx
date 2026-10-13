@@ -17,6 +17,8 @@ interface ProductCardProps {
   index: number;
   text: ProductCardText;
   headingLevel?: "h2" | "h3";
+  // False for admin previews: unpublished items have no public page to open.
+  linked?: boolean;
 }
 
 // Shared store card. Callers load the products; the card only renders one.
@@ -27,11 +29,18 @@ export function ProductCard({
   index,
   text,
   headingLevel: Heading = "h3",
+  linked = true,
 }: ProductCardProps) {
   const isService = product.type === ProductType.SERVICE;
 
   return (
-    <article className="relative flex h-full flex-col rounded-panel border border-border bg-panel p-3 transition-[box-shadow,border-color,transform] duration-200 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary-strong hover:border-primary hover:shadow-raised motion-safe:hover:-translate-y-0.5">
+    <article
+      className={`relative flex h-full flex-col rounded-panel border border-border bg-panel p-3 ${
+        linked
+          ? "transition-[box-shadow,border-color,transform] duration-200 focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-primary-strong hover:border-primary hover:shadow-raised motion-safe:hover:-translate-y-0.5"
+          : ""
+      }`}
+    >
       {/* The title names the card, so the cover image is decorative. */}
       <ProductCover product={product} locale={locale} index={index} alt="" />
       <div className="flex flex-1 flex-col gap-3 px-2 pt-5 pb-2">
@@ -44,12 +53,16 @@ export function ProductCard({
         <Heading dir="auto" className="text-lg font-semibold break-words">
           {/* The stretched link makes the whole card clickable while its
               accessible name stays the item name. */}
-          <Link
-            href={localizedPath(locale, productPath(product))}
-            className="outline-none after:absolute after:inset-0"
-          >
-            {product.name}
-          </Link>
+          {linked ? (
+            <Link
+              href={localizedPath(locale, productPath(product))}
+              className="outline-none after:absolute after:inset-0"
+            >
+              {product.name}
+            </Link>
+          ) : (
+            product.name
+          )}
         </Heading>
         <p dir="auto" className="text-sm break-words text-muted">
           {product.shortDescription}

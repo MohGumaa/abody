@@ -221,6 +221,7 @@ export interface AdminProduct {
   shortDescription: string;
   description: string;
   priceCents: number;
+  type: ProductType;
   category: string;
   image: string | null;
   included: string[];
@@ -237,6 +238,7 @@ export interface AdminProduct {
   // Only the download name; the storage key never leaves the server.
   fileName: string | null;
   orderCount: number;
+  createdAt: Date;
   updatedAt: Date;
 }
 
@@ -254,6 +256,7 @@ export async function getAdminProduct(
       shortDescription: true,
       description: true,
       priceCents: true,
+      type: true,
       category: true,
       image: true,
       included: true,
@@ -268,6 +271,7 @@ export async function getAdminProduct(
       featuredRank: true,
       status: true,
       digitalFile: true,
+      createdAt: true,
       updatedAt: true,
       _count: { select: { orderItems: true } },
     },

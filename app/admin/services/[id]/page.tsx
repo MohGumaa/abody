@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { DeleteProduct, ProductStatusControl } from "@/components/admin/ProductActions";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { ProductStatusChip } from "@/components/admin/ProductStatusChip";
+import { StoreCardPreview } from "@/components/admin/StoreCardPreview";
 import { ExternalIcon } from "@/components/icons";
 import {
   adminMetadata,
@@ -85,6 +86,15 @@ export default async function EditServicePage({ params }: PageProps<"/admin/serv
         <ProductForm type="SERVICE" id={service.id} initial={initial} categories={categories} />
 
         <div className="grid gap-6">
+          <section aria-labelledby="service-preview-title" className={CARD}>
+            <div className="grid gap-1">
+              <h2 id="service-preview-title" className="text-lg font-semibold">
+                Store card preview
+              </h2>
+              <p className="text-sm text-muted">Shows the last saved version.</p>
+            </div>
+            <StoreCardPreview product={service} />
+          </section>
           <section aria-labelledby="service-status-title" className={CARD}>
             <h2 id="service-status-title" className="text-lg font-semibold">
               Visibility

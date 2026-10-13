@@ -5,6 +5,7 @@ import { DeleteProduct, ProductStatusControl } from "@/components/admin/ProductA
 import { ProductFileUpload } from "@/components/admin/ProductFileUpload";
 import { ProductForm } from "@/components/admin/ProductForm";
 import { ProductStatusChip } from "@/components/admin/ProductStatusChip";
+import { StoreCardPreview } from "@/components/admin/StoreCardPreview";
 import { ExternalIcon } from "@/components/icons";
 import {
   adminMetadata,
@@ -95,6 +96,15 @@ export default async function EditProductPage({ params }: PageProps<"/admin/prod
               fileName={product.fileName}
               direct={bucketConfig() !== null}
             />
+          </section>
+          <section aria-labelledby="product-preview-title" className={CARD}>
+            <div className="grid gap-1">
+              <h2 id="product-preview-title" className="text-lg font-semibold">
+                Store card preview
+              </h2>
+              <p className="text-sm text-muted">Shows the last saved version.</p>
+            </div>
+            <StoreCardPreview product={product} />
           </section>
           <section aria-labelledby="product-status-title" className={CARD}>
             <h2 id="product-status-title" className="text-lg font-semibold">
